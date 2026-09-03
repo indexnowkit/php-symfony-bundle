@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
+use BackedEnum;
+use Closure;
 use Doctrine\Persistence\ManagerRegistry;
+use IndexNowKit\Attribute\Param\Equals;
 use IndexNowKit\Attribute\UrlRule;
 use IndexNowKit\Config;
 use IndexNowKit\Debounce\DebounceStoreInterface;
@@ -124,9 +127,9 @@ final class ExplainCommand extends Command
         if ($rule->when !== []) {
             try {
                 $applies = $rule->appliesTo($entity);
-                $io->writeln(\sprintf('  when: %s -> %s', implode(' && ', $rule->when), $applies ? '<fg=green>true</>' : '<fg=yellow>false (page not public, nothing submitted)</>'));
+                $io->writeln(\sprintf('  when: %s -> %s', implode(' && ', array_map(self::describeCondition(...), $rule->when)), $applies ? '<fg=green>true</>' : '<fg=yellow>false (page not public, nothing submitted)</>'));
             } catch (Throwable $e) {
-                $io->writeln(\sprintf('  when: %s -> <fg=red>error: %s</>', implode(' && ', $rule->when), $e->getMessage()));
+                $io->writeln(\sprintf('  when: %s -> <fg=red>error: %s</>', implode(' && ', array_map(self::describeCondition(...), $rule->when)), $e->getMessage()));
 
                 return [];
             }
@@ -147,6 +150,16 @@ final class ExplainCommand extends Command
         }
 
         return $urls;
+    }
+
+    private static function describeCondition(mixed $condition): string
+    {
+        return match (true) {
+            \is_string($condition) => $condition,
+            $condition instanceof Equals => \sprintf('%s == %s', $condition->path, json_encode($condition->value instanceof BackedEnum ? $condition->value->value : $condition->value)),
+            $condition instanceof Closure => 'closure',
+            default => get_debug_type($condition),
+        };
     }
 
     private function explainUrl(SymfonyStyle $io, string $url): void
