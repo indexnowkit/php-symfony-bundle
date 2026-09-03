@@ -134,7 +134,7 @@ monolog:
 ```
 
 Set it to `debug` while diagnosing: the reason a rule decided **not** to produce a URL is only logged at that level.
-Every message text and level is listed in the [operations guide](../../core/docs/operations.md).
+Every message text and level is listed in the [operations guide](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md).
 
 Keys are masked in every log line, including inside response bodies and exception messages, so these files are safe
 to attach to a bug report.

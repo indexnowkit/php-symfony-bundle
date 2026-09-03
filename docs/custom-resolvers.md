@@ -116,4 +116,4 @@ keeps the class-level event-subscription check for that case, and still catches 
 If your objects cannot carry attributes but you do want rules, register them at runtime with
 `IndexNowKit\Attribute\RuleRegistry` and decorate `indexnowkit.attribute_reader` instead. That keeps the whole rule
 model — guards, per-rule deletions, `via`, locales — and is almost always the better choice. See the
-[core attribute reference](../../core/docs/attribute-reference.md#rules-registered-at-runtime).
+[core attribute reference](https://github.com/indexnowkit/php/blob/main/packages/core/docs/attribute-reference.md#rules-registered-at-runtime).

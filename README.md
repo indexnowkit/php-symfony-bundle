@@ -69,7 +69,7 @@ class Post { /* ... */ }
 | `name` | stable rule id for logs, `indexnow:explain` and overriding in a subclass |
 
 Full model, typed parameters, inheritance and the semantics table:
-[core attribute reference](../core/docs/attribute-reference.md).
+[core attribute reference](https://github.com/indexnowkit/php/blob/main/packages/core/docs/attribute-reference.md).
 
 ## Verify
 
@@ -151,7 +151,7 @@ Three tools, in the order you should reach for them.
    engine, alongside the dispatch mode, the key file URL per host and the debounce window.
 3. **The `indexnow` Monolog channel** carries everything. Set it to `debug` while diagnosing: the reason a rule
    decided *not* to produce a URL is logged there. Message texts and levels are listed in the
-   [operations guide](../core/docs/operations.md).
+   [operations guide](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md).
 
 An invalid configuration does not throw from a flush: IndexNow is disabled, one `critical` line is logged, and
 `indexnow:check` prints the exact error.
@@ -176,10 +176,10 @@ An invalid configuration does not throw from a flush: IndexNow is disabled, one 
 
 | | |
 |---|---|
-| PHP | [core](../core), [doctrine](../doctrine), laravel (soon) |
+| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), laravel (soon) |
 | JS/TS | @indexnowkit/core, next, prisma (soon) |
 | Python | indexnowkit, indexnowkit-django (soon) |
 
-Design rationale: [docs/spec](../../../docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
+Design rationale: [docs/spec](https://github.com/indexnowkit/php/tree/main/docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 MIT.

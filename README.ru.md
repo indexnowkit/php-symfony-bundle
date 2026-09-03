@@ -69,7 +69,7 @@ class Post { /* ... */ }
 | `name` | стабильный id правила для логов, `indexnow:explain` и переопределения в наследнике |
 
 Полная модель, типизированные параметры, наследование и таблица семантики:
-[справочник по атрибутам](../core/docs/attribute-reference.md).
+[справочник по атрибутам](https://github.com/indexnowkit/php/blob/main/packages/core/docs/attribute-reference.md).
 
 ## Проверка
 
@@ -151,7 +151,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
    вместе с режимом dispatch, URL файла ключа для каждого хоста и окном дебаунса.
 3. **Канал Monolog `indexnow`** содержит всё. На время диагностики переключите его на `debug`: причина, по которой
    правило решило **не** выдавать URL, пишется именно там. Тексты сообщений и уровни перечислены в
-   [руководстве по эксплуатации](../core/docs/operations.md).
+   [руководстве по эксплуатации](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md).
 
 Некорректная конфигурация не бросает исключение из flush: IndexNow выключается, в лог уходит одна строка уровня
 `critical`, а `indexnow:check` печатает точную ошибку.
@@ -174,10 +174,10 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 
 | | |
 |---|---|
-| PHP | [core](../core), [doctrine](../doctrine), laravel (скоро) |
+| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), laravel (скоро) |
 | JS/TS | @indexnowkit/core, next, prisma (скоро) |
 | Python | indexnowkit, indexnowkit-django (скоро) |
 
-Обоснование архитектуры: [docs/spec](../../../docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
+Обоснование архитектуры: [docs/spec](https://github.com/indexnowkit/php/tree/main/docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 MIT.

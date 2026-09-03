@@ -171,4 +171,4 @@ Run it in the application that decorates or replaces bundle services to prove th
 
 `Submitter` dispatches every `Result` as a PSR-14 event through `event_dispatcher` when it exists; a listener on
 `IndexNowKit\Result` gets each outcome for metrics or alerting without touching the pipeline
-([operations guide](../../core/docs/operations.md)).
+([operations guide](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md)).
