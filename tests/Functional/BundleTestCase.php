@@ -7,7 +7,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Tests\Support\FakeTransport;
+use IndexNowKit\Testing\FakeTransport;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;

@@ -6,7 +6,7 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use Doctrine\Persistence\ManagerRegistry;
 use IndexNowKit\Event;
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -15,10 +15,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve URLs of Doctrine entities through #[IndexNow] and submit them')]
+#[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve URLs of Doctrine entities through #[IndexNowKit] and submit them')]
 final class SubmitEntityCommand extends Command
 {
-    public function __construct(private readonly IndexNow $indexNow, private readonly ManagerRegistry $doctrine)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly ManagerRegistry $doctrine)
     {
         parent::__construct();
     }

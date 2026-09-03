@@ -7,7 +7,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsHandler;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
-use IndexNowKit\Tests\Support\FakeTransport;
+use IndexNowKit\Testing\FakeTransport;
 use PHPUnit\Framework\Attributes\TestDox;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;

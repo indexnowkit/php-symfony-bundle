@@ -6,7 +6,7 @@ namespace IndexNowKit\SymfonyBundle\DataCollector;
 
 use IndexNowKit\Config;
 use IndexNowKit\Engine;
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 use IndexNowKit\Result;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +21,7 @@ use Throwable;
 final class IndexNowDataCollector extends DataCollector implements LateDataCollectorInterface
 {
     public function __construct(
-        private readonly IndexNow $indexNow,
+        private readonly IndexNowKit $indexNow,
         private readonly Config $config,
         private readonly ResultRecorder $recorder,
         private readonly string $dispatchMode,

@@ -6,7 +6,7 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use DateTimeImmutable;
 use IndexNowKit\Http\Exception\TransportException;
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 use IndexNowKit\Sitemap\SitemapReader;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -19,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:sitemap', description: 'Submit every URL of a sitemap (or only those with lastmod after --changed-since)')]
 final class SitemapCommand extends Command
 {
-    public function __construct(private readonly IndexNow $indexNow, private readonly SitemapReader $reader)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly SitemapReader $reader)
     {
         parent::__construct();
     }

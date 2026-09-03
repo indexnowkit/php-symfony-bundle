@@ -18,10 +18,10 @@ use IndexNowKit\Dispatch\NullDispatcher;
 use IndexNowKit\Dispatch\SyncDispatcher;
 use IndexNowKit\Doctrine\IndexNowListener;
 use IndexNowKit\Doctrine\Middleware\IndexNowMiddleware;
-use IndexNowKit\Doctrine\Transaction\TransactionStaging;
+use IndexNowKit\Transaction\TransactionStaging;
 use IndexNowKit\Http\Psr18Transport;
 use IndexNowKit\Http\TransportInterface;
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
 use IndexNowKit\Sitemap\SitemapReader;
@@ -159,7 +159,7 @@ final class IndexNowKitLoader
                 ->tag('messenger.message_handler');
         }
 
-        $services->set('indexnowkit', IndexNow::class)
+        $services->set('indexnowkit', IndexNowKit::class)
             ->args([
                 '$config' => service('indexnowkit.config'),
                 '$submitter' => service('indexnowkit.submitter'),
@@ -171,7 +171,7 @@ final class IndexNowKitLoader
                 '$logger' => service('logger')->nullOnInvalid(),
             ])
             ->public();
-        $services->alias(IndexNow::class, 'indexnowkit')->public();
+        $services->alias(IndexNowKit::class, 'indexnowkit')->public();
 
         $services->set('indexnowkit.flush_listener', FlushListener::class)
             ->args([service('indexnowkit')])

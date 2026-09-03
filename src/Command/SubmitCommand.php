@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 use IndexNowKit\Result;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -13,10 +13,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'indexnow:submit', description: 'Submit URLs to IndexNow immediately (bypasses queue and debounce store only if --force)')]
+#[AsCommand(name: 'indexnow:submit', description: 'Submit URLs to IndexNowKit immediately (bypasses queue and debounce store only if --force)')]
 final class SubmitCommand extends Command
 {
-    public function __construct(private readonly IndexNow $indexNow)
+    public function __construct(private readonly IndexNowKit $indexNow)
     {
         parent::__construct();
     }
@@ -42,7 +42,7 @@ final class SubmitCommand extends Command
     public static function render(SymfonyStyle $io, array $results): int
     {
         if ($results === []) {
-            $io->warning('Nothing submitted (all URLs invalid, debounced, or IndexNow disabled).');
+            $io->warning('Nothing submitted (all URLs invalid, debounced, or IndexNowKit disabled).');
 
             return Command::SUCCESS;
         }

@@ -9,7 +9,7 @@ use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\Tests\Support\Factory;
-use IndexNowKit\Tests\Support\FakeTransport;
+use IndexNowKit\Testing\FakeTransport;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;

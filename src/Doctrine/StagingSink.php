@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Doctrine;
 
-use IndexNowKit\IndexNow;
+use IndexNowKit\IndexNowKit;
 
 /**
  * Receives URLs from TransactionStaging after the real COMMIT and parks them in the request collector.
  */
 final class StagingSink
 {
-    public function __construct(private readonly IndexNow $indexNow) {}
+    public function __construct(private readonly IndexNowKit $indexNow) {}
 
     /**
      * @param list<string> $urls

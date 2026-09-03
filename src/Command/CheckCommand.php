@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use IndexNowKit\Check\Checker;
+use IndexNowKit\Check\CheckLevel;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,10 +33,10 @@ final class CheckCommand extends Command
         $io->text(\sprintf('dispatch mode: <info>%s</info>', $this->dispatchMode));
         $report = $this->checker->run(liveProbe: (bool) $input->getOption('live'));
         foreach ($report->items() as $item) {
-            match ($item['level']) {
-                'ok' => $io->writeln('  <fg=green>✔</> ' . $item['message']),
-                'warning' => $io->writeln('  <fg=yellow>!</> ' . $item['message']),
-                'error' => $io->writeln('  <fg=red>✘</> ' . $item['message']),
+            match ($item->level) {
+                CheckLevel::Ok => $io->writeln('  <fg=green>✔</> ' . $item->message),
+                CheckLevel::Warning => $io->writeln('  <fg=yellow>!</> ' . $item->message),
+                CheckLevel::Error => $io->writeln('  <fg=red>✘</> ' . $item->message),
             };
         }
         $io->newLine();
