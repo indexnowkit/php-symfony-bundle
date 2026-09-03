@@ -40,8 +40,8 @@ final class SubmitUrlsHandler
             }
         }
         if ($retryUrls !== []) {
-            $this->logger->info('indexnow: {count} URL(s) will be retried', ['count' => \count($retryUrls)]);
-            $message = \sprintf('IndexNow: %d URL(s) temporarily rejected', \count($retryUrls));
+            $this->logger->info('indexnow: {count} URL(s) of message {id} will be retried', ['count' => \count($retryUrls), 'id' => $message->id]);
+            $message = \sprintf('IndexNow: %d URL(s) temporarily rejected (message %s)', \count($retryUrls), $message->id);
             if ($retryAfter !== null && $retryAfter > 0 && self::supportsRetryDelay()) {
                 throw new RecoverableMessageHandlingException($message, 0, null, $retryAfter * 1000);
             }

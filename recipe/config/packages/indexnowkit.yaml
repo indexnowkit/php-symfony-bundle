@@ -2,6 +2,7 @@ indexnowkit:
     key: '%env(INDEXNOW_KEY)%'
     base_url: '%env(INDEXNOW_BASE_URL)%'
 
+    # enabled: '%env(bool:INDEXNOW_ENABLED)%'   # runtime kill switch without a deploy (default true)
     # dispatch: auto        # messenger when a transport is configured, otherwise sync after the response was sent
     # engines: [api]        # api = the shared endpoint (Yandex, Bing, Naver, Seznam, Yep)
 

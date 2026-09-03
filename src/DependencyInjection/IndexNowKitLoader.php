@@ -257,7 +257,9 @@ final class IndexNowKitLoader
 
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport')]);
-        $services->set('indexnowkit.sitemap_reader', SitemapReader::class)->args([service('indexnowkit.transport')]);
+        $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
+            ->args([service('indexnowkit.transport'), 3, $logger])
+            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
             ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger])
             ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
