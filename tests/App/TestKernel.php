@@ -9,6 +9,7 @@ use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\SymfonyBundle\Tests\App\Resolver\CustomUrlResolver;
+use IndexNowKit\SymfonyBundle\Tests\App\Sitemap\FilteringSitemapSource;
 use IndexNowKit\Testing\FakeTransport;
 use IndexNowKit\Tests\Support\Factory;
 use ReflectionClass;
@@ -129,6 +130,9 @@ final class TestKernel extends Kernel
             $container->services()->set(CustomUrlResolver::class)->autoconfigure();
         }
         $container->services()->set(FakeTransport::class)->public();
+        if ($this->dispatch === 'sitemapsource') {
+            $container->services()->set(FilteringSitemapSource::class)->autowire()->autoconfigure();
+        }
         if ($this->dispatch === 'scopedclient') {
             $container->services()->set('app.scoped_http_client', MockHttpClient::class)->public();
         }
@@ -186,6 +190,9 @@ final class TestKernel extends Kernel
                 break;
             case 'nositemap':
                 $config['sitemap'] = ['enabled' => false];
+                break;
+            case 'sitemapsource':
+                $config['sitemap'] = ['spool' => 'memory'];
                 break;
         }
 

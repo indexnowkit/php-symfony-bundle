@@ -27,6 +27,7 @@ use IndexNowKit\Key\KeyFileResponder;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
 use IndexNowKit\Sitemap\SitemapReader;
+use IndexNowKit\Sitemap\SitemapSourceInterface;
 use IndexNowKit\Sitemap\SpoolMode;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
@@ -222,6 +223,8 @@ final class IndexNowKitLoader
                 '$attributes' => service('indexnowkit.attribute_reader'),
                 '$resolver' => service('indexnowkit.guarded_url_resolver'),
                 '$logger' => $logger,
+                '$transport' => service('indexnowkit.transport'),
+                '$sitemap' => service('indexnowkit.sitemap_reader')->nullOnInvalid(),
             ])
             ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL])
             ->public();
@@ -264,6 +267,7 @@ final class IndexNowKitLoader
                 ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts'], SpoolMode::from($sitemap['spool']), $sitemap['spool_dir'], $sitemap['fetch_retries']])
                 ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
             $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
+            $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
             $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url']])->tag('console.command');
         }
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)

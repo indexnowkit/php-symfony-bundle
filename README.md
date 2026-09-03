@@ -118,9 +118,10 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` |
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
-`indexnow:sitemap` with no argument reads `sitemap.url`, else `<base_url>/sitemap.xml`; it streams the sitemap
-(and its index) and submits every `batch.max_urls` URLs, so size is not a concern. `sitemap.enabled: false` removes
-the command. `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and
+`indexnow:sitemap` with no argument reads `sitemap.url`, else `<base_url>/sitemap.xml`; a local path or `file://`
+URL reads the file without the web server. XML and text sitemaps, indexes and gzip are handled; the command streams
+and submits every `batch.max_urls` URLs, so size is not a concern. `sitemap.enabled: false` removes the command;
+decorating `indexnowkit.sitemap_reader` shapes what it submits ([docs/extending.md](docs/extending.md)). `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and
 `indexnow:explain` need Doctrine.
 
 ## Configuration
@@ -135,6 +136,7 @@ The full annotated tree, every default and every compile-time validation:
 | HTTP client, proxy, scoped clients | [docs/http-client.md](docs/http-client.md) |
 | Doctrine details, priorities, connections | [docs/doctrine.md](docs/doctrine.md) |
 | Custom resolvers | [docs/custom-resolvers.md](docs/custom-resolvers.md) |
+| Extending: what is replaceable, decorating services | [docs/extending.md](docs/extending.md) |
 | Testing your integration | [docs/testing.md](docs/testing.md) |
 | Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
 

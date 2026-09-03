@@ -218,9 +218,10 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Debounce\DebounceStoreInterface` | `indexnowkit.debounce_store` |
 | `Throttle\ThrottleInterface` | `indexnowkit.throttle` |
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
-| `Sitemap\SitemapReader` | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
+| `Sitemap\SitemapSourceInterface` (and `Sitemap\SitemapReader`) | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
 
-Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them.
+Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them. How to
+decorate or replace each one: [extending.md](extending.md).
 
 ## Container parameters
 

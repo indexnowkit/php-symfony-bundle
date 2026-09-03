@@ -53,6 +53,12 @@ contain breaking changes, listed under "Changed".
   document is kept while parsing; `auto` uses a temp file and falls back to memory when the temp dir is not
   writable. `sitemap.fetch_retries` (default 2) retries a document fetch after a network failure or 5xx.
   `indexnow:check` reports the spool location, or why the temp dir is unusable.
+- **Replaceable sitemap source.** `indexnowkit.sitemap_reader` is aliased to `Sitemap\SitemapSourceInterface` and
+  `indexnow:sitemap` depends on the interface: `#[AsDecorator('indexnowkit.sitemap_reader')]` filters or rewrites
+  entries, a replacement reads from anywhere. The facade's `sitemap()` returns the same service. The command also
+  takes a local path or `file://` URL and reads text sitemaps.
+- **[docs/extending.md](docs/extending.md)**: every service id, its interface, its config knob, and whether to
+  configure, decorate or replace it; worked examples for the sitemap source, the transport and the key provider.
 - `indexnow:key:generate --write-env` is idempotent: an existing `INDEXNOW_KEY` line is left alone and reported as
   success, and `--force` rotates it with a warning about the propagation window.
 

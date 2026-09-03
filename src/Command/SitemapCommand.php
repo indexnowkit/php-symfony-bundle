@@ -9,6 +9,7 @@ use Exception;
 use IndexNowKit\Http\Exception\TransportException;
 use IndexNowKit\IndexNowKit;
 use IndexNowKit\Sitemap\SitemapReader;
+use IndexNowKit\Sitemap\SitemapSourceInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -19,8 +20,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Reads a sitemap (or sitemap index) as a stream and submits it in batches of `batch.max_urls`, so the URL list
- * never has to fit in memory. The reader spools documents to temp files; the command keeps one batch and a
- * summary table.
+ * never has to fit in memory. The source is whatever implements {@see SitemapSourceInterface} under
+ * `indexnowkit.sitemap_reader` (the shipped {@see SitemapReader}, or the application's decorator/replacement);
+ * `--allow-foreign-hosts` only reaches the shipped reader.
  */
 #[AsCommand(name: 'indexnow:sitemap', description: 'Submit every URL of a sitemap (or only those with lastmod after --changed-since)')]
 final class SitemapCommand extends Command
@@ -30,7 +32,7 @@ final class SitemapCommand extends Command
      */
     public function __construct(
         private readonly IndexNowKit $indexNow,
-        private readonly SitemapReader $reader,
+        private readonly SitemapSourceInterface $reader,
         private readonly SubmitterFactory $submitters,
         private readonly ?string $defaultSitemap = null,
     ) {
@@ -40,7 +42,7 @@ final class SitemapCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL (default: sitemap.url from the config, else <base_url>/sitemap.xml)')
+            ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL or local file (default: sitemap.url from the config, else <base_url>/sitemap.xml)')
             ->addOption('changed-since', null, InputOption::VALUE_REQUIRED, 'Only URLs whose <lastmod> is newer, e.g. "1 day" or "2026-09-01"')
             ->addOption('allow-foreign-hosts', null, InputOption::VALUE_NONE, 'Follow nested sitemaps hosted on another origin (CDN) for this run')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store')
@@ -66,7 +68,10 @@ final class SitemapCommand extends Command
             return Command::INVALID;
         }
         $allowForeignHosts = $input->getOption('allow-foreign-hosts') === true ? true : null;
-        $entries = $this->reader->read($sitemap, $since, $allowForeignHosts);
+        if ($allowForeignHosts === true && !$this->reader instanceof SitemapReader) {
+            $io->warning(\sprintf('--allow-foreign-hosts is an option of the shipped SitemapReader; the configured source (%s) decides on its own.', $this->reader::class));
+        }
+        $entries = $this->reader instanceof SitemapReader ? $this->reader->read($sitemap, $since, $allowForeignHosts) : $this->reader->read($sitemap, $since);
         $found = 0;
 
         if ($input->getOption('dry-run') === true) {
