@@ -103,9 +103,14 @@ final class SitemapCommand extends Command
                 }
             }
         } catch (TransportException $e) {
+            // Whatever was read before the failure is still worth announcing; the re-run is idempotent anyway.
+            if ($batch !== []) {
+                $summary->add($submitter->submit($batch));
+                ++$batches;
+            }
             $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
             if ($batches > 0 && !$json) {
-                $io->text(\sprintf('%d batch(es) were already submitted before the error.', $batches));
+                $io->text(\sprintf('%d URL(s) read before the error were submitted in %d batch(es); re-run the command once the sitemap is reachable.', $found, $batches));
                 $summary->render($io, false);
             }
 

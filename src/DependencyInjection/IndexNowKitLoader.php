@@ -27,6 +27,7 @@ use IndexNowKit\Key\KeyFileResponder;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
 use IndexNowKit\Sitemap\SitemapReader;
+use IndexNowKit\Sitemap\SpoolMode;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
@@ -83,7 +84,7 @@ final class IndexNowKitLoader
      */
     public function load(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool}} $config */
+        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool, spool: string, spool_dir: ?string, fetch_retries: int}} $config */
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
         $logger = service('logger')->nullOnInvalid();
@@ -260,7 +261,7 @@ final class IndexNowKitLoader
         if ($config['sitemap']['enabled']) {
             $sitemap = $config['sitemap'];
             $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
-                ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts']])
+                ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts'], SpoolMode::from($sitemap['spool']), $sitemap['spool_dir'], $sitemap['fetch_retries']])
                 ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
             $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
             $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url']])->tag('console.command');

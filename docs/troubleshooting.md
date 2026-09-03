@@ -146,6 +146,19 @@ logged (`debounce store unavailable, submitting without de-duplication`). The vi
 submissions, not lost ones, which is the right trade: a duplicate costs one request, a miss leaves stale content
 indexed.
 
+## `indexnow:sitemap` in a read-only container
+
+`SitemapReader` keeps each document in a temp file while parsing. With `readOnlyRootFilesystem` and no writable
+`/tmp`, the default `sitemap.spool: auto` falls back to memory and logs one warning per run; memory use is bounded
+by `sitemap.max_bytes` per document (50 MiB), so nothing breaks, it just costs RAM. Mount an `emptyDir` on `/tmp`
+(or set `TMPDIR` / `sitemap.spool_dir` to a writable volume) to get the temp file back, or set `spool: memory` to
+make the choice explicit. `indexnow:check` prints where documents are spooled and why the temp dir is unusable.
+
+A sitemap that ends midway ("ends early (truncated download or broken sitemap)") or a connection lost during the
+download is retried `sitemap.fetch_retries` times; when it still fails, the URLs read so far are submitted, the
+command exits with 1, and a re-run is safe (IndexNow is idempotent, the debounce store absorbs the repeats). For a
+daily cron with `--changed-since`, use a window wider than the interval (`"2 days"`) so a failed run leaves no gap.
+
 ## Getting help
 
 Include the output of `bin/console indexnow:check`, the relevant `indexnow` log lines, and the

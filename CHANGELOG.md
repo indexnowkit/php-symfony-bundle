@@ -47,7 +47,12 @@ contain breaking changes, listed under "Changed".
 - **`indexnow:sitemap` streams.** URLs are submitted every `batch.max_urls` entries while the sitemap is still being
   read, and results are folded into a summary table (one row per engine/host/status with `urls` and `batches`
   counts). A million-URL sitemap index no longer needs the whole URL list, or every `Result`, in memory.
-  `--dry-run` prints entries as they are read; with `--json` the list is still one JSON array.
+  `--dry-run` prints entries as they are read; with `--json` the list is still one JSON array. When the sitemap
+  breaks midway the pending batch is still submitted before the command fails, and the error says how much went out.
+- **Read-only containers.** `sitemap.spool` (`auto` | `disk` | `memory`) and `sitemap.spool_dir` decide where a
+  document is kept while parsing; `auto` uses a temp file and falls back to memory when the temp dir is not
+  writable. `sitemap.fetch_retries` (default 2) retries a document fetch after a network failure or 5xx.
+  `indexnow:check` reports the spool location, or why the temp dir is unusable.
 - `indexnow:key:generate --write-env` is idempotent: an existing `INDEXNOW_KEY` line is left alone and reported as
   success, and `--force` rotates it with a warning about the propagation window.
 

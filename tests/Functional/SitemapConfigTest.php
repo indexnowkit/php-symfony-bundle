@@ -34,6 +34,26 @@ final class SitemapConfigTest extends BundleTestCase
         self::assertStringContainsString('3 URL(s) found', $tester->getDisplay());
     }
 
+    public function testPendingBatchIsSubmittedWhenTheSitemapBreaksMidway(): void
+    {
+        $tester = $this->tester('indexnow:sitemap');
+        $this->transport()->onGet('https://www.example.com/sitemaps/root.xml', new Response(200, '<?xml version="1.0"?><urlset ' . self::NS . '><url><loc>https://www.example.com/t1</loc></url><url><loc>https://www.example.com/t2</loc></url><url><loc>https://www.example.com/t3</loc></url><url><loc>https://www.exa'));
+
+        self::assertSame(1, $tester->execute([]));
+
+        self::assertSame(['https://www.example.com/t1', 'https://www.example.com/t2', 'https://www.example.com/t3'], $this->sentUrls(), 'two full batches plus the pending one');
+        self::assertStringContainsString('ends early', $tester->getDisplay());
+        self::assertStringContainsString('3 URL(s) read before the error were submitted in 2 batch(es)', $tester->getDisplay());
+    }
+
+    public function testCheckReportsTheMemorySpool(): void
+    {
+        $tester = $this->tester('indexnow:check');
+        $tester->execute([]);
+
+        self::assertStringContainsString('sitemap: documents are spooled in memory', $tester->getDisplay());
+    }
+
     public function testJsonSummaryCarriesCountsNotUrlLists(): void
     {
         $tester = $this->tester('indexnow:sitemap');

@@ -57,6 +57,7 @@ final class CommandsTest extends BundleTestCase
         $this->transport()->onGet('https://www.example.com/' . Factory::KEY . '.txt', new Response(200, Factory::KEY));
         $tester = $this->tester('indexnow:check');
         self::assertSame(0, $tester->execute([]));
+        self::assertStringContainsString('sitemap: documents are spooled to temp files in', $tester->getDisplay());
 
         $display = $tester->getDisplay();
         self::assertStringContainsString('dispatch: sync', $display);

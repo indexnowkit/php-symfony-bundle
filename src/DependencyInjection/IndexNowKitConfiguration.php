@@ -9,6 +9,7 @@ use IndexNowKit\Config;
 use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyValidator;
 use IndexNowKit\Sitemap\SitemapReader;
+use IndexNowKit\Sitemap\SpoolMode;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -93,6 +94,10 @@ final class IndexNowKitConfiguration
                     ->integerNode('max_sitemaps')->defaultValue(SitemapReader::MAX_SITEMAPS)->min(1)->info('Documents fetched per run, root included.')->end()
                     ->integerNode('max_bytes')->defaultValue(SitemapReader::MAX_XML_BYTES)->min(1024)->info('Size cap of one uncompressed sitemap document (protocol maximum 50 MiB). Documents are spooled to disk, not memory.')->end()
                     ->booleanNode('allow_foreign_hosts')->defaultFalse()->info('Follow nested sitemaps on other origins (CDN-hosted sitemaps). Off by default: a sitemap then decides which hosts this server fetches from. --allow-foreign-hosts enables it for one run.')->end()
+                    ->enumNode('spool')->values(array_map(static fn(SpoolMode $m): string => $m->value, SpoolMode::cases()))->defaultValue(SpoolMode::Auto->value)
+                        ->info('Where a document is kept while parsing: auto = temp file, memory when the temp dir is not writable (read-only container); disk = temp file or fail; memory = never touch the disk (at most max_bytes per document).')->end()
+                    ->scalarNode('spool_dir')->defaultNull()->info('Directory for the temp files (default: sys_get_temp_dir(), i.e. TMPDIR). Point it at a writable volume on a read-only filesystem.')->end()
+                    ->integerNode('fetch_retries')->defaultValue(2)->min(0)->info('Extra attempts (1 s, 2 s, 4 s apart) when fetching a sitemap document fails on the network or with a 5xx. 4xx and broken documents are never retried.')->end()
                 ->end()->end()
                 ->booleanNode('dry_run')->defaultFalse()->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured.')->end()
                 ->arrayNode('doctrine')->addDefaultsIfNotSet()->children()

@@ -110,6 +110,16 @@ indexnowkit:
         # Follow nested sitemaps on other origins (CDN-hosted parts). Off by default: a sitemap then
         # decides which hosts this server fetches from. --allow-foreign-hosts enables it for one run.
         allow_foreign_hosts: false
+        # Where a document is kept while parsing. auto = a temp file, or memory when the temp dir is not
+        # writable (read-only container; logged once). disk = a temp file or fail. memory = never touch
+        # the disk (at most max_bytes per document, so memory stays bounded either way).
+        spool:            auto
+        # Directory for the temp files. Default: sys_get_temp_dir(), i.e. TMPDIR / sys_temp_dir. On a
+        # readOnlyRootFilesystem point it at an emptyDir or tmpfs mount.
+        spool_dir:        null
+        # Extra attempts (1 s, 2 s, 4 s apart) when fetching a document fails on the network or with a
+        # 5xx. 4xx and broken documents are never retried.
+        fetch_retries:    2
 
     doctrine:
         # Hook Doctrine ORM. Needs indexnowkit/doctrine + doctrine/doctrine-bundle.
