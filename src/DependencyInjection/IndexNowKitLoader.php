@@ -64,6 +64,15 @@ final class IndexNowKitLoader
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
 
+        // Dispatch mode (resolved first so Config reports the effective mode) --------------------------------------------------------------------------------------------------
+        $dispatch = $config['dispatch'];
+        $hasMessenger = interface_exists(MessageBusInterface::class) && $builder->hasExtension('framework');
+        if ($dispatch === 'auto') {
+            $dispatch = $hasMessenger && $this->messengerConfigured($builder) ? 'messenger' : 'sync';
+        }
+        $builder->setParameter('indexnowkit.dispatch', $dispatch);
+        $config['dispatch'] = $dispatch;
+
         // Core graph -------------------------------------------------------------------------------------------------
         $services->set('indexnowkit.config', Config::class)
             ->factory([Config::class, 'fromArray'])
@@ -120,13 +129,6 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator')]);
         $services->alias(UrlResolverInterface::class, 'indexnowkit.url_resolver');
 
-        // Dispatch --------------------------------------------------------------------------------------------------
-        $dispatch = $config['dispatch'];
-        $hasMessenger = interface_exists(MessageBusInterface::class) && $builder->hasExtension('framework');
-        if ($dispatch === 'auto') {
-            $dispatch = $hasMessenger && $this->messengerConfigured($builder) ? 'messenger' : 'sync';
-        }
-        $builder->setParameter('indexnowkit.dispatch', $dispatch);
 
         match ($dispatch) {
             'none' => $services->set('indexnowkit.dispatcher', NullDispatcher::class),

@@ -19,7 +19,7 @@
     },
     "suggest": {
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger)",
-        "doctrine/doctrine-bundle": "Automatic entity change detection",
+        "doctrine/doctrine-bundle": "Automatic entity change detection (^2.13 || ^3.0)",
         "symfony/http-client": "PSR-18 client for outgoing requests",
         "nyholm/psr7": "PSR-17 factories for symfony/http-client"
     },
