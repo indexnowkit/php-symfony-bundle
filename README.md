@@ -21,83 +21,150 @@ Indexing API is restricted to `JobPosting` / `BroadcastEvent`. This bundle will 
 
 ```bash
 composer require indexnowkit/symfony-bundle
+composer require indexnowkit/doctrine        # for automatic submission when entities change
 bin/console indexnow:key:generate --write-env     # adds INDEXNOW_KEY to .env.local
 ```
 
-The Flex recipe registers the bundle, creates `config/packages/indexnowkit.yaml` and the route for the
-key file. Without Flex, add the bundle to `config/bundles.php` and import
-`@IndexNowKitBundle/config/routes.php` in `config/routes.yaml`.
+The Flex recipe registers the bundle, creates `config/packages/indexnowkit.yaml` and imports the key file route.
+Without Flex, add `IndexNowKit\SymfonyBundle\IndexNowKitBundle` to `config/bundles.php` and import
+`@IndexNowKitBundle/config/routes.php` from `config/routes.yaml`.
 
 ```yaml
 # config/packages/indexnowkit.yaml
 indexnowkit:
     key: '%env(INDEXNOW_KEY)%'
-    base_url: '%env(INDEXNOW_BASE_URL)%'   # used by console commands and workers
+    base_url: '%env(INDEXNOW_BASE_URL)%'   # used by console commands and Messenger workers
 ```
+
+Entity hooks need `indexnowkit/doctrine` **and** `doctrine/doctrine-bundle`. Without them the bundle still works for
+manual submission, and `indexnow:check` says so instead of failing silently.
 
 ## Declare what has a public page
 
+`#[IndexNow]` is repeatable: one attribute per family of public URLs the entity has.
+
 ```php
-use IndexNowKit\Attribute\IndexNow;
+use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 
 #[ORM\Entity]
-#[IndexNow(route: 'post_show', params: ['slug' => 'slug'], when: 'isPublished', fields: ['slug', 'title', 'body'])]
-class Post { ... }
+#[IndexNowDefaults(when: 'isPublished', fields: ['slug', 'title', 'body', 'published'])]
+#[IndexNow(route: 'post_show', params: ['slug' => 'slug'])]
+#[IndexNow(route: 'post_amp', params: ['slug' => 'slug'], when: 'hasAmp')]
+#[IndexNow(via: 'category')]      // a changed post also refreshes its category page
+#[IndexNow(urls: ['/'])]          // and the homepage
+class Post { /* ... */ }
 ```
 
 | Option | Meaning |
 |---|---|
-| `route` / `params` | route name and `param => property/getter/"self"/dotted.path` |
-| `resolver` | instead of a route: a `UrlResolverInterface` service or class for anything custom (multiple pages, locales, external front-end) |
-| `when` | bool property/method; unpublished entities are skipped, `published → draft` is sent as a deletion so engines recrawl the 404 |
+| `route` / `params` | route name and `param => property, getter, "self", dotted.path` or a typed `Param\*` value |
+| `resolver` | a `UrlResolverInterface` service id or class for anything custom |
+| `via` | an accessor to a related object or collection whose pages are resubmitted |
+| `url` / `urls` | an accessor returning the URL(s), or literal URLs |
+| `when` / `whenFields` | bool accessor; unpublished entities are skipped and `published → draft` is sent as a deletion |
 | `fields` | for updates, submit only when one of these fields changed |
 | `events` | subset of `created`, `updated`, `deleted` |
-| `locales` | `current` (default), `all` (every `framework.enabled_locales`), or a list, for routes with `_locale` |
+| `locales` | `current` (default), `all` (every `framework.enabled_locales`), or a list |
+| `host` | generate this rule's URLs on another host (multi-domain) |
+| `name` | stable rule id for logs, `indexnow:explain` and overriding in a subclass |
+
+Full model, typed parameters, inheritance and the semantics table:
+[core attribute reference](../core/docs/attribute-reference.md).
 
 ## Verify
 
 ```bash
-bin/console indexnow:check          # config, key file reachable, engines
-bin/console indexnow:check --live   # also sends a probe request
+bin/console indexnow:check          # config, key file reachable, engines, dispatch, Doctrine hooks
+bin/console indexnow:check --live   # also sends a real probe request to every engine
 ```
+
+Run it after every key rotation and after every deployment that touches the configuration. It is the command that
+answers most "it does not work" reports on its own.
 
 ## How it works
 
-- URLs are collected in `onFlush`/`postFlush` and handed over **only after the outermost transaction commits**
-  (DBAL driver middleware). Rolled-back changes are never submitted.
-- Everything collected during one HTTP request / console command / Messenger message is sent as **one batch**
-  after the response was sent (`kernel.terminate`), never inside your request.
-- `dispatch: auto` uses **Messenger** when it is configured (route `IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage`
-  to an async transport to get retries with back-off on 429/5xx), otherwise sends synchronously after the response.
-- The same URL is not re-sent within **10 minutes** (`debounce.per_url`, stored in `cache.app`), batches are split at
-  **10 000 URLs**, hosts are grouped, `202` is success, `403` tells you to check the key file.
-- Failures are logged on the `indexnow` channel and never break your request. `http.timeout` (10 s) and
-  `throttle.max_requests_per_minute` (60, per HTTP request) apply to the discovered `symfony/http-client`.
+- URLs are collected in `onFlush` / `postFlush` and handed over **only after the outermost transaction commits**
+  (a DBAL driver middleware watches the real COMMIT). Rolled-back changes are never submitted.
+- Every rule of an entity is classified separately: the article page can be an update while the AMP page of the same
+  entity is a deletion, in the same flush.
+- Everything collected during one HTTP request, console command or Messenger message is sent as **one batch** after
+  the response was sent (`kernel.terminate`), never inside your request.
+- `dispatch: auto` uses **Messenger** when a transport is configured, otherwise sends synchronously after the
+  response. `sync` always sends on terminate. `none` collects and never sends, for applications that drain the
+  collector themselves.
+- The same URL is not re-sent within **10 minutes** (`debounce.per_url`, stored in `cache.app`), batches are split
+  at **10 000 URLs**, hosts are grouped, `202` is a success, `403` means the key file is wrong.
+- Failures are logged on the `indexnow` Monolog channel and never break your request. `http.timeout` (10 s) and
+  `throttle.max_requests_per_minute` (60, per process) apply to the HTTP client the bundle builds on first use.
 
 ## Manual submission
 
 ```php
-$indexNow->submit(['/posts/hello', 'https://www.example.com/about']);   // IndexNowKit\IndexNow service
-$indexNow->submitEntity($post);
+public function __construct(private readonly IndexNowKit\IndexNowKit $indexNow) {}
+
+$this->indexNow->submit(['/posts/hello', 'https://www.example.com/about']);
+$this->indexNow->submitEntity($post);
+$this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule produced which URL
 ```
 
-```bash
-bin/console indexnow:submit /posts/hello
-bin/console indexnow:submit-entity App\\Entity\\Post 42 43      # through #[IndexNow]
-bin/console indexnow:sitemap --changed-since="1 day"
-```
+## Commands
+
+| Command | Options |
+|---|---|
+| `indexnow:check` | `--live` send a real probe · `--host` check one host only |
+| `indexnow:submit <urls...>` | `-f, --force` ignore the debounce store · `--dry-run` · `--json` |
+| `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` or `deleted` · `--limit` (default 1000, when no ids) · `--explain` show rule → URL and send nothing · `-f, --force` · `--dry-run` · `--json` |
+| `indexnow:explain <class> <id>` | `--event=updated`, `created` or `deleted` |
+| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `-f, --force` · `--dry-run` list only · `--json` |
+| `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
+
+`indexnow:sitemap` with no argument reads `<base_url>/sitemap.xml`. `<class>` accepts an FQCN or a short
+`App\Entity` name. `indexnow:submit-entity` and `indexnow:explain` need Doctrine.
+
+## Configuration
+
+The full annotated tree, every default and every compile-time validation:
+[docs/configuration.md](docs/configuration.md).
+
+| Topic | |
+|---|---|
+| Multiple domains | [docs/multi-domain.md](docs/multi-domain.md) |
+| Async delivery and retries | [docs/messenger.md](docs/messenger.md) |
+| HTTP client, proxy, scoped clients | [docs/http-client.md](docs/http-client.md) |
+| Doctrine details, priorities, connections | [docs/doctrine.md](docs/doctrine.md) |
+| Custom resolvers | [docs/custom-resolvers.md](docs/custom-resolvers.md) |
+| Testing your integration | [docs/testing.md](docs/testing.md) |
+| Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
 
 ## Debugging
 
-The Web Profiler gets an **IndexNow** panel: URLs collected in the request, what was sent, HTTP outcome per engine.
-Logs go to the `indexnow` Monolog channel.
+Three tools, in the order you should reach for them.
+
+1. **`bin/console indexnow:explain App\Entity\Post 42`** walks the whole decision path for one entity — rules, event
+   subscription, `when` guard, `fields` filter, resolved URLs, normalization, host and key, key file, debounce — and
+   sends nothing.
+2. **The Web Profiler panel** shows what the request collected, what was actually sent, and the HTTP outcome per
+   engine, alongside the dispatch mode, the key file URL per host and the debounce window.
+3. **The `indexnow` Monolog channel** carries everything. Set it to `debug` while diagnosing: the reason a rule
+   decided *not* to produce a URL is logged there. Message texts and levels are listed in the
+   [operations guide](../core/docs/operations.md).
+
+An invalid configuration does not throw from a flush: IndexNow is disabled, one `critical` line is logged, and
+`indexnow:check` prints the exact error.
 
 ## Limitations
 
-- DQL / QueryBuilder bulk `UPDATE`/`DELETE` bypass the unit of work: use `indexnow:submit` or `$indexNow->submit()`.
-- Sub-domains are separate hosts: give each its own key with the `hosts` map
-  (`shop.example.com: {key: '...', key_location: 'https://shop.example.com/keys/indexnow.txt'}` when the key file is not at `/{key}.txt`).
-- Outside `prod`, a missing `INDEXNOW_KEY` switches `dry_run` on instead of failing, so dev and test environments never hit the real API.
+- DQL and QueryBuilder bulk `UPDATE` / `DELETE` bypass the unit of work: use `indexnow:submit` or
+  `$indexNow->submit()`.
+- Sub-domains are separate hosts: give each its own key with the `hosts` map, and set `strict_hosts: true` so a
+  host you did not configure is skipped rather than announced under the default key.
+- `dispatch: sync` depends on `kernel.terminate` actually firing. An early `exit()`, a fatal error, or a
+  worker runtime whose bridge does not dispatch it per request will discard the batch — with a warning. Under
+  Swoole, RoadRunner or FrankenPHP prefer `dispatch: messenger`.
+- Long-running custom commands should call `$indexNow->flush()` periodically instead of accumulating URLs for the
+  whole process lifetime.
+- Outside `prod`, a missing `INDEXNOW_KEY` switches `dry_run` on instead of failing, so dev and test never hit the
+  real API.
 
 ## Other frameworks
 
@@ -106,5 +173,7 @@ Logs go to the `indexnow` Monolog channel.
 | PHP | [core](../core), [doctrine](../doctrine), laravel (soon) |
 | JS/TS | @indexnowkit/core, next, prisma (soon) |
 | Python | indexnowkit, indexnowkit-django (soon) |
+
+Design rationale: [docs/spec](../../../docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 MIT.

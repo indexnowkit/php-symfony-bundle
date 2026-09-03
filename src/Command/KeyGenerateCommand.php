@@ -24,7 +24,7 @@ final class KeyGenerateCommand extends Command
     {
         $this
             ->addOption('length', 'l', InputOption::VALUE_REQUIRED, 'Key length (8-128)', '32')
-            ->addOption('alphanumeric', null, InputOption::VALUE_NONE, 'Use the full [A-Za-z0-9-] alphabet instead of hex')
+            ->addOption('alphanumeric', null, InputOption::VALUE_NONE, 'Use the full alphanumeric alphabet instead of hex')
             ->addOption('write-env', null, InputOption::VALUE_OPTIONAL, 'Write INDEXNOW_KEY=<key> to this env file (default .env.local); idempotent', false)
             ->addOption('force', null, InputOption::VALUE_NONE, 'Replace an existing INDEXNOW_KEY line in the env file (key rotation)');
     }
