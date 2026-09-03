@@ -94,6 +94,23 @@ indexnowkit:
     # Log the request instead of sending it. Switched on automatically outside prod when no key is set.
     dry_run:              false
 
+    sitemap:
+        # Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing
+        # else in the bundle reads sitemaps.
+        enabled:          true
+        # Sitemap read by indexnow:sitemap when no argument is given. Default: <base_url>/sitemap.xml.
+        url:              null
+        # Levels of <sitemapindex> followed below the root (0 = the root only).
+        max_depth:        3
+        # Documents fetched per run, root included.
+        max_sitemaps:     1000
+        # Size cap of one uncompressed sitemap document (protocol maximum 50 MiB). Documents are
+        # spooled to temp files, never held in memory, so this bounds disk and time rather than RAM.
+        max_bytes:        52428800
+        # Follow nested sitemaps on other origins (CDN-hosted parts). Off by default: a sitemap then
+        # decides which hosts this server fetches from. --allow-foreign-hosts enables it for one run.
+        allow_foreign_hosts: false
+
     doctrine:
         # Hook Doctrine ORM. Needs indexnowkit/doctrine + doctrine/doctrine-bundle.
         enabled:          true
@@ -118,6 +135,7 @@ The container fails to build when:
 | a literal `base_url` that is not an absolute http(s) URL | |
 | an `engines` entry that is neither a known engine nor an `http(s)` URL | |
 | `key_file.path` without `{key}` | |
+| literal `sitemap.url` that is not an absolute http(s) URL | |
 | `dispatch: messenger` without `symfony/messenger` installed | install it, or use `dispatch: sync` |
 
 Literal values only. A `%env(...)%` placeholder is resolved at runtime, so it is skipped here and validated by the
@@ -190,6 +208,7 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Debounce\DebounceStoreInterface` | `indexnowkit.debounce_store` |
 | `Throttle\ThrottleInterface` | `indexnowkit.throttle` |
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
+| `Sitemap\SitemapReader` | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
 
 Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them.
 

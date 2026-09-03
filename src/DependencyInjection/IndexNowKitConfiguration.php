@@ -8,6 +8,7 @@ use Closure;
 use IndexNowKit\Config;
 use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyValidator;
+use IndexNowKit\Sitemap\SitemapReader;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -82,6 +83,17 @@ final class IndexNowKitConfiguration
                     ->integerNode('cache_max_age')->defaultValue(300)->min(0)->info('Cache-Control max-age in seconds. Keep it short so a key rotation propagates quickly.')->end()
                 ->end()->end()
                 ->booleanNode('serve_key_file')->defaultNull()->info('Deprecated alias of key_file.enabled.')->end()
+                ->arrayNode('sitemap')->addDefaultsIfNotSet()->children()
+                    ->booleanNode('enabled')->defaultTrue()->info('Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing else reads sitemaps.')->end()
+                    ->scalarNode('url')->defaultNull()
+                        ->info('Sitemap read by indexnow:sitemap when no argument is given. Default: <base_url>/sitemap.xml.')
+                        ->validate()->ifTrue(self::literal(static fn(string $v): bool => !self::isAbsoluteUrl($v)))->thenInvalid('indexnowkit.sitemap.url must be an absolute http(s) URL, got %s.')->end()
+                    ->end()
+                    ->integerNode('max_depth')->defaultValue(3)->min(0)->info('Levels of <sitemapindex> followed below the root (0 = the root only).')->end()
+                    ->integerNode('max_sitemaps')->defaultValue(SitemapReader::MAX_SITEMAPS)->min(1)->info('Documents fetched per run, root included.')->end()
+                    ->integerNode('max_bytes')->defaultValue(SitemapReader::MAX_XML_BYTES)->min(1024)->info('Size cap of one uncompressed sitemap document (protocol maximum 50 MiB). Documents are spooled to disk, not memory.')->end()
+                    ->booleanNode('allow_foreign_hosts')->defaultFalse()->info('Follow nested sitemaps on other origins (CDN-hosted sitemaps). Off by default: a sitemap then decides which hosts this server fetches from. --allow-foreign-hosts enables it for one run.')->end()
+                ->end()->end()
                 ->booleanNode('dry_run')->defaultFalse()->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured.')->end()
                 ->arrayNode('doctrine')->addDefaultsIfNotSet()->children()
                     ->booleanNode('enabled')->defaultTrue()->info('Hook Doctrine ORM (needs indexnowkit/doctrine + doctrine/doctrine-bundle).')->end()

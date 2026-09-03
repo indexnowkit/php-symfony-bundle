@@ -91,6 +91,39 @@ final class CommandsTest extends BundleTestCase
 
         self::assertSame(0, $tester->execute(['--changed-since' => '2026-01-01']));
         self::assertSame(['https://www.example.com/s1'], $this->sentUrls());
+        self::assertStringContainsString('1 URL(s) found', $tester->getDisplay());
+        self::assertStringContainsString('batches', $tester->getDisplay(), 'the summary table has a batches column');
+    }
+
+    public function testSitemapCommandDryRunStreamsTheListAsTextOrJson(): void
+    {
+        $xml = '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://www.example.com/s1</loc></url><url><loc>https://www.example.com/s2</loc></url></urlset>';
+        $tester = $this->tester('indexnow:sitemap');
+        $this->transport()->onGet('https://www.example.com/sitemap.xml', new Response(200, $xml));
+
+        self::assertSame(0, $tester->execute(['--dry-run' => true]));
+        self::assertStringContainsString(' * https://www.example.com/s1', $tester->getDisplay());
+        self::assertStringContainsString('2 URL(s) found', $tester->getDisplay());
+        self::assertSame([], $this->transport()->posts, 'nothing is sent');
+
+        self::assertSame(0, $tester->execute(['--dry-run' => true, '--json' => true]));
+        self::assertSame(['https://www.example.com/s1', 'https://www.example.com/s2'], json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR), 'the streamed output is one valid JSON array');
+    }
+
+    public function testSitemapCommandRejectsAnUnparseableChangedSince(): void
+    {
+        $tester = $this->tester('indexnow:sitemap');
+
+        self::assertSame(2, $tester->execute(['--changed-since' => 'yesterday-ish']));
+        self::assertStringContainsString('--changed-since', $tester->getDisplay());
+    }
+
+    public function testSitemapCommandReportsAnUnreadableRoot(): void
+    {
+        $tester = $this->tester('indexnow:sitemap');
+
+        self::assertSame(1, $tester->execute(['sitemap' => 'https://www.example.com/missing.xml']));
+        self::assertStringContainsString('HTTP 404', $tester->getDisplay());
     }
 
     public function testSubmitEntityCommand(): void

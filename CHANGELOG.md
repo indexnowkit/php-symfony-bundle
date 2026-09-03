@@ -25,7 +25,7 @@ contain breaking changes, listed under "Changed".
   `when` guard, `fields` filter, resolved URLs, normalization, host and key, key file, debounce — and sends nothing.
 - New command options: `indexnow:check --live --host`, `indexnow:submit --force --dry-run --json`,
   `indexnow:submit-entity --event --limit --explain --force --dry-run --json`,
-  `indexnow:sitemap --changed-since --force --dry-run --json`,
+  `indexnow:sitemap --changed-since --allow-foreign-hosts --force --dry-run --json`,
   `indexnow:key:generate --length --alphanumeric --write-env --force`.
 - `indexnow:check` reports the effective wiring, not just the configuration: the resolved dispatch mode, whether
   `SubmitUrlsMessage` is actually routed to a transport, and whether Doctrine entity hooks are active.
@@ -41,6 +41,13 @@ contain breaking changes, listed under "Changed".
   host pattern, `key_file.cache_max_age`. The controller only serves a key that belongs to the requested host, so
   one tenant cannot serve another tenant's key file.
 - `dispatch: none` collects without ever sending, for applications that drain the collector themselves.
+- **`sitemap` config block**: `enabled` (false = no `indexnow:sitemap` command, no reader service), `url` (default
+  argument of the command instead of `<base_url>/sitemap.xml`), `max_depth`, `max_sitemaps`, `max_bytes` and
+  `allow_foreign_hosts` (follow CDN-hosted parts of a sitemap index; `--allow-foreign-hosts` does it for one run).
+- **`indexnow:sitemap` streams.** URLs are submitted every `batch.max_urls` entries while the sitemap is still being
+  read, and results are folded into a summary table (one row per engine/host/status with `urls` and `batches`
+  counts). A million-URL sitemap index no longer needs the whole URL list, or every `Result`, in memory.
+  `--dry-run` prints entries as they are read; with `--json` the list is still one JSON array.
 - `indexnow:key:generate --write-env` is idempotent: an existing `INDEXNOW_KEY` line is left alone and reported as
   success, and `--force` rotates it with a warning about the propagation window.
 

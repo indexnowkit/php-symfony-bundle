@@ -116,11 +116,13 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 | `indexnow:submit <urls...>` | `-f, --force` игнорировать дебаунс · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` или `deleted` · `--limit` (по умолчанию 1000, если id не заданы) · `--explain` показать правило → URL и ничего не отправлять · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` или `deleted` |
-| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `-f, --force` · `--dry-run` только список · `--json` |
+| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` обходить части на CDN · `-f, --force` · `--dry-run` только список · `--json` |
 | `indexnow:key:generate` | `-l, --length` (8–128, по умолчанию 32) · `--alphanumeric` · `--write-env[=FILE]` (по умолчанию `.env.local`) · `--force` ротация существующего ключа |
 
-`indexnow:sitemap` без аргумента читает `<base_url>/sitemap.xml`. `<class>` принимает FQCN или короткое имя из
-`App\Entity`. `indexnow:submit-entity` и `indexnow:explain` требуют Doctrine.
+`indexnow:sitemap` без аргумента читает `sitemap.url`, иначе `<base_url>/sitemap.xml`; sitemap (и его индекс)
+читается потоком, URL отправляются каждые `batch.max_urls` записей, так что размер не важен.
+`sitemap.enabled: false` убирает команду. `<class>` принимает FQCN или короткое имя из `App\Entity`.
+`indexnow:submit-entity` и `indexnow:explain` требуют Doctrine.
 
 ## Конфигурация
 

@@ -53,7 +53,7 @@ final class ConfigFactory
         $keyFile = \is_array($config['key_file'] ?? null) ? $config['key_file'] : [];
         $serve = $config['serve_key_file'] ?? null;
         $config['serve_key_file'] = \is_bool($serve) ? $serve : (bool) ($keyFile['enabled'] ?? true);
-        unset($config['messenger'], $config['doctrine'], $config['key_file']);
+        unset($config['messenger'], $config['doctrine'], $config['key_file'], $config['sitemap']);
         if (\is_array($config['http'] ?? null)) {
             unset($config['http']['client']);
             if ($config['http'] === []) {

@@ -180,6 +180,13 @@ final class TestKernel extends Kernel
             case 'scopedclient':
                 $config['http'] = ['client' => 'app.scoped_http_client'];
                 break;
+            case 'sitemapcfg':
+                $config['sitemap'] = ['url' => 'https://www.example.com/sitemaps/root.xml', 'allow_foreign_hosts' => true, 'max_depth' => 1, 'max_sitemaps' => 3];
+                $config['batch'] = ['max_urls' => 2];
+                break;
+            case 'nositemap':
+                $config['sitemap'] = ['enabled' => false];
+                break;
         }
 
         return $config;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use DateTimeImmutable;
+use Exception;
 use IndexNowKit\Http\Exception\TransportException;
 use IndexNowKit\IndexNowKit;
 use IndexNowKit\Sitemap\SitemapReader;
@@ -16,19 +17,32 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Reads a sitemap (or sitemap index) as a stream and submits it in batches of `batch.max_urls`, so the URL list
+ * never has to fit in memory. The reader spools documents to temp files; the command keeps one batch and a
+ * summary table.
+ */
 #[AsCommand(name: 'indexnow:sitemap', description: 'Submit every URL of a sitemap (or only those with lastmod after --changed-since)')]
 final class SitemapCommand extends Command
 {
-    public function __construct(private readonly IndexNowKit $indexNow, private readonly SitemapReader $reader, private readonly SubmitterFactory $submitters)
-    {
+    /**
+     * @param string|null $defaultSitemap `sitemap.url` from the bundle config; falls back to <base_url>/sitemap.xml
+     */
+    public function __construct(
+        private readonly IndexNowKit $indexNow,
+        private readonly SitemapReader $reader,
+        private readonly SubmitterFactory $submitters,
+        private readonly ?string $defaultSitemap = null,
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
         $this
-            ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL (default: <base_url>/sitemap.xml)')
+            ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL (default: sitemap.url from the config, else <base_url>/sitemap.xml)')
             ->addOption('changed-since', null, InputOption::VALUE_REQUIRED, 'Only URLs whose <lastmod> is newer, e.g. "1 day" or "2026-09-01"')
+            ->addOption('allow-foreign-hosts', null, InputOption::VALUE_NONE, 'Follow nested sitemaps hosted on another origin (CDN) for this run')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'List URLs without submitting')
             ->addOption('json', null, InputOption::VALUE_NONE, 'Machine-readable output');
@@ -38,42 +52,136 @@ final class SitemapCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $json = (bool) $input->getOption('json');
-        $sitemap = $input->getArgument('sitemap');
-        if (!\is_string($sitemap) || $sitemap === '') {
-            if ($this->indexNow->config->baseUrl === null) {
-                $io->error('Give a sitemap URL or configure base_url.');
+        $sitemap = $this->sitemapUrl($input);
+        if ($sitemap === null) {
+            $io->error('Give a sitemap URL, or configure indexnowkit.sitemap.url or base_url.');
 
-                return Command::INVALID;
-            }
-            $sitemap = rtrim($this->indexNow->config->baseUrl, '/') . '/sitemap.xml';
+            return Command::INVALID;
         }
-        $since = null;
-        $sinceOption = $input->getOption('changed-since');
-        if (\is_string($sinceOption) && $sinceOption !== '') {
-            $since = new DateTimeImmutable(preg_match('/^\d+\s*\w+$/', $sinceOption) === 1 ? '-' . $sinceOption : $sinceOption);
-        }
-
-        $urls = [];
         try {
-            foreach ($this->reader->read($sitemap, $since) as $entry) {
-                $urls[] = $entry->url;
-            }
-        } catch (TransportException $e) {
-            $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
+            $since = self::changedSince($input);
+        } catch (Exception $e) {
+            $io->error(\sprintf('--changed-since: %s', $e->getMessage()));
 
-            return Command::FAILURE;
+            return Command::INVALID;
         }
-        if (!$json) {
-            $io->text(\sprintf('%d URL(s) found in %s%s', \count($urls), $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : ''));
-        }
+        $allowForeignHosts = $input->getOption('allow-foreign-hosts') === true ? true : null;
+        $entries = $this->reader->read($sitemap, $since, $allowForeignHosts);
+        $found = 0;
+
         if ($input->getOption('dry-run') === true) {
-            $json ? $io->writeln((string) json_encode($urls, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) : $io->listing($urls);
+            try {
+                $found = $json ? $this->listJson($io, $entries) : $this->listText($io, $entries);
+            } catch (TransportException $e) {
+                $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
+
+                return Command::FAILURE;
+            }
+            if (!$json) {
+                $io->text(self::foundLine($found, $sitemap, $since));
+            }
 
             return Command::SUCCESS;
         }
-        $force = (bool) $input->getOption('force');
-        $submitter = $force ? $this->submitters->create(true, false) : $this->indexNow->submitter;
 
-        return ResultRenderer::render($io, $submitter->submit($urls), $json);
+        $submitter = $input->getOption('force') === true ? $this->submitters->create(true, false) : $this->indexNow->submitter;
+        $batchSize = max(1, $this->indexNow->config->batchMaxUrls);
+        $summary = new ResultSummary();
+        $batch = [];
+        $batches = 0;
+        try {
+            foreach ($entries as $entry) {
+                ++$found;
+                $batch[] = $entry->url;
+                if (\count($batch) >= $batchSize) {
+                    $summary->add($submitter->submit($batch));
+                    $batch = [];
+                    ++$batches;
+                    if (!$json && $output->isVerbose()) {
+                        $io->text(\sprintf('  batch %d: %d URL(s) read so far', $batches, $found));
+                    }
+                }
+            }
+        } catch (TransportException $e) {
+            $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
+            if ($batches > 0 && !$json) {
+                $io->text(\sprintf('%d batch(es) were already submitted before the error.', $batches));
+                $summary->render($io, false);
+            }
+
+            return Command::FAILURE;
+        }
+        if ($batch !== []) {
+            $summary->add($submitter->submit($batch));
+        }
+        if (!$json) {
+            $io->text(self::foundLine($found, $sitemap, $since));
+        }
+
+        return $summary->render($io, $json);
+    }
+
+    private function sitemapUrl(InputInterface $input): ?string
+    {
+        $argument = $input->getArgument('sitemap');
+        if (\is_string($argument) && $argument !== '') {
+            return $argument;
+        }
+        if ($this->defaultSitemap !== null && $this->defaultSitemap !== '') {
+            return $this->defaultSitemap;
+        }
+        $baseUrl = $this->indexNow->config->baseUrl;
+
+        return $baseUrl === null ? null : rtrim($baseUrl, '/') . '/sitemap.xml';
+    }
+
+    /**
+     * @throws Exception on an unparseable value
+     */
+    private static function changedSince(InputInterface $input): ?DateTimeImmutable
+    {
+        $option = $input->getOption('changed-since');
+        if (!\is_string($option) || $option === '') {
+            return null;
+        }
+
+        return new DateTimeImmutable(preg_match('/^\d+\s*\w+$/', $option) === 1 ? '-' . $option : $option);
+    }
+
+    private static function foundLine(int $found, string $sitemap, ?DateTimeImmutable $since): string
+    {
+        return \sprintf('%d URL(s) found in %s%s', $found, $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : '');
+    }
+
+    /**
+     * @param iterable<\IndexNowKit\Sitemap\SitemapEntry> $entries
+     */
+    private function listText(SymfonyStyle $io, iterable $entries): int
+    {
+        $found = 0;
+        foreach ($entries as $entry) {
+            ++$found;
+            $io->writeln(' * ' . $entry->url);
+        }
+
+        return $found;
+    }
+
+    /**
+     * Streams a JSON array of URLs, one element per line, without holding the list.
+     *
+     * @param iterable<\IndexNowKit\Sitemap\SitemapEntry> $entries
+     */
+    private function listJson(SymfonyStyle $io, iterable $entries): int
+    {
+        $found = 0;
+        $io->write('[');
+        foreach ($entries as $entry) {
+            $io->write(($found === 0 ? "\n    " : ",\n    ") . json_encode($entry->url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            ++$found;
+        }
+        $io->writeln($found === 0 ? ']' : "\n]");
+
+        return $found;
     }
 }

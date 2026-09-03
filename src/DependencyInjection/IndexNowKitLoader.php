@@ -83,7 +83,7 @@ final class IndexNowKitLoader
      */
     public function load(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}} $config */
+        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool}} $config */
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
         $logger = service('logger')->nullOnInvalid();
@@ -257,9 +257,14 @@ final class IndexNowKitLoader
 
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport')]);
-        $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
-            ->args([service('indexnowkit.transport'), 3, $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+        if ($config['sitemap']['enabled']) {
+            $sitemap = $config['sitemap'];
+            $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
+                ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts']])
+                ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
+            $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url']])->tag('console.command');
+        }
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
             ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger])
             ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
@@ -267,7 +272,6 @@ final class IndexNowKitLoader
         $services->set(KeyGenerateCommand::class)->args(['%kernel.project_dir%'])->tag('console.command');
         $services->set(CheckCommand::class)->args([service('indexnowkit.checker'), $config, '%kernel.environment%', '%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('console.command');
         $services->set(SubmitCommand::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory')])->tag('console.command');
-        $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory')])->tag('console.command');
 
         // Doctrine --------------------------------------------------------------------------------------------------
         if ($doctrine) {

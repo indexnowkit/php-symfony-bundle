@@ -115,11 +115,13 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:submit <urls...>` | `-f, --force` ignore the debounce store · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` or `deleted` · `--limit` (default 1000, when no ids) · `--explain` show rule → URL and send nothing · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` or `deleted` |
-| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `-f, --force` · `--dry-run` list only · `--json` |
+| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` |
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
-`indexnow:sitemap` with no argument reads `<base_url>/sitemap.xml`. `<class>` accepts an FQCN or a short
-`App\Entity` name. `indexnow:submit-entity` and `indexnow:explain` need Doctrine.
+`indexnow:sitemap` with no argument reads `sitemap.url`, else `<base_url>/sitemap.xml`; it streams the sitemap
+(and its index) and submits every `batch.max_urls` URLs, so size is not a concern. `sitemap.enabled: false` removes
+the command. `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and
+`indexnow:explain` need Doctrine.
 
 ## Configuration
 
