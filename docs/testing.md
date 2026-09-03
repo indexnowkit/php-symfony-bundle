@@ -75,6 +75,9 @@ Set `dry_run: false` for this variant, or nothing is ever posted.
 
 ## Making the test deterministic
 
+- **Debounce expiry itself** is tested with `IndexNowKit\Testing\FrozenClock`: pass it as `clock:` to a facade built
+  in the test (or register it as the `Psr\Clock\ClockInterface` service) and move time instead of sleeping; see the core's
+  [testing guide](https://github.com/indexnowkit/php-core/blob/main/docs/testing.md).
 - **`debounce: {per_url: 0}`** or `debounce: {store: memory}`. With the default `cache.app` and a real pool, a second
   test submitting the same URL is silently debounced and the assertion fails for the wrong reason.
 - **`dispatch: sync`**. Sending happens on `kernel.terminate`, which the test client fires; with `messenger` you

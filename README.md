@@ -23,6 +23,7 @@ Indexing API is restricted to `JobPosting` / `BroadcastEvent`. This bundle will 
 
 ```bash
 composer require indexnowkit/symfony-bundle
+composer require symfony/http-client nyholm/psr7  # any PSR-18 client works; this pair is auto-configured
 composer require indexnowkit/doctrine        # for automatic submission when entities change
 bin/console indexnow:key:generate --write-env     # adds INDEXNOW_KEY to .env.local
 ```
@@ -193,4 +194,4 @@ every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the m
 
 Design rationale: [docs/spec](https://github.com/indexnowkit/php/tree/main/docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
-MIT.
+MIT. IndexNow is a trademark of its owner; this project is independent and not affiliated with Microsoft, Yandex or indexnow.org.

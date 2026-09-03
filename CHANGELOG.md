@@ -3,7 +3,7 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
-## 0.2.0 — 2026-09-04
+## [0.2.0] — 2026-09-04
 
 ### Added
 
@@ -126,13 +126,17 @@ contain breaking changes, listed under "Changed".
   Messenger handler, so resolver and dispatch failures land on the channel the README points at.
 - The profiler panel no longer shows an empty result list for synchronous dispatch.
 
-## 0.1.1 — 2026-09-03
+## [0.1.1] — 2026-09-03
 
 - Web Profiler routing import works on Symfony 6.4; `indexnow:check` reports the resolved dispatch mode;
   DoctrineBundle 3 allowed.
 
-## 0.1.0 — 2026-09-03
+## [0.1.0] — 2026-09-03
 
 - Bundle configuration, Messenger dispatch with retry-after, `kernel.terminate` batching, key file route.
 - Commands `indexnow:key:generate`, `indexnow:check`, `indexnow:submit`, `indexnow:submit-entity`,
   `indexnow:sitemap`. Web Profiler panel. Flex recipe in `recipe/`.
+
+[0.2.0]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/indexnowkit/php-symfony-bundle/releases/tag/0.1.0

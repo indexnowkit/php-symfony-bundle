@@ -23,6 +23,7 @@
 
 ```bash
 composer require indexnowkit/symfony-bundle
+composer require symfony/http-client nyholm/psr7  # подойдёт любой PSR-18 клиент; эта пара настраивается сама
 composer require indexnowkit/doctrine        # для автоматической отправки при изменении сущностей
 bin/console indexnow:key:generate --write-env     # добавит INDEXNOW_KEY в .env.local
 ```
@@ -195,4 +196,4 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 
 Обоснование архитектуры: [docs/spec](https://github.com/indexnowkit/php/tree/main/docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
-MIT.
+MIT. IndexNow — товарный знак его владельца; проект независимый и не связан с Microsoft, Яндексом или indexnow.org.
