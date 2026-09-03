@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use Doctrine\Persistence\ManagerRegistry;
+use IndexNowKit\Event;
 use IndexNowKit\IndexNow;
-use IndexNowKit\Url\Event;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

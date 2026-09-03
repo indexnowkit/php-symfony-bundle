@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Messenger;
 
-use IndexNowKit\Submitter;
+use IndexNowKit\Result;
+use IndexNowKit\SubmitterInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ReflectionClass;
@@ -18,7 +19,7 @@ use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 #[AsMessageHandler]
 final class SubmitUrlsHandler
 {
-    public function __construct(private readonly Submitter $submitter, private readonly LoggerInterface $logger = new NullLogger()) {}
+    public function __construct(private readonly SubmitterInterface $submitter, private readonly LoggerInterface $logger = new NullLogger()) {}
 
     private static ?bool $retryDelaySupported = null;
 
@@ -30,12 +31,12 @@ final class SubmitUrlsHandler
 
     public function __invoke(SubmitUrlsMessage $message): void
     {
-        $retryUrls = [];
+        $results = $this->submitter->submit($message->urls);
+        $retryUrls = Result::urlsOf($results);
         $retryAfter = null;
-        foreach ($this->submitter->submit($message->urls) as $result) {
-            if ($result->retryable) {
-                $retryUrls = [...$retryUrls, ...$result->urls];
-                $retryAfter = max($retryAfter ?? 0, $result->retryAfter ?? 0);
+        foreach ($results as $result) {
+            if ($result->retryable && $result->retryAfter !== null) {
+                $retryAfter = max($retryAfter ?? 0, $result->retryAfter);
             }
         }
         if ($retryUrls !== []) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use IndexNowKit\Attribute\AttributeReader;
+use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Client;
 use IndexNowKit\Collector\Collector;
@@ -25,6 +26,7 @@ use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
 use IndexNowKit\Sitemap\SitemapReader;
 use IndexNowKit\Submitter;
+use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
 use IndexNowKit\SymfonyBundle\Command\SitemapCommand;
@@ -39,9 +41,13 @@ use IndexNowKit\SymfonyBundle\Messenger\MessengerDispatcher;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsHandler;
 use IndexNowKit\SymfonyBundle\Url\ContainerResolverLocator;
 use IndexNowKit\SymfonyBundle\Url\SymfonyRouteUrlResolver;
+use IndexNowKit\Throttle\ThrottleInterface;
+use IndexNowKit\Throttle\TokenBucket;
 use IndexNowKit\Url\AttributeUrlResolver;
 use IndexNowKit\Url\ResolverLocatorInterface;
 use IndexNowKit\Url\RouteUrlResolverInterface;
+use IndexNowKit\Url\UrlNormalizer;
+use IndexNowKit\Url\UrlNormalizerInterface;
 use IndexNowKit\Url\UrlResolverInterface;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -76,7 +82,7 @@ final class IndexNowKitLoader
         // Core graph -------------------------------------------------------------------------------------------------
         $services->set('indexnowkit.config', Config::class)
             ->factory([Config::class, 'fromArray'])
-            ->args([$config]);
+            ->args([$config + ['environment' => '%kernel.environment%']]);
         $services->alias(Config::class, 'indexnowkit.config');
 
         $services->set('indexnowkit.key_provider', StaticKeyProvider::class)
@@ -84,15 +90,21 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.config')]);
         $services->alias(KeyProviderInterface::class, 'indexnowkit.key_provider');
 
-        $transport = $services->set('indexnowkit.transport', Psr18Transport::class)
-            ->factory([Psr18Transport::class, 'discover']);
-        if (\is_string($config['http']['client'])) {
-            $transport->args([service($config['http']['client'])]);
-        }
+        $services->set('indexnowkit.transport', Psr18Transport::class)
+            ->factory([Psr18Transport::class, 'discover'])
+            ->args([\is_string($config['http']['client']) ? service($config['http']['client']) : null, $config['http']['timeout'] ?? Config::DEFAULT_HTTP_TIMEOUT]);
         $services->alias(TransportInterface::class, 'indexnowkit.transport');
 
+        $services->set('indexnowkit.url_normalizer', UrlNormalizer::class)->args([$config['base_url']]);
+        $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
+
+        $services->set('indexnowkit.throttle', TokenBucket::class)
+            ->args([$config['throttle']['max_requests_per_minute'] ?? Config::DEFAULT_THROTTLE_PER_MINUTE, null, null, service('logger')->nullOnInvalid()])
+            ->tag('monolog.logger', ['channel' => 'indexnow']);
+        $services->alias(ThrottleInterface::class, 'indexnowkit.throttle');
+
         $services->set('indexnowkit.client', Client::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('logger')->nullOnInvalid()])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('logger')->nullOnInvalid(), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer')])
             ->tag('monolog.logger', ['channel' => 'indexnow']);
 
         $store = $config['debounce']['store'];
@@ -105,9 +117,10 @@ final class IndexNowKitLoader
         $services->alias(DebounceStoreInterface::class, 'indexnowkit.debounce_store');
 
         $services->set('indexnowkit.submitter', Submitter::class)
-            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('logger')->nullOnInvalid()])
+            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('logger')->nullOnInvalid(), service('indexnowkit.url_normalizer')])
             ->tag('monolog.logger', ['channel' => 'indexnow']);
         $services->alias(Submitter::class, 'indexnowkit.submitter');
+        $services->alias(SubmitterInterface::class, 'indexnowkit.submitter');
 
         $services->set('indexnowkit.collector', Collector::class)->tag('kernel.reset', ['method' => 'reset']);
         $services->alias(Collector::class, 'indexnowkit.collector');
@@ -115,6 +128,7 @@ final class IndexNowKitLoader
         // URL resolution --------------------------------------------------------------------------------------------
         $services->set('indexnowkit.attribute_reader', AttributeReader::class);
         $services->alias(AttributeReader::class, 'indexnowkit.attribute_reader');
+        $services->alias(AttributeReaderInterface::class, 'indexnowkit.attribute_reader');
 
         $services->set('indexnowkit.route_url_resolver', SymfonyRouteUrlResolver::class)
             ->args([service('router'), service('request_stack'), $config['base_url'], '%kernel.enabled_locales%']);
