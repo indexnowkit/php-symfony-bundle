@@ -7,7 +7,6 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use IndexNowKit\IndexNowKit;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\GermanArticle;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Tests\Support\Factory;
 
 /**
  * "hosts" + "strict_hosts: true": each host is served under its own key, and a host that is neither
@@ -28,7 +27,7 @@ final class MultiHostTest extends BundleTestCase
         $client->request('GET', '/' . TestKernel::DE_KEY . '.txt', server: ['HTTP_HOST' => 'www.example.com']);
         self::assertResponseStatusCodeSame(404, "www.example.com must not serve example.de's key");
 
-        $client->request('GET', '/' . Factory::KEY . '.txt', server: ['HTTP_HOST' => 'www.example.com']);
+        $client->request('GET', '/' . TestKernel::KEY . '.txt', server: ['HTTP_HOST' => 'www.example.com']);
         self::assertResponseStatusCodeSame(200, 'www.example.com serves the default key');
     }
 

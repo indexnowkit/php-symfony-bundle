@@ -69,4 +69,19 @@ final class SitemapConfigTest extends BundleTestCase
         self::assertSame(2, $rows[0]['batches']);
         self::assertArrayNotHasKey('urls', $rows[0]);
     }
+
+    public function testJsonModeReportsThePartialBatchesWhenTheSitemapBreaksMidway(): void
+    {
+        $tester = $this->tester('indexnow:sitemap');
+        $this->transport()->onGet('https://www.example.com/sitemaps/root.xml', new Response(200, '<?xml version="1.0"?><urlset ' . self::NS . '><url><loc>https://www.example.com/t1</loc></url><url><loc>https://www.example.com/t2</loc></url><url><loc>https://www.example.com/t3</loc></url><url><loc>https://www.exa'));
+
+        self::assertSame(1, $tester->execute(['--json' => true], ['capture_stderr_separately' => true]));
+
+        /** @var list<array{status: string, url_count: int, batches: int}> $rows */
+        $rows = json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertCount(1, $rows, 'stdout is the JSON summary of what was submitted before the error');
+        self::assertSame(3, $rows[0]['url_count']);
+        self::assertSame(2, $rows[0]['batches']);
+        self::assertStringContainsString('ends early', $tester->getErrorOutput(), 'the error goes to stderr');
+    }
 }

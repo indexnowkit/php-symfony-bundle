@@ -81,7 +81,7 @@ message is being handled, the submission is only dispatched after that handler f
 `doctrine_transaction` middleware this keeps the guarantee that nothing is announced before its transaction commits.
 
 A failure to dispatch never breaks the request: it is logged as
-`indexnow: cannot dispatch to messenger: {error}` on the `indexnow` channel.
+`indexnow: cannot dispatch {count} URL(s) to messenger (message {id}), they are lost: {error}` on the `indexnow` channel.
 
 ## Retry semantics
 
@@ -89,7 +89,7 @@ A failure to dispatch never breaks the request: it is logged as
 
 - Nothing retryable — the handler returns. Failures that are final (400, 403, 422) are already logged by the client
   with the reason; the message is acknowledged and not retried, because retrying a bad key changes nothing.
-- Something retryable (429, 5xx, network) — it logs `indexnow: {count} URL(s) will be retried` at `info` and throws
+- Something retryable (429, 5xx, network) — it logs `indexnow: {count} URL(s) of message {id} will be retried` at `info` and throws
   `RecoverableMessageHandlingException`, which hands the decision to the transport's `retry_strategy`.
 
 On Symfony 7.2 and later, when the engine sent a `Retry-After`, the largest value in the batch is passed to that
@@ -130,8 +130,8 @@ periodically, or the collector grows for the life of the process and the URLs go
 
 | Signal | Where |
 |---|---|
-| `indexnow: {count} URL(s) will be retried` | `indexnow` channel, `info`, in the worker |
-| `indexnow: cannot dispatch to messenger` | `indexnow` channel, `error`, in the web request |
+| `indexnow: {count} URL(s) of message {id} will be retried` | `indexnow` channel, `info`, in the worker |
+| `indexnow: cannot dispatch {count} URL(s) to messenger (message {id}), they are lost` | `indexnow` channel, `error`, in the web request |
 | exhausted retries | Messenger's failure transport, default channel |
 | the URLs a request handed over | Web Profiler panel, which also says results appear in the worker's log |
 

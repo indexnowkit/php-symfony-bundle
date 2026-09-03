@@ -3,6 +3,8 @@
 Сообщайте поисковикам о новых, изменённых и удалённых страницах в момент коммита сущности Doctrine.
 Один атрибут на сущности, одна переменная окружения — всё.
 
+[![Packagist](https://img.shields.io/packagist/v/indexnowkit/symfony-bundle)](https://packagist.org/packages/indexnowkit/symfony-bundle)
+[![Downloads](https://img.shields.io/packagist/dt/indexnowkit/symfony-bundle)](https://packagist.org/packages/indexnowkit/symfony-bundle)
 [![CI](https://github.com/indexnowkit/php/actions/workflows/ci.yml/badge.svg)](https://github.com/indexnowkit/php/actions)
 [![Conformance](https://img.shields.io/badge/conformance-core%2022%2F22%20%C2%B7%20orm%2014%2F14%20%C2%B7%20http%206%2F6-brightgreen)](https://github.com/indexnowkit/spec)
 ![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4) ![Symfony](https://img.shields.io/badge/symfony-6.4%20%7C%207.x-000)
@@ -112,7 +114,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 
 | Команда | Опции |
 |---|---|
-| `indexnow:check` | `--live` реальный пробный запрос · `--host` проверить только один хост |
+| `indexnow:check` | `--live` реальный пробный запрос · `--host` проверить только один хост · `--probe-url` страница для пробы, если корень редиректит |
 | `indexnow:submit <urls...>` | `-f, --force` игнорировать дебаунс · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` или `deleted` · `--limit` (по умолчанию 1000, если id не заданы) · `--explain` показать правило → URL и ничего не отправлять · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` или `deleted` |
@@ -137,6 +139,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 | HTTP-клиент, прокси, scoped-клиенты | [docs/http-client.md](docs/http-client.md) |
 | Детали Doctrine, приоритеты, соединения | [docs/doctrine.md](docs/doctrine.md) |
 | Свои резолверы | [docs/custom-resolvers.md](docs/custom-resolvers.md) |
+| Расширение: что заменяемо, декорирование сервисов | [docs/extending.md](docs/extending.md) |
 | Тестирование интеграции | [docs/testing.md](docs/testing.md) |
 | Диагностика проблем | [docs/troubleshooting.md](docs/troubleshooting.md) |
 
@@ -167,8 +170,20 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
   предупреждением в логе. Под Swoole, RoadRunner и FrankenPHP выбирайте `dispatch: messenger`.
 - Долгоживущие собственные команды должны периодически вызывать `$indexNow->flush()`, а не копить URL всё время
   работы процесса.
-- Вне `prod` отсутствующий `INDEXNOW_KEY` включает `dry_run` вместо падения, поэтому dev и test никогда не бьют в
-  настоящий API.
+- Вне production (`production_environments`, по умолчанию `prod`/`production`) отсутствующий `INDEXNOW_KEY`
+  включает `dry_run` вместо падения, поэтому dev и test никогда не бьют в настоящий API.
+- Переименованная страница (изменился slug) объявляет старый URL удалённым, а новый — обновлённым в том же flush;
+  у сущности, чей slug — `readonly`-свойство, уходит только новый URL (в лог на уровне `debug`).
+
+## Совместимость
+
+Публичный API бандла: узлы конфигурации, имена и опции команд, идентификаторы и алиасы сервисов из
+[docs/extending.md](docs/extending.md), интерфейсы `Command\*Interface`, сообщение и обработчик Messenger и
+параметры контейнера из [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` — проводка, не API.
+Действуют правила core, включая интерфейсы «may grow»:
+[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). До 1.0 минорная версия может ломать
+совместимость; каждый такой случай перечислен в разделе «Changed» файла [CHANGELOG.md](CHANGELOG.md) вместе с
+миграцией.
 
 ## Другие фреймворки
 

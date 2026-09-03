@@ -6,7 +6,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
-use IndexNowKit\Tests\Support\Factory;
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 
 final class CommandsTest extends BundleTestCase
 {
@@ -47,14 +47,14 @@ final class CommandsTest extends BundleTestCase
         self::assertSame(1, $tester->execute([]));
         self::assertStringContainsString('HTTP 404', $tester->getDisplay());
 
-        $this->transport()->onGet('https://www.example.com/' . Factory::KEY . '.txt', new Response(200, Factory::KEY));
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
         self::assertSame(0, $tester->execute([]));
         self::assertStringContainsString('key file OK', $tester->getDisplay());
     }
 
     public function testCheckPrintsDispatchAndDoctrineWiring(): void
     {
-        $this->transport()->onGet('https://www.example.com/' . Factory::KEY . '.txt', new Response(200, Factory::KEY));
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
         $tester = $this->tester('indexnow:check');
         self::assertSame(0, $tester->execute([]));
         self::assertStringContainsString('sitemap: documents are spooled to temp files in', $tester->getDisplay());
@@ -192,6 +192,6 @@ final class CommandsTest extends BundleTestCase
         self::assertStringContainsString('Rule "article_show"', $display);
         self::assertStringContainsString('when: published -> ', $display);
         self::assertStringContainsString('https://www.example.com/en/articles/one', $display);
-        self::assertStringContainsString(substr(Factory::KEY, 0, 4) . '****', $display, 'the key is masked, never printed in full');
+        self::assertStringContainsString(substr(TestKernel::KEY, 0, 4) . '****', $display, 'the key is masked, never printed in full');
     }
 }

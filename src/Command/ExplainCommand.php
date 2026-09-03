@@ -183,7 +183,7 @@ final class ExplainCommand extends Command
         if ($this->config->debouncePerUrl > 0) {
             try {
                 $recent = $this->debounce->filterRecent([$normalized], $this->config->debouncePerUrl) !== [];
-                $line .= $recent ? \sprintf(', <fg=yellow>debounced</> (sent within the last %ds; --force bypasses)', $this->config->debouncePerUrl) : ', not debounced';
+                $line .= $recent ? \sprintf(', <fg=yellow>debounced</> (sent within the last %ds; indexnow:submit --force bypasses)', $this->config->debouncePerUrl) : ', not debounced';
             } catch (Throwable $e) {
                 $line .= ', debounce store unavailable (' . $e->getMessage() . '), would submit';
             }

@@ -221,6 +221,7 @@ The container fails to build when:
 | `logging.levels` with an unknown event | the message lists the known events |
 | literal `sitemap.url` that is not an absolute http(s) URL | |
 | `dispatch: messenger` without `symfony/messenger` installed | install it, or use `dispatch: sync` |
+| a number outside its range: `max_url_length` ≥ 64, `http.timeout` ≥ 0.1, `batch.max_urls` 1–10000, `sitemap.max_bytes` ≥ 1024, `sitemap.max_sitemaps` ≥ 1, `key_file.cache_max_age` ≥ 0, `resolver.max_via_fanout` ≥ 1, `logging.forbidden_escalation` ≥ 1 | the node's own message |
 
 Literal values only. A `%env(...)%` placeholder is resolved at runtime, so it is skipped here and validated by the
 core's `Config` instead — see the next section.
@@ -303,11 +304,11 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Command\ResultFormatterInterface` | `indexnowkit.result_formatter` |
 | `Routing\KeyFileRouteLoader` | `indexnowkit.key_file_routes` |
 
-Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them. How to
+Only `indexnowkit`, `IndexNowKit\IndexNowKit` and the key file controller are public; inject the rest by type where you need them. How to
 decorate or replace each one: [extending.md](extending.md).
 
 ## Container parameters
 
 `indexnowkit.dispatch` (the resolved mode, after `auto`), `indexnowkit.messenger.transport`,
 `indexnowkit.messenger_routed`, `indexnowkit.doctrine_hooked`, `indexnowkit.key_file.path`,
-`indexnowkit.key_file.host`, `indexnowkit.log_channel`. `indexnow:check` prints the first, third and fourth.
+`indexnowkit.key_file.host`, `indexnowkit.key_file.route_name`, `indexnowkit.log_channel`. `indexnow:check` prints the first, third and fourth.

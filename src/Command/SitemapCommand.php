@@ -114,8 +114,16 @@ final class SitemapCommand extends Command
                 $summary->add($submitter->submit($batch));
                 ++$batches;
             }
-            $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
-            if ($batches > 0 && !$json) {
+            $error = \sprintf('Cannot read %s: %s', $sitemap, $e->getMessage());
+            if ($json) {
+                // stdout stays machine-readable: the partial summary as JSON, the error on stderr.
+                $io->getErrorStyle()->error($error);
+                $this->formatter->summary($io, $summary, true);
+
+                return Command::FAILURE;
+            }
+            $io->error($error);
+            if ($batches > 0) {
                 $io->text(\sprintf('%d URL(s) read before the error were submitted in %d batch(es); re-run the command once the sitemap is reachable.', $found, $batches));
                 $this->formatter->summary($io, $summary, false);
             }

@@ -3,6 +3,8 @@
 Tell search engines about new, changed and deleted pages the moment a Doctrine entity is committed.
 One attribute on the entity, one env variable, done.
 
+[![Packagist](https://img.shields.io/packagist/v/indexnowkit/symfony-bundle)](https://packagist.org/packages/indexnowkit/symfony-bundle)
+[![Downloads](https://img.shields.io/packagist/dt/indexnowkit/symfony-bundle)](https://packagist.org/packages/indexnowkit/symfony-bundle)
 [![CI](https://github.com/indexnowkit/php/actions/workflows/ci.yml/badge.svg)](https://github.com/indexnowkit/php/actions)
 [![Conformance](https://img.shields.io/badge/conformance-core%2022%2F22%20%C2%B7%20orm%2014%2F14%20%C2%B7%20http%206%2F6-brightgreen)](https://github.com/indexnowkit/spec)
 ![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4) ![Symfony](https://img.shields.io/badge/symfony-6.4%20%7C%207.x-000)
@@ -171,6 +173,15 @@ An invalid configuration does not throw from a flush: IndexNow is disabled, one 
   `dry_run` on instead of failing, so dev and test never hit the real API.
 - A renamed page (changed slug) announces its old URL as deleted and the new one as updated in the same flush; an
   entity whose slug is a `readonly` property only gets the new URL (logged at `debug`).
+
+## Compatibility
+
+Public API of the bundle: configuration nodes, command names and options, service ids and aliases listed in
+[docs/extending.md](docs/extending.md), the `Command\*Interface`s, the Messenger message and handler, and the
+container parameters listed in [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` is wiring,
+not API. The core's rules apply, including the "may grow" interfaces:
+[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). Before 1.0 a minor version may break;
+every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the migration.
 
 ## Other frameworks
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
-use IndexNowKit\Tests\Support\Factory;
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 
 /**
  * key_file.path can move the route away from the protocol default (/{key}.txt); cache_max_age controls
@@ -17,17 +17,17 @@ final class KeyFilePathTest extends BundleTestCase
     public function testKeyFileIsServedAtTheConfiguredPathWithCustomMaxAge(): void
     {
         $client = $this->browser();
-        $client->request('GET', '/keys/' . Factory::KEY . '.txt');
+        $client->request('GET', '/keys/' . TestKernel::KEY . '.txt');
 
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(Factory::KEY, $client->getResponse()->getContent());
+        self::assertSame(TestKernel::KEY, $client->getResponse()->getContent());
         self::assertResponseHeaderSame('Cache-Control', 'max-age=3600, public');
     }
 
     public function testDefaultPathIsNoLongerServed(): void
     {
         $client = $this->browser();
-        $client->request('GET', '/' . Factory::KEY . '.txt');
+        $client->request('GET', '/' . TestKernel::KEY . '.txt');
 
         self::assertResponseStatusCodeSame(404);
     }

@@ -13,9 +13,16 @@
         "bing",
         "messenger"
     ],
-    "homepage": "https://github.com/indexnowkit/php",
+    "homepage": "https://github.com/indexnowkit/php-symfony-bundle",
+    "support": {
+        "issues": "https://github.com/indexnowkit/php/issues",
+        "source": "https://github.com/indexnowkit/php-symfony-bundle",
+        "docs": "https://github.com/indexnowkit/php-symfony-bundle/blob/main/README.md",
+        "security": "https://github.com/indexnowkit/php-symfony-bundle/blob/main/SECURITY.md"
+    },
     "require": {
         "php": "^8.2",
+        "ext-json": "*",
         "indexnowkit/core": "^0.2",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
@@ -26,10 +33,27 @@
         "symfony/http-kernel": "^6.4 || ^7.0",
         "symfony/routing": "^6.4 || ^7.0"
     },
+    "require-dev": {
+        "doctrine/dbal": "^3.8 || ^4.0",
+        "doctrine/doctrine-bundle": "^2.13 || ^3.0",
+        "doctrine/orm": "^2.19 || ^3.0",
+        "doctrine/persistence": "^3.0 || ^4.0",
+        "indexnowkit/doctrine": "^0.2",
+        "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.5",
+        "symfony/browser-kit": "^6.4 || ^7.0",
+        "symfony/http-client": "^6.4 || ^7.0",
+        "symfony/messenger": "^6.4 || ^7.0",
+        "symfony/twig-bundle": "^6.4 || ^7.0",
+        "symfony/web-profiler-bundle": "^6.4 || ^7.0",
+        "symfony/yaml": "^6.4 || ^7.0"
+    },
     "suggest": {
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.2, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
-        "symfony/messenger": "Async dispatch with retries (dispatch: messenger)",
+        "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
         "nyholm/psr7": "PSR-17 factories for symfony/http-client",
         "symfony/web-profiler-bundle": "IndexNow panel in the Web Profiler"
@@ -39,18 +63,21 @@
             "IndexNowKit\\SymfonyBundle\\": "src/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-main": "0.2-dev"
+    "autoload-dev": {
+        "psr-4": {
+            "IndexNowKit\\SymfonyBundle\\Tests\\": "tests/"
         }
     },
-    "require-dev": {
-        "indexnowkit/doctrine": "^0.2",
-        "doctrine/doctrine-bundle": "^2.13 || ^3.0"
+    "scripts": {
+        "test": "phpunit",
+        "stan": "phpstan analyse --memory-limit=1G"
     },
-    "support": {
-        "issues": "https://github.com/indexnowkit/php/issues",
-        "source": "https://github.com/indexnowkit/php/tree/main/packages/symfony-bundle",
-        "docs": "https://github.com/indexnowkit/php/blob/main/packages/symfony-bundle/README.md"
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.2.x-dev"
+        }
     }
 }

@@ -35,14 +35,6 @@ entities through the manager registry.
 | `indexnowkit.doctrine.staging` | — | holds URLs until the commit |
 | `indexnowkit.doctrine.sink` | — | hands committed URLs to the request collector |
 
-## Listener priority
-
-```yaml
-indexnowkit:
-    doctrine:
-        listener_priority: -100
-```
-
 ## Renamed pages
 
 When a field a route parameter reads changes (the slug, the category the path goes through), the old URL now
@@ -52,6 +44,12 @@ A21). Only route rules; only fields that are writable properties (a `readonly` s
 skipped); the old page must have been public (`when` true before the change).
 
 ## Listener priority
+
+```yaml
+indexnowkit:
+    doctrine:
+        listener_priority: -100
+```
 
 The default is `-100`, low enough to run **after** listeners that compute the values URLs depend on. Gedmo Sluggable
 writes the slug in `onFlush`; if the IndexNow listener ran first it would resolve a route with an empty slug.

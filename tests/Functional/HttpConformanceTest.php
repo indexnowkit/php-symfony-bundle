@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
-use IndexNowKit\Tests\Support\Factory;
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 use PHPUnit\Framework\Attributes\TestDox;
 
 final class HttpConformanceTest extends BundleTestCase
@@ -13,11 +13,11 @@ final class HttpConformanceTest extends BundleTestCase
     public function testH01KeyFile(): void
     {
         $client = $this->browser();
-        $client->request('GET', '/' . Factory::KEY . '.txt');
+        $client->request('GET', '/' . TestKernel::KEY . '.txt');
 
         self::assertResponseStatusCodeSame(200);
         self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=utf-8');
-        self::assertSame(Factory::KEY, $client->getResponse()->getContent());
+        self::assertSame(TestKernel::KEY, $client->getResponse()->getContent());
     }
 
     #[TestDox('H02 GET /other.txt -> 404')]

@@ -7,7 +7,7 @@ contain breaking changes, listed under "Changed".
 
 ### Added
 
-- **Configuration reference** for every node: `strict_hosts`, per-host `base_url` in the `hosts` map, `http.client`,
+- **Configuration reference** for every node: `strict_hosts`, per-host `key_location` and `base_url` in the `hosts` map, `http.client`,
   the `key_file` block (`enabled`, `path`, `host`, `cache_max_age`), `messenger.transport`, and
   `doctrine.{enabled,listener_priority,connections}`. Documented in [docs/configuration.md](docs/configuration.md).
 - **Compile-time validation.** `dispatch: messenger` without `base_url`, a `hosts` map without `base_url`,
@@ -67,6 +67,8 @@ contain breaking changes, listed under "Changed".
   `Command\EntityLoaderInterface` (`indexnowkit.entity_loader`, the entity lookup of `submit-entity` / `explain`).
 - The key file answers with `Vary: Host` when a `hosts` map is configured, so a shared cache never serves one
   host's key to another.
+- `SubmitUrlsMessage` carries a correlation id (`$id`, `SubmitUrlsMessage::newId()`), logged when the message is
+  dispatched and when it is handled, so a batch can be followed from the request to the worker.
 - Compile-time validation for literal `key_location`, `previous_key`, `http.user_agent` (no line breaks),
   `key_file.path` (leading `/`) and `logging.levels`; `serve_key_file` is formally deprecated.
 - `indexnow:check` warns in production when `strict_hosts` is off: a staging copy reached under another hostname
@@ -90,6 +92,10 @@ contain breaking changes, listed under "Changed".
   `doctrine/doctrine-bundle` are installed, `doctrine.enabled` is true and the bundle is enabled; otherwise
   `indexnow:check` says so explicitly instead of failing silently.
 - **Breaking:** `serve_key_file` is a deprecated alias of `key_file.enabled`.
+- **Breaking:** `SymfonyRouteUrlResolver` follows the split `RouteUrlResolverInterface` of the core:
+  `generate(string $route, array $params, ?string $locale, ?string $host): string` plus
+  `locales(array|string): list<string|null>`, instead of `generate($route, $params, $locales): iterable`. A custom
+  implementation moves its locale loop into `locales()` and returns one URL per `generate()` call.
 - The HTTP client is built on first use (`LazyTransport`). A request that submits nothing never runs PSR-18
   discovery, and a missing client no longer breaks `indexnow:check`.
 - The facade is resolved through a service locator in `FlushListener`, so a request that collected nothing never
@@ -112,10 +118,18 @@ contain breaking changes, listed under "Changed".
   listeners (metrics) no longer miss manual submissions.
 
 - The Flex recipe ships a working multi-environment default: `dry_run: true` in `dev` and `test`, with the
-  multi-domain, Messenger and scoped-client blocks present as commented examples.
+  multi-domain, Messenger, scoped-client and `enabled: '%env(bool:INDEXNOW_ENABLED)%'` kill-switch blocks present
+  as commented examples.
+- `indexnow:sitemap --json` keeps stdout machine-readable when the sitemap breaks midway: the summary of what was
+  submitted before the error is printed as JSON, the error goes to stderr.
 - Services that log are tagged with the `indexnow` Monolog channel, including the facade, the dispatcher and the
   Messenger handler, so resolver and dispatch failures land on the channel the README points at.
 - The profiler panel no longer shows an empty result list for synchronous dispatch.
+
+## 0.1.1 — 2026-09-03
+
+- Web Profiler routing import works on Symfony 6.4; `indexnow:check` reports the resolved dispatch mode;
+  DoctrineBundle 3 allowed.
 
 ## 0.1.0 — 2026-09-03
 

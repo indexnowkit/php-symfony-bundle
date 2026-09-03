@@ -28,8 +28,8 @@ the order you should try them:
 | Dispatcher | `indexnowkit.dispatcher` | `Dispatch\DispatcherInterface` | `dispatch`, `messenger.transport`, `messenger.delay`, `messenger.stamps` | replace for another queue (`dispatch: none` + your own drain of the collector). A decorator cannot add stamps after the fact: use `messenger.stamps` |
 | Debounce store | `indexnowkit.debounce_store` | `Debounce\DebounceStoreInterface` | `debounce.store` (any PSR-6 pool, `memory`, `none`), `debounce.key_prefix` | replace |
 | Throttle | `indexnowkit.throttle` | `Throttle\ThrottleInterface` | `throttle.max_requests_per_minute` | replace for a shared (Redis) limiter |
-| Sitemap source | `indexnowkit.sitemap_reader` | `Sitemap\SitemapSourceInterface` | `sitemap.*` | decorate to filter or rewrite entries; replace to read from another place or format |
-| Entity loader (commands) | `indexnowkit.entity_loader` | `Command\EntityLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format |
+| Sitemap source | `indexnowkit.sitemap_reader` | `Sitemap\SitemapSourceInterface` | `sitemap.*` | decorate to filter or rewrite entries; replace to read from another place or format. Registered only with `sitemap.enabled: true` (the default) |
+| Entity loader (commands) | `indexnowkit.entity_loader` | `Command\EntityLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format. Registered only when the Doctrine integration is active ([doctrine.md](doctrine.md)) |
 | Command submitter (`--force`, `--dry-run`) | `indexnowkit.command_submitter_factory` | `Command\SubmitterFactoryInterface` | | decorate to wrap what the manual commands submit through |
 | Command output | `indexnowkit.result_formatter` | `Command\ResultFormatterInterface` | | replace to match your CLI's JSON envelope or table style |
 | `indexnow:check` | `indexnowkit.checker` | `Check\CheckerInterface`; add lines with `Check\CheckInterface` services (autoconfigured) | | add checks rather than replacing the checker |

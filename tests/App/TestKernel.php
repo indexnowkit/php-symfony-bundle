@@ -13,7 +13,6 @@ use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\SymfonyBundle\Tests\App\Resolver\CustomUrlResolver;
 use IndexNowKit\SymfonyBundle\Tests\App\Sitemap\FilteringSitemapSource;
 use IndexNowKit\Testing\FakeTransport;
-use IndexNowKit\Tests\Support\Factory;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -35,6 +34,8 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 final class TestKernel extends Kernel
 {
     use MicroKernelTrait;
+
+    public const KEY = 'abcdef1234567890abcdef1234567890';
 
     public const DE_KEY = '1234567890abcdef1234567890abcdef';
 
@@ -150,7 +151,7 @@ final class TestKernel extends Kernel
     private function indexNowKitConfig(): array
     {
         $config = [
-            'key' => Factory::KEY,
+            'key' => self::KEY,
             'base_url' => 'https://www.example.com',
             'dispatch' => 'sync',
             'debounce' => ['per_url' => 0],

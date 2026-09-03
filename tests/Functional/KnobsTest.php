@@ -9,11 +9,12 @@ use IndexNowKit\Http\Response;
 use IndexNowKit\IndexNowKit;
 use IndexNowKit\SymfonyBundle\Command\EntityLoaderInterface;
 use IndexNowKit\SymfonyBundle\Tests\App\ResultRecorderListener;
-
 /**
  * The options added by the configurability audit reach the core: previous keys are served, per-host engines route,
  * log channel/levels/sampling apply, resolver and collector limits are wired, the profiler can be switched off.
  */
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
+
 final class KnobsTest extends BundleTestCase
 {
     protected static string $dispatch = 'knobs';
@@ -69,7 +70,7 @@ final class KnobsTest extends BundleTestCase
 
     public function testApplicationChecksAreRunByCheck(): void
     {
-        $this->transport()->onGet('https://www.example.com/' . \IndexNowKit\Tests\Support\Factory::KEY . '.txt', new Response(200, \IndexNowKit\Tests\Support\Factory::KEY));
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
         $this->transport()->onGet('https://example.ru/ru1234567890abcd.txt', new Response(200, 'ru1234567890abcd'));
         $tester = $this->tester('indexnow:check');
         $tester->execute([]);
@@ -99,7 +100,7 @@ final class KnobsTest extends BundleTestCase
 
     public function testCheckAcceptsAProbeUrl(): void
     {
-        $this->transport()->onGet('https://www.example.com/' . \IndexNowKit\Tests\Support\Factory::KEY . '.txt', new Response(200, \IndexNowKit\Tests\Support\Factory::KEY));
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
         $this->transport()->onGet('https://example.ru/ru1234567890abcd.txt', new Response(200, 'ru1234567890abcd'));
         $tester = $this->tester('indexnow:check');
 

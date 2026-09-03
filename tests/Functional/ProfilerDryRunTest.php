@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\DataCollector\IndexNowDataCollector;
-use IndexNowKit\Tests\Support\Factory;
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
@@ -40,7 +40,7 @@ final class ProfilerDryRunTest extends BundleTestCase
         $html = (string) $client->getResponse()->getContent();
         self::assertStringContainsString('status-warning', $html);
         self::assertStringContainsString('dry_run', $html);
-        self::assertStringNotContainsString(Factory::KEY, $html, 'the real key must never appear in the panel');
-        self::assertStringContainsString(substr(Factory::KEY, 0, 4) . '********', $html, 'the Configuration table shows the masked key file');
+        self::assertStringNotContainsString(TestKernel::KEY, $html, 'the real key must never appear in the panel');
+        self::assertStringContainsString(substr(TestKernel::KEY, 0, 4) . '********', $html, 'the Configuration table shows the masked key file');
     }
 }
