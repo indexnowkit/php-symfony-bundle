@@ -161,8 +161,14 @@ final class IndexNowKitLoader
 
         $services->set('indexnowkit', IndexNow::class)
             ->args([
-                service('indexnowkit.config'), service('indexnowkit.submitter'), service('indexnowkit.collector'), service('indexnowkit.dispatcher'),
-                service('indexnowkit.key_provider'), service('indexnowkit.attribute_reader'), service('indexnowkit.url_resolver'), service('logger')->nullOnInvalid(),
+                '$config' => service('indexnowkit.config'),
+                '$submitter' => service('indexnowkit.submitter'),
+                '$collector' => service('indexnowkit.collector'),
+                '$dispatcher' => service('indexnowkit.dispatcher'),
+                '$keys' => service('indexnowkit.key_provider'),
+                '$attributes' => service('indexnowkit.attribute_reader'),
+                '$resolver' => service('indexnowkit.url_resolver'),
+                '$logger' => service('logger')->nullOnInvalid(),
             ])
             ->public();
         $services->alias(IndexNow::class, 'indexnowkit')->public();
@@ -210,7 +216,7 @@ final class IndexNowKitLoader
             $priority = $config['doctrine']['listener_priority'];
             $services->set(SubmitEntityCommand::class)->args([service('indexnowkit'), service('doctrine')])->tag('console.command');
             $services->set('indexnowkit.doctrine.listener', IndexNowListener::class)
-                ->args([service('indexnowkit'), service('indexnowkit.url_resolver'), service('indexnowkit.doctrine.staging'), service('logger')->nullOnInvalid(), false])
+                ->args(['$indexNow' => service('indexnowkit'), '$resolver' => null, '$staging' => service('indexnowkit.doctrine.staging'), '$logger' => service('logger')->nullOnInvalid(), '$autoFlush' => false])
                 ->tag('doctrine.event_listener', ['event' => 'onFlush', 'priority' => $priority])
                 ->tag('doctrine.event_listener', ['event' => 'postFlush', 'priority' => $priority])
                 ->tag('monolog.logger', ['channel' => 'indexnow']);

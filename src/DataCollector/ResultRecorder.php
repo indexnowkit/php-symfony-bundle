@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DataCollector;
 
 use IndexNowKit\Result;
-use IndexNowKit\Submitter;
+use IndexNowKit\SubmitterInterface;
 
 /**
  * Shared per-request log of Submitter results. Separate from the DataCollector because the profiler
@@ -16,7 +16,7 @@ final class ResultRecorder
     /** @var list<Result> */
     private array $results = [];
 
-    public function __construct(Submitter $submitter)
+    public function __construct(SubmitterInterface $submitter)
     {
         $submitter->addListener($this->record(...));
     }
