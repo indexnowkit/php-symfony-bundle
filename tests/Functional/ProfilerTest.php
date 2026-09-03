@@ -14,6 +14,7 @@ final class ProfilerTest extends BundleTestCase
     {
         $client = $this->browser();
         $client->enableProfiler();
+        $client->catchExceptions(false);
         $client->request('POST', '/articles?slug=profiled');
         self::assertResponseStatusCodeSame(201);
 

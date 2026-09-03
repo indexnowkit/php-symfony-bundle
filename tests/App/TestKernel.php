@@ -10,6 +10,7 @@ use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\Tests\Support\Factory;
 use IndexNowKit\Tests\Support\FakeTransport;
+use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -114,7 +115,8 @@ final class TestKernel extends Kernel
     {
         $routes->import(\dirname(__DIR__, 2) . '/config/routes.php');
         if ($this->dispatch === 'profiler') {
-            $routes->import('@WebProfilerBundle/Resources/config/routing/profiler.php')->prefix('/_profiler');
+            $routing = \dirname((string) (new ReflectionClass(WebProfilerBundle::class))->getFileName()) . '/Resources/config/routing/';
+            $routes->import($routing . (is_file($routing . 'profiler.php') ? 'profiler.php' : 'profiler.xml'))->prefix('/_profiler'); // .php only since Symfony 7.x
         }
         $routes->add('article_show', '/{_locale}/articles/{slug}')->controller([ArticleController::class, 'show'])->requirements(['_locale' => 'en|de'])->defaults(['_locale' => 'en']);
         $routes->add('article_create', '/articles')->controller([ArticleController::class, 'create'])->methods(['POST']);
