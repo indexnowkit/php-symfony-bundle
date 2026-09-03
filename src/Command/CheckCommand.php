@@ -77,7 +77,6 @@ final class CheckCommand extends Command
 
     private function wiring(SymfonyStyle $io): void
     {
-        $io->writeln(\sprintf('  <fg=green>✔</> dispatch: %s', $this->dispatchMode));
         if ($this->dispatchMode === 'messenger' && !$this->messengerRouted) {
             $io->writeln('  <fg=yellow>!</> dispatch is "messenger" but SubmitUrlsMessage is not routed to a transport: it is handled synchronously, 429/5xx are not retried. Set indexnowkit.messenger.transport or add framework.messenger.routing.');
         }
