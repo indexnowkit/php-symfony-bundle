@@ -1,11 +1,29 @@
 indexnowkit:
     key: '%env(INDEXNOW_KEY)%'
     base_url: '%env(INDEXNOW_BASE_URL)%'
-    # dispatch: auto      # messenger when configured, otherwise sync after the response is sent
-    # engines: [api]      # api = api.indexnow.org, shared by Yandex, Bing, Naver, Seznam, Yep
+
+    # dispatch: auto        # messenger when a transport is configured, otherwise sync after the response was sent
+    # engines: [api]        # api = the shared endpoint (Yandex, Bing, Naver, Seznam, Yep)
+
+    # Async delivery with retries: name a transport from framework.messenger.transports,
+    # the bundle routes SubmitUrlsMessage to it (no change to messenger.yaml needed).
+    # messenger:
+    #     transport: async
+
+    # Multi-domain: one entry per additional host, each with its own key.
+    # hosts:
+    #     example.de:
+    #         key: '%env(INDEXNOW_KEY_DE)%'
+    #         base_url: 'https://example.de'
+    # strict_hosts: true
+
+    # Point at a symfony/http-client scoped client for proxy, retries or extra headers.
+    # http:
+    #     client: indexnow.client
 
 when@dev:
     indexnowkit:
+        # Nothing leaves your machine. Set to false to test against the real API from dev.
         dry_run: true
 
 when@test:

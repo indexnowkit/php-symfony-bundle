@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Controller;
 
-use IndexNowKit\Key\KeyProviderInterface;
+use IndexNowKit\Key\KeyFileResponder;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * GET /{key}.txt -> the key itself. Only configured keys are served.
+ * GET /{key}.txt -> the key itself. Only keys of the requested host are served (404 otherwise).
  */
 final class KeyFileController
 {
-    public function __construct(private readonly KeyProviderInterface $keys, private readonly bool $enabled = true) {}
+    public function __construct(private readonly KeyFileResponder $responder, private readonly int $maxAge = KeyFileResponder::DEFAULT_MAX_AGE) {}
 
-    public function __invoke(string $key): Response
+    public function __invoke(Request $request, string $key): Response
     {
-        if (!$this->enabled || !$this->keys->isKnownKey($key)) {
+        $body = $this->responder->bodyForKey($key, $request->getHost());
+        if ($body === null) {
             throw new NotFoundHttpException();
         }
 
-        return new Response($key, 200, ['Content-Type' => 'text/plain; charset=utf-8', 'Cache-Control' => 'public, max-age=86400']);
+        return new Response($body, 200, KeyFileResponder::headers($this->maxAge));
     }
 }

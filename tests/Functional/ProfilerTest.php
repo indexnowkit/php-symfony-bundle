@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\DataCollector\IndexNowDataCollector;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 final class ProfilerTest extends BundleTestCase
 {
@@ -19,7 +20,7 @@ final class ProfilerTest extends BundleTestCase
         self::assertResponseStatusCodeSame(201);
 
         $profile = $client->getProfile();
-        self::assertNotFalse($profile);
+        self::assertInstanceOf(Profile::class, $profile);
         $collector = $profile->getCollector('indexnow');
         self::assertInstanceOf(IndexNowDataCollector::class, $collector);
         self::assertSame('sync', $collector->getDispatch());

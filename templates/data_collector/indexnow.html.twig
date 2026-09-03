@@ -9,10 +9,11 @@
     {% set text %}
         <div class="sf-toolbar-info-piece"><b>Collected</b><span>{{ collector.collected }}</span></div>
         <div class="sf-toolbar-info-piece"><b>Sent</b><span>{{ collector.sent }}</span></div>
+        <div class="sf-toolbar-info-piece"><b>Skipped</b><span>{{ collector.skipped }}</span></div>
         <div class="sf-toolbar-info-piece"><b>Failed</b><span class="sf-toolbar-status {{ collector.failed ? 'sf-toolbar-status-red' }}">{{ collector.failed }}</span></div>
-        <div class="sf-toolbar-info-piece"><b>Dispatch</b><span>{{ collector.dispatch }}{{ collector.dryRun ? ' (dry run)' }}</span></div>
+        <div class="sf-toolbar-info-piece"><b>Dispatch</b><span>{{ collector.dispatch }}{{ collector.dryRun ? ' (dry run)' }}{{ not collector.enabled ? ' (disabled)' }}</span></div>
     {% endset %}
-    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: collector.failed ? 'red' : (collector.enabled ? '' : 'yellow') }) }}
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: collector.failed ? 'red' : ((collector.enabled and not collector.dryRun) ? '' : 'yellow') }) }}
 {% endblock %}
 
 {% block menu %}
@@ -28,15 +29,42 @@
     <div class="metrics">
         <div class="metric"><span class="value">{{ collector.collected }}</span><span class="label">URLs collected</span></div>
         <div class="metric"><span class="value">{{ collector.sent }}</span><span class="label">URLs accepted</span></div>
+        <div class="metric"><span class="value">{{ collector.skipped }}</span><span class="label">Skipped batches</span></div>
         <div class="metric"><span class="value">{{ collector.failed }}</span><span class="label">Failed requests</span></div>
         <div class="metric"><span class="value">{{ collector.dispatch }}</span><span class="label">Dispatch</span></div>
     </div>
-    <p>Engines: {{ collector.engines|join(', ') }}{% if collector.dryRun %} · <strong>dry run</strong>{% endif %}{% if not collector.enabled %} · <strong>disabled</strong>{% endif %}</p>
-    {% if collector.dispatch == 'messenger' %}
-        <p class="help">URLs were dispatched to Messenger; HTTP results appear in the worker logs (channel <code>indexnow</code>).</p>
+
+    {% if not collector.enabled %}
+        <div class="empty"><p><strong>IndexNow is disabled</strong> (<code>enabled: false</code> or invalid configuration, see the <code>indexnow</code> log channel and <code>bin/console indexnow:check</code>). Nothing is sent.</p></div>
+    {% elseif collector.dryRun %}
+        <p class="help"><strong>Dry run:</strong> requests are logged on the <code>indexnow</code> channel, not sent.</p>
     {% endif %}
+    {% if collector.dispatch == 'messenger' %}
+        {% if collector.messengerRouted %}
+            <p class="help">URLs are dispatched to Messenger; HTTP results appear in the worker logs (channel <code>indexnow</code>).</p>
+        {% else %}
+            <p class="help"><strong>Messenger is not routing <code>SubmitUrlsMessage</code> to a transport:</strong> messages are handled synchronously and 429/5xx are not retried. Set <code>indexnowkit.messenger.transport</code>.</p>
+        {% endif %}
+    {% endif %}
+
+    <h3>Configuration</h3>
+    <table>
+        <tbody>
+            <tr><th>Engines</th><td>{{ collector.engines|join(', ') }}</td></tr>
+            <tr><th>base_url</th><td>{{ collector.baseUrl ?? '(not set: relative URLs and console/worker generation fail)' }}</td></tr>
+            <tr><th>Key files</th><td>{% if collector.keyFiles is empty %}none{% else %}<ul>{% for host, file in collector.keyFiles %}<li>{{ host }}: {{ file }}</li>{% endfor %}</ul>{% endif %}</td></tr>
+            <tr><th>Debounce</th><td>{{ collector.debounce }}s per URL{% if collector.strictHosts %} · strict hosts{% endif %}</td></tr>
+        </tbody>
+    </table>
+
+    {% if collector.collectedUrls is not empty %}
+        <h3>Collected in this request</h3>
+        <ul>{% for u in collector.collectedUrls %}<li>{{ u }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <h3>Results</h3>
     {% if collector.results is empty %}
-        <div class="empty"><p>No IndexNow request was sent during this request.</p></div>
+        <div class="empty"><p>No IndexNow submission happened during this request{% if collector.collected %} yet ({{ collector.collected }} URL(s) collected, sent after the response or through Messenger){% endif %}.</p></div>
     {% else %}
         <table>
             <thead><tr><th>Engine</th><th>Host</th><th>Status</th><th>HTTP</th><th>URLs</th></tr></thead>
@@ -45,7 +73,11 @@
                 <tr>
                     <td>{{ r.engine }}</td>
                     <td>{{ r.host }}</td>
-                    <td><span class="label {{ r.status == 'failed' ? 'status-error' : 'status-success' }}">{{ r.status }}</span>{% if r.error %} <small>{{ r.error }}</small>{% endif %}</td>
+                    <td>
+                        <span class="label {{ r.status == 'failed' ? 'status-error' : (r.status == 'skipped' ? 'status-warning' : 'status-success') }}">{{ r.status }}</span>
+                        {% if r.reason %} <code>{{ r.reason }}</code>{% endif %}
+                        {% if r.error %} <small>{{ r.error }}</small>{% endif %}
+                    </td>
                     <td>{{ r.http ?? '-' }}</td>
                     <td><ul>{% for u in r.urls %}<li>{{ u }}</li>{% endfor %}</ul></td>
                 </tr>

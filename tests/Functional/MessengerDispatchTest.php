@@ -7,7 +7,6 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsHandler;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
-use IndexNowKit\Testing\FakeTransport;
 use PHPUnit\Framework\Attributes\TestDox;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
@@ -36,13 +35,12 @@ final class MessengerDispatchTest extends BundleTestCase
         $handler($message);
         self::assertCount(1, $this->transport()->posts);
 
-        $fake = $this->transport();
-        \assert($fake instanceof FakeTransport);
-        $fake->willRespond(new Response(429, '', 7));
+        $this->transport()->willRespond(new Response(429, '', 7));
         try {
             $handler($message);
             self::fail('expected RecoverableMessageHandlingException');
         } catch (RecoverableMessageHandlingException $e) {
+            // @phpstan-ignore-next-line function.alreadyNarrowedType (true on the locked Symfony version; the composer constraint also allows 6.4, which lacks it)
             if (method_exists($e, 'getRetryDelay')) { // Symfony >= 7.2
                 self::assertSame(7000, $e->getRetryDelay());
             }

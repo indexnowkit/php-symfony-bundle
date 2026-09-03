@@ -5,25 +5,29 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use IndexNowKit\IndexNowKit;
-use IndexNowKit\Result;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'indexnow:submit', description: 'Submit URLs to IndexNowKit immediately (bypasses queue and debounce store only if --force)')]
+#[AsCommand(name: 'indexnow:submit', description: 'Submit URLs to IndexNow immediately (synchronously, bypassing the queue)')]
 final class SubmitCommand extends Command
 {
-    public function __construct(private readonly IndexNowKit $indexNow)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly SubmitterFactory $submitters)
     {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->addArgument('urls', InputArgument::REQUIRED | InputArgument::IS_ARRAY, 'Absolute URLs or paths relative to base_url');
+        $this
+            ->addArgument('urls', InputArgument::REQUIRED | InputArgument::IS_ARRAY, 'Absolute URLs or paths relative to base_url')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store: re-submit URLs sent within the last debounce.per_url seconds')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Log the request instead of sending it')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Machine-readable output');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -31,29 +35,10 @@ final class SubmitCommand extends Command
         $io = new SymfonyStyle($input, $output);
         /** @var list<string> $urls */
         $urls = $input->getArgument('urls');
-        $results = $this->indexNow->submit($urls);
+        $force = (bool) $input->getOption('force');
+        $dryRun = (bool) $input->getOption('dry-run');
+        $submitter = $force || $dryRun ? $this->submitters->create($force, $dryRun) : $this->indexNow->submitter;
 
-        return self::render($io, $results);
-    }
-
-    /**
-     * @param list<Result> $results
-     */
-    public static function render(SymfonyStyle $io, array $results): int
-    {
-        if ($results === []) {
-            $io->warning('Nothing submitted (all URLs invalid, debounced, or IndexNowKit disabled).');
-
-            return Command::SUCCESS;
-        }
-        $rows = [];
-        $failed = false;
-        foreach ($results as $r) {
-            $rows[] = [$r->engine, $r->host, $r->urlCount(), $r->status->value, $r->httpCode ?? '-', $r->error ?? ''];
-            $failed = $failed || $r->status->value === 'failed';
-        }
-        $io->table(['engine', 'host', 'urls', 'status', 'http', 'error'], $rows);
-
-        return $failed ? Command::FAILURE : Command::SUCCESS;
+        return ResultRenderer::render($io, $submitter->submit($urls), (bool) $input->getOption('json'));
     }
 }

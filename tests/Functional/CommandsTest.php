@@ -5,20 +5,11 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Http\Response;
+use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\Tests\Support\Factory;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Component\Console\Tester\CommandTester;
 
 final class CommandsTest extends BundleTestCase
 {
-    private function tester(string $command): CommandTester
-    {
-        $kernel = static::bootKernel();
-        $application = new Application($kernel);
-
-        return new CommandTester($application->find($command));
-    }
-
     public function testKeyGenerate(): void
     {
         $tester = $this->tester('indexnow:key:generate');
@@ -28,9 +19,26 @@ final class CommandsTest extends BundleTestCase
         $file = tempnam(sys_get_temp_dir(), 'env');
         self::assertNotFalse($file);
         self::assertSame(0, $tester->execute(['--write-env' => $file]));
-        self::assertStringContainsString('INDEXNOW_KEY=', (string) file_get_contents($file));
-        self::assertSame(1, $tester->execute(['--write-env' => $file]), 'refuses to overwrite');
+        $written = (string) file_get_contents($file);
+        self::assertMatchesRegularExpression('/^INDEXNOW_KEY=[a-f0-9]{32}$/m', $written);
+        $firstKey = self::envKey($written);
+
+        self::assertSame(0, $tester->execute(['--write-env' => $file]), 'idempotent: a second run is a no-op, not a failure');
+        self::assertStringContainsString('nothing to do', $tester->getDisplay());
+        self::assertSame($written, (string) file_get_contents($file), 'the file is untouched when nothing was written');
+
+        self::assertSame(0, $tester->execute(['--write-env' => $file, '--force' => true]));
+        self::assertStringContainsString('Rotating the key', $tester->getDisplay());
+        self::assertNotSame($firstKey, self::envKey((string) file_get_contents($file)), '--force rotates the key');
         unlink($file);
+    }
+
+    private static function envKey(string $envFileContents): string
+    {
+        self::assertMatchesRegularExpression('/^INDEXNOW_KEY=(.+)$/m', $envFileContents);
+        preg_match('/^INDEXNOW_KEY=(.+)$/m', $envFileContents, $match);
+
+        return $match[1] ?? self::fail('INDEXNOW_KEY line not found.');
     }
 
     public function testCheckReportsMissingKeyFile(): void
@@ -44,12 +52,35 @@ final class CommandsTest extends BundleTestCase
         self::assertStringContainsString('key file OK', $tester->getDisplay());
     }
 
+    public function testCheckPrintsDispatchAndDoctrineWiring(): void
+    {
+        $this->transport()->onGet('https://www.example.com/' . Factory::KEY . '.txt', new Response(200, Factory::KEY));
+        $tester = $this->tester('indexnow:check');
+        self::assertSame(0, $tester->execute([]));
+
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('dispatch: sync', $display);
+        self::assertStringContainsString('entity changes are submitted automatically', $display);
+    }
+
     public function testSubmitCommandUsesBaseUrl(): void
     {
         $tester = $this->tester('indexnow:submit');
         self::assertSame(0, $tester->execute(['urls' => ['/a', 'https://www.example.com/b']]));
         self::assertSame(['https://www.example.com/a', 'https://www.example.com/b'], $this->sentUrls());
         self::assertStringContainsString('api', $tester->getDisplay());
+    }
+
+    public function testSubmitCommandDryRunSendsNothing(): void
+    {
+        $tester = $this->tester('indexnow:submit');
+        self::assertSame(0, $tester->execute(['urls' => ['/dry'], '--dry-run' => true, '--json' => true]));
+
+        self::assertSame([], $this->transport()->posts, 'dry-run never reaches the transport');
+        /** @var list<array{status: string, reason: ?string}> $rows */
+        $rows = (array) json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame('skipped', $rows[0]['status']);
+        self::assertSame('dry_run', $rows[0]['reason']);
     }
 
     public function testSitemapCommand(): void
@@ -64,18 +95,69 @@ final class CommandsTest extends BundleTestCase
 
     public function testSubmitEntityCommand(): void
     {
-        $kernel = static::bootKernel();
-        $em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
-        \assert($em instanceof \Doctrine\ORM\EntityManagerInterface);
-        (new \Doctrine\ORM\Tools\SchemaTool($em))->createSchema($em->getMetadataFactory()->getAllMetadata());
-        $em->persist(new \IndexNowKit\SymfonyBundle\Tests\App\Entity\Article('cmd'));
-        $em->persist(new \IndexNowKit\SymfonyBundle\Tests\App\Entity\Article('draft', published: false));
+        static::bootKernel();
+        $this->schema();
+        $em = $this->em();
+        $em->persist(new Article('cmd'));
+        $em->persist(new Article('draft', published: false));
         $em->flush();
         $this->transport()->posts = [];
 
-        $tester = new CommandTester((new Application($kernel))->find('indexnow:submit-entity'));
-        self::assertSame(0, $tester->execute(['class' => \IndexNowKit\SymfonyBundle\Tests\App\Entity\Article::class]));
+        $tester = $this->tester('indexnow:submit-entity');
+        self::assertSame(0, $tester->execute(['class' => Article::class]));
         self::assertSame(['https://www.example.com/en/articles/cmd', 'https://www.example.com/de/articles/cmd'], $this->sentUrls(), 'draft skipped, base_url used for console context');
         self::assertStringContainsString('2 entities -> 2 URL(s)', $tester->getDisplay());
+    }
+
+    public function testSubmitEntityCommandReportsMissingIds(): void
+    {
+        static::bootKernel();
+        $this->schema();
+
+        $tester = $this->tester('indexnow:submit-entity');
+        self::assertSame(2, $tester->execute(['class' => Article::class, 'ids' => ['999']]), 'INVALID when no id was found');
+        self::assertStringContainsString('id(s) not found', $tester->getDisplay());
+        self::assertStringContainsString('999', $tester->getDisplay());
+    }
+
+    public function testSubmitEntityCommandExplainShowsRuleAndUrl(): void
+    {
+        static::bootKernel();
+        $this->schema();
+        $em = $this->em();
+        $article = new Article('explained');
+        $em->persist($article);
+        $em->flush();
+        $this->transport()->posts = [];
+
+        $tester = $this->tester('indexnow:submit-entity');
+        self::assertSame(0, $tester->execute(['class' => Article::class, 'ids' => [(string) $article->id], '--explain' => true, '--json' => true]));
+        self::assertSame([], $this->transport()->posts, '--explain sends nothing');
+
+        /** @var list<array{class: string, rule: string, url: string}> $rows */
+        $rows = (array) json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertNotSame([], $rows);
+        self::assertSame('article_show', $rows[0]['rule']);
+        self::assertStringContainsString('https://www.example.com/', $rows[0]['url']);
+    }
+
+    public function testExplainCommandShowsRuleWhenAndMaskedKey(): void
+    {
+        static::bootKernel();
+        $this->schema();
+        $em = $this->em();
+        $em->persist(new Article('one'));
+        $em->flush();
+        $this->transport()->posts = [];
+
+        $tester = $this->tester('indexnow:explain');
+        self::assertSame(0, $tester->execute(['class' => Article::class, 'id' => (string) $em->getRepository(Article::class)->findOneBy(['slug' => 'one'])?->id]));
+
+        $display = $tester->getDisplay();
+        self::assertSame([], $this->transport()->posts, 'explain sends nothing');
+        self::assertStringContainsString('Rule "article_show"', $display);
+        self::assertStringContainsString('when: published -> ', $display);
+        self::assertStringContainsString('https://www.example.com/en/articles/one', $display);
+        self::assertStringContainsString(substr(Factory::KEY, 0, 4) . '****', $display, 'the key is masked, never printed in full');
     }
 }

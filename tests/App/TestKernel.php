@@ -8,32 +8,65 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
-use IndexNowKit\Tests\Support\Factory;
+use IndexNowKit\SymfonyBundle\Tests\App\Resolver\CustomUrlResolver;
 use IndexNowKit\Testing\FakeTransport;
+use IndexNowKit\Tests\Support\Factory;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Bundle\WebProfilerBundle\WebProfilerBundle;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
+/**
+ * $dispatch doubles as "variant": besides picking the dispatch mode it selects which bundles, config
+ * blocks and routes a given functional test needs. Every variant gets its own cache/log dir (see
+ * getCacheDir()) so kernels never share a compiled container.
+ */
 final class TestKernel extends Kernel
 {
     use MicroKernelTrait;
 
+    public const DE_KEY = '1234567890abcdef1234567890abcdef';
+
+    /** @var list<string> variants that boot without DoctrineBundle */
+    private const NO_DOCTRINE = ['nodoctrine'];
+
     public function __construct(string $environment = 'test', bool $debug = false, private readonly string $dispatch = 'sync')
     {
+        if ($this->dispatch === 'invalidconfig') {
+            // A runtime env value the literal-validation in IndexNowKitConfiguration cannot see (it skips %env(...)%),
+            // so the bad key only surfaces when ConfigFactory builds the real Config.
+            putenv('INDEXNOW_TEST_KEY=short');
+            $_SERVER['INDEXNOW_TEST_KEY'] = 'short';
+        }
         parent::__construct($environment, $debug);
+    }
+
+    private function hasDoctrine(): bool
+    {
+        return !\in_array($this->dispatch, self::NO_DOCTRINE, true);
+    }
+
+    private function isProfilerVariant(): bool
+    {
+        return \in_array($this->dispatch, ['profiler', 'profilerdryrun'], true);
     }
 
     public function registerBundles(): iterable
     {
-        $bundles = [new FrameworkBundle(), new DoctrineBundle(), new IndexNowKitBundle()];
-        if ($this->dispatch === 'profiler') {
+        $bundles = [new FrameworkBundle()];
+        if ($this->hasDoctrine()) {
+            $bundles[] = new DoctrineBundle();
+        }
+        $bundles[] = new IndexNowKitBundle();
+        if ($this->isProfilerVariant()) {
             $bundles[] = new TwigBundle();
             $bundles[] = new WebProfilerBundle();
         }
@@ -63,7 +96,7 @@ final class TestKernel extends Kernel
             'cache' => ['app' => 'cache.adapter.array'],
             'enabled_locales' => ['en', 'de'],
         ];
-        if ($this->dispatch === 'profiler') {
+        if ($this->isProfilerVariant()) {
             $framework['profiler'] = ['enabled' => true, 'collect' => true];
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
@@ -74,32 +107,101 @@ final class TestKernel extends Kernel
                 'routing' => [SubmitUrlsMessage::class => 'async'],
             ];
         }
+        if ($this->dispatch === 'messengerauto') {
+            $framework['messenger'] = ['transports' => ['async' => 'in-memory://']];
+        }
         $container->extension('framework', $framework);
-        $container->extension('doctrine', [
-            'dbal' => ['driver' => 'pdo_sqlite', 'memory' => true],
-            'orm' => [
-                'mappings' => ['Test' => ['type' => 'attribute', 'dir' => __DIR__ . '/Entity', 'prefix' => 'IndexNowKit\SymfonyBundle\Tests\App\Entity', 'is_bundle' => false]],
-                'controller_resolver' => ['auto_mapping' => false],
-            ],
-        ]);
-        $container->extension('indexnowkit', [
+
+        if ($this->hasDoctrine()) {
+            $container->extension('doctrine', [
+                'dbal' => ['driver' => 'pdo_sqlite', 'memory' => true],
+                'orm' => [
+                    'mappings' => ['Test' => ['type' => 'attribute', 'dir' => __DIR__ . '/Entity', 'prefix' => 'IndexNowKit\SymfonyBundle\Tests\App\Entity', 'is_bundle' => false]],
+                    'controller_resolver' => ['auto_mapping' => false],
+                ],
+            ]);
+        }
+
+        $container->extension('indexnowkit', $this->indexNowKitConfig());
+
+        if ($this->hasDoctrine()) {
+            $container->services()->set(ArticleController::class)->autowire()->autoconfigure()->public()->tag('controller.service_arguments');
+            $container->services()->set(CustomUrlResolver::class)->autoconfigure();
+        }
+        $container->services()->set(FakeTransport::class)->public();
+        if ($this->dispatch === 'scopedclient') {
+            $container->services()->set('app.scoped_http_client', MockHttpClient::class)->public();
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function indexNowKitConfig(): array
+    {
+        $config = [
             'key' => Factory::KEY,
             'base_url' => 'https://www.example.com',
-            'dispatch' => \in_array($this->dispatch, ['profiler', 'nokey'], true) ? 'sync' : $this->dispatch,
+            'dispatch' => 'sync',
             'debounce' => ['per_url' => 0],
             'serve_key_file' => $this->dispatch !== 'nokey',
-        ]);
+        ];
+        switch ($this->dispatch) {
+            case 'messenger':
+                $config['dispatch'] = 'messenger';
+                break;
+            case 'messengerauto':
+                $config['dispatch'] = 'auto';
+                $config['messenger'] = ['transport' => 'async'];
+                break;
+            case 'nokey':
+                $config['dispatch'] = 'sync';
+                break;
+            case 'debounced':
+                $config['debounce'] = ['per_url' => 600];
+                break;
+            case 'profilerdryrun':
+                $config['dry_run'] = true;
+                break;
+            case 'multihost':
+                $config['hosts'] = ['example.de' => ['key' => self::DE_KEY, 'base_url' => 'https://example.de']];
+                $config['strict_hosts'] = true;
+                break;
+            case 'invalidconfig':
+                $config['key'] = '%env(INDEXNOW_TEST_KEY)%';
+                break;
+            case 'disabled':
+                $config['enabled'] = false;
+                break;
+            case 'keyfilepath':
+                $config['key_file'] = ['path' => '/keys/{key}.txt', 'cache_max_age' => 3600];
+                unset($config['serve_key_file']);
+                break;
+            case 'scopedclient':
+                $config['http'] = ['client' => 'app.scoped_http_client'];
+                break;
+        }
 
-        $container->services()->set(ArticleController::class)->autowire()->autoconfigure()->public()->tag('controller.service_arguments');
-        $container->services()->set(FakeTransport::class)->public();
+        return $config;
     }
 
     protected function build(ContainerBuilder $container): void
     {
-        $container->addCompilerPass(new class implements \Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface {
+        $useFake = $this->dispatch !== 'scopedclient';
+        $container->addCompilerPass(new class ($useFake) implements CompilerPassInterface {
+            public function __construct(private readonly bool $useFake) {}
+
             public function process(ContainerBuilder $container): void
             {
-                $container->setAlias('indexnowkit.transport', FakeTransport::class)->setPublic(true);
+                if ($this->useFake) {
+                    $container->setAlias('indexnowkit.transport', FakeTransport::class)->setPublic(true);
+                }
+                if ($container->hasDefinition('indexnowkit.transport.real')) {
+                    $container->getDefinition('indexnowkit.transport.real')->setPublic(true);
+                }
+                if ($container->hasDefinition('indexnowkit.dispatcher')) {
+                    $container->getDefinition('indexnowkit.dispatcher')->setPublic(true);
+                }
                 $container->getDefinition('indexnowkit')->setPublic(true);
                 if ($container->hasDefinition('indexnowkit.data_collector')) {
                     $container->getDefinition('indexnowkit.data_collector')->setPublic(true);
@@ -111,16 +213,27 @@ final class TestKernel extends Kernel
         });
     }
 
+    // @phpstan-ignore-next-line method.unused (invoked reflectively by MicroKernelTrait, not called directly)
     private function configureRoutes(RoutingConfigurator $routes): void
     {
         $routes->import(\dirname(__DIR__, 2) . '/config/routes.php');
-        if ($this->dispatch === 'profiler') {
+        if ($this->isProfilerVariant()) {
             $routing = \dirname((string) (new ReflectionClass(WebProfilerBundle::class))->getFileName()) . '/Resources/config/routing/';
             $routes->import($routing . (is_file($routing . 'profiler.php') ? 'profiler.php' : 'profiler.xml'))->prefix('/_profiler'); // .php only since Symfony 7.x
+        }
+        if (!$this->hasDoctrine()) {
+            return;
         }
         $routes->add('article_show', '/{_locale}/articles/{slug}')->controller([ArticleController::class, 'show'])->requirements(['_locale' => 'en|de'])->defaults(['_locale' => 'en']);
         $routes->add('article_create', '/articles')->controller([ArticleController::class, 'create'])->methods(['POST']);
         $routes->add('article_delete', '/articles/{slug}/delete')->controller([ArticleController::class, 'delete'])->methods(['POST']);
         $routes->add('article_fail', '/articles/fail')->controller([ArticleController::class, 'createAndFail'])->methods(['POST']);
+        if ($this->dispatch === 'multihost') {
+            $routes->add('de_article_show', '/articles/{slug}')->controller([ArticleController::class, 'show'])->host('example.de');
+        }
+        if ($this->dispatch === 'multirule') {
+            $routes->add('multirule_show', '/articles/{slug}')->controller([ArticleController::class, 'show']);
+            $routes->add('multirule_amp', '/articles/{slug}/amp')->controller([ArticleController::class, 'show']);
+        }
     }
 }

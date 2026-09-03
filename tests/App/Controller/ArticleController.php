@@ -46,6 +46,7 @@ final class ArticleController
             throw new RuntimeException('business rule violated');
         });
 
+        // @phpstan-ignore-next-line deadCode.unreachable (wrapInTransaction() always rethrows above; kept for readability)
         return new Response('unreachable');
     }
 }

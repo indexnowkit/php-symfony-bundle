@@ -1,32 +1,56 @@
 {
     "name": "indexnowkit/symfony-bundle",
-    "description": "Symfony bundle for IndexNow: notify Yandex, Bing, Naver and Seznam when Doctrine entities change. Attribute on entity, Messenger dispatch, key file route, console commands.",
+    "description": "Symfony bundle for IndexNow: notify Yandex, Bing, Naver, Seznam and Yep when Doctrine entities change. #[IndexNow] rules on entities, commit-safe Doctrine hooks, Messenger dispatch, key file route, console commands, profiler panel.",
     "type": "symfony-bundle",
     "license": "MIT",
-    "keywords": ["indexnow", "symfony", "symfony-bundle", "doctrine", "seo", "yandex", "bing", "messenger"],
-    "homepage": "https://indexnowkit.dev/php/symfony",
+    "keywords": [
+        "indexnow",
+        "symfony",
+        "symfony-bundle",
+        "doctrine",
+        "seo",
+        "yandex",
+        "bing",
+        "messenger"
+    ],
+    "homepage": "https://github.com/indexnowkit/php",
     "require": {
         "php": "^8.2",
         "indexnowkit/core": "^0.2",
-        "indexnowkit/doctrine": "^0.2",
         "symfony/config": "^6.4 || ^7.0",
-        "symfony/dependency-injection": "^6.4 || ^7.0",
-        "symfony/http-kernel": "^6.4 || ^7.0",
-        "symfony/http-foundation": "^6.4 || ^7.0",
-        "symfony/routing": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
-        "symfony/event-dispatcher": "^6.4 || ^7.0"
+        "symfony/dependency-injection": "^6.4 || ^7.0",
+        "symfony/event-dispatcher": "^6.4 || ^7.0",
+        "symfony/framework-bundle": "^6.4 || ^7.0",
+        "symfony/http-foundation": "^6.4 || ^7.0",
+        "symfony/http-kernel": "^6.4 || ^7.0",
+        "symfony/routing": "^6.4 || ^7.0"
     },
     "suggest": {
+        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.2, together with doctrine/doctrine-bundle)",
+        "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger)",
-        "doctrine/doctrine-bundle": "Automatic entity change detection (^2.13 || ^3.0)",
-        "symfony/http-client": "PSR-18 client for outgoing requests",
-        "nyholm/psr7": "PSR-17 factories for symfony/http-client"
+        "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
+        "nyholm/psr7": "PSR-17 factories for symfony/http-client",
+        "symfony/web-profiler-bundle": "IndexNow panel in the Web Profiler"
     },
     "autoload": {
-        "psr-4": {"IndexNowKit\\SymfonyBundle\\": "src/"}
+        "psr-4": {
+            "IndexNowKit\\SymfonyBundle\\": "src/"
+        }
     },
     "extra": {
-        "branch-alias": {"dev-main": "0.2-dev"}
+        "branch-alias": {
+            "dev-main": "0.2-dev"
+        }
+    },
+    "require-dev": {
+        "indexnowkit/doctrine": "^0.2",
+        "doctrine/doctrine-bundle": "^2.13 || ^3.0"
+    },
+    "support": {
+        "issues": "https://github.com/indexnowkit/php/issues",
+        "source": "https://github.com/indexnowkit/php/tree/main/packages/symfony-bundle",
+        "docs": "https://github.com/indexnowkit/php/blob/main/packages/symfony-bundle/README.md"
     }
 }

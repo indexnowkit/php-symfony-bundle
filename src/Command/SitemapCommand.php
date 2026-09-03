@@ -19,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:sitemap', description: 'Submit every URL of a sitemap (or only those with lastmod after --changed-since)')]
 final class SitemapCommand extends Command
 {
-    public function __construct(private readonly IndexNowKit $indexNow, private readonly SitemapReader $reader)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly SitemapReader $reader, private readonly SubmitterFactory $submitters)
     {
         parent::__construct();
     }
@@ -29,12 +29,15 @@ final class SitemapCommand extends Command
         $this
             ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL (default: <base_url>/sitemap.xml)')
             ->addOption('changed-since', null, InputOption::VALUE_REQUIRED, 'Only URLs whose <lastmod> is newer, e.g. "1 day" or "2026-09-01"')
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'List URLs without submitting');
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'List URLs without submitting')
+            ->addOption('json', null, InputOption::VALUE_NONE, 'Machine-readable output');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $json = (bool) $input->getOption('json');
         $sitemap = $input->getArgument('sitemap');
         if (!\is_string($sitemap) || $sitemap === '') {
             if ($this->indexNow->config->baseUrl === null) {
@@ -60,13 +63,17 @@ final class SitemapCommand extends Command
 
             return Command::FAILURE;
         }
-        $io->text(\sprintf('%d URL(s) found in %s%s', \count($urls), $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : ''));
+        if (!$json) {
+            $io->text(\sprintf('%d URL(s) found in %s%s', \count($urls), $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : ''));
+        }
         if ($input->getOption('dry-run') === true) {
-            $io->listing($urls);
+            $json ? $io->writeln((string) json_encode($urls, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) : $io->listing($urls);
 
             return Command::SUCCESS;
         }
+        $force = (bool) $input->getOption('force');
+        $submitter = $force ? $this->submitters->create(true, false) : $this->indexNow->submitter;
 
-        return SubmitCommand::render($io, $this->indexNow->submit($urls));
+        return ResultRenderer::render($io, $submitter->submit($urls), $json);
     }
 }

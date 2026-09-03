@@ -32,7 +32,7 @@ final class SubmitUrlsHandler
     public function __invoke(SubmitUrlsMessage $message): void
     {
         $results = $this->submitter->submit($message->urls);
-        $retryUrls = Result::urlsOf($results);
+        $retryUrls = Result::retryableUrls($results);
         $retryAfter = null;
         foreach ($results as $result) {
             if ($result->retryable && $result->retryAfter !== null) {

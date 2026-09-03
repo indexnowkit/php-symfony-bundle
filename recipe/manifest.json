@@ -6,8 +6,20 @@
         "config/": "%CONFIG_DIR%/"
     },
     "env": {
-        "#1": "Generate with: bin/console indexnow:key:generate",
+        "#1": "IndexNow key (8-128 chars of [A-Za-z0-9-]). Generate one: bin/console indexnow:key:generate --write-env",
         "INDEXNOW_KEY": "",
-        "INDEXNOW_BASE_URL": "https://www.example.com"
-    }
+        "#2": "Absolute site URL, used by console commands and Messenger workers (no request context there), e.g. https://www.example.com",
+        "INDEXNOW_BASE_URL": ""
+    },
+    "post-install-output": [
+        "  * Generate a key and write it to <comment>.env.local</comment>:",
+        "",
+        "      <comment>bin/console indexnow:key:generate --write-env</comment>",
+        "",
+        "  * Set <comment>INDEXNOW_BASE_URL</comment> to your public site URL (in .env.local / the server environment).",
+        "",
+        "  * Mark an entity: <comment>#[IndexNow(route: 'post_show', params: ['slug' => 'slug'], when: 'isPublished')]</comment>",
+        "",
+        "  * Verify: <comment>bin/console indexnow:check</comment>"
+    ]
 }
