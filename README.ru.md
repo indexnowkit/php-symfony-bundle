@@ -179,7 +179,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 ## Совместимость
 
 Публичный API бандла: узлы конфигурации, имена и опции команд, идентификаторы и алиасы сервисов из
-[docs/extending.md](docs/extending.md), интерфейсы `Command\*Interface`, сообщение и обработчик Messenger и
+[docs/extending.md](docs/extending.md), интерфейсы `Console\*Interface` ядра, на которые они указывают, сообщение и обработчик Messenger и
 параметры контейнера из [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` — проводка, не API.
 Действуют правила core, включая интерфейсы «may grow»:
 [bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). До 1.0 минорная версия может ломать

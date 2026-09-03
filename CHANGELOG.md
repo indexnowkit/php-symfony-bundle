@@ -3,6 +3,29 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.3.0] — 2026-09-04
+
+### Changed
+
+- **Requires `indexnowkit/core ^0.3`.** The command bodies moved to the core (`IndexNowKit\Console\*Runner`); the
+  bundle's commands only parse their input, so every framework prints the same output.
+- **`Command\EntityLoaderInterface`, `Command\SubmitterFactoryInterface`, `Command\ResultFormatterInterface`
+  are gone**; the services keep their ids (`indexnowkit.entity_loader`, `indexnowkit.command_submitter_factory`,
+  `indexnowkit.result_formatter`) and are now aliased to `IndexNowKit\Console\SubjectLoaderInterface`,
+  `SubmitterFactoryInterface`, `ResultFormatterInterface`. Migration: replace the `use` statements; a decorated
+  entity loader implements `byIds(string $class, array $ids, Event $event)` and
+  `all(string $class, int $limit, Event $event)` (the event is new: load soft-deleted rows for `deleted`).
+  `Command\ResultRenderer`, `Command\ResultSummary` and `Command\SubmitterFactory` are the core classes of the same
+  name.
+- **`indexnow:check` wiring lines are checks.** "dispatch is messenger but not routed" and "doctrine: entity hooks
+  active" come from `Check\WiringCheck`, the sitemap spool line from the core's `Check\SitemapSpoolCheck`; both are
+  `indexnowkit.check` services, so they print among the application's own checks instead of after them.
+- `indexnow:key:generate` prints the env hint and the written-key confirmation as plain lines (copyable) instead
+  of note / success blocks; `indexnow:explain` prints the submit hint the same way.
+- The command classes take their runner in the constructor (`SubmitCommand`, `SubmitEntityCommand`,
+  `ExplainCommand`, `SitemapCommand`, `KeyGenerateCommand`, `CheckCommand`). They are `final` and registered by the
+  bundle; nothing to change unless you instantiated them yourself.
+
 ## [0.2.0] — 2026-09-04
 
 ### Added
@@ -137,6 +160,7 @@ contain breaking changes, listed under "Changed".
 - Commands `indexnow:key:generate`, `indexnow:check`, `indexnow:submit`, `indexnow:submit-entity`,
   `indexnow:sitemap`. Web Profiler panel. Flex recipe in `recipe/`.
 
+[0.3.0]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/indexnowkit/php-symfony-bundle/releases/tag/0.1.0

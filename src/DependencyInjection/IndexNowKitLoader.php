@@ -9,11 +9,24 @@ use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
+use IndexNowKit\Check\SitemapSpoolCheck;
 use IndexNowKit\Client;
 use IndexNowKit\ClientInterface;
 use IndexNowKit\Collector\Collector;
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
+use IndexNowKit\Console\CheckRunner;
+use IndexNowKit\Console\ExplainRunner;
+use IndexNowKit\Console\KeyGenerateRunner;
+use IndexNowKit\Console\ResultFormatterInterface;
+use IndexNowKit\Console\ResultRenderer;
+use IndexNowKit\Console\SitemapRunner;
+use IndexNowKit\Console\SubjectLoaderInterface;
+use IndexNowKit\Console\SubmitRunner;
+use IndexNowKit\Console\SubmitSubjectsRunner;
+use IndexNowKit\Console\SubmitterFactory;
+use IndexNowKit\Console\SubmitterFactoryInterface;
+use IndexNowKit\Console\Vocabulary;
 use IndexNowKit\Debounce\DebounceStoreInterface;
 use IndexNowKit\Debounce\MemoryDebounceStore;
 use IndexNowKit\Debounce\NullDebounceStore;
@@ -34,18 +47,14 @@ use IndexNowKit\Sitemap\SitemapSourceInterface;
 use IndexNowKit\Sitemap\SpoolMode;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
+use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
-use IndexNowKit\SymfonyBundle\Command\EntityLoaderInterface;
 use IndexNowKit\SymfonyBundle\Command\ExplainCommand;
 use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
-use IndexNowKit\SymfonyBundle\Command\ResultFormatterInterface;
-use IndexNowKit\SymfonyBundle\Command\ResultRenderer;
 use IndexNowKit\SymfonyBundle\Command\SitemapCommand;
 use IndexNowKit\SymfonyBundle\Command\SubmitCommand;
 use IndexNowKit\SymfonyBundle\Command\SubmitEntityCommand;
-use IndexNowKit\SymfonyBundle\Command\SubmitterFactory;
-use IndexNowKit\SymfonyBundle\Command\SubmitterFactoryInterface;
 use IndexNowKit\SymfonyBundle\Controller\KeyFileController;
 use IndexNowKit\SymfonyBundle\DataCollector\IndexNowDataCollector;
 use IndexNowKit\SymfonyBundle\DataCollector\ResultRecorder;
@@ -278,11 +287,26 @@ final class IndexNowKitLoader
         $builder->setParameter('indexnowkit.doctrine_hooked', $doctrine && $config['enabled']);
 
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
+        $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
+        $services->set('indexnowkit.check.sitemap_spool', SitemapSpoolCheck::class)->args([$config['sitemap']])->tag('indexnowkit.check');
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport'), tagged_iterator('indexnowkit.check')]);
         $services->alias(CheckerInterface::class, 'indexnowkit.checker');
+        $services->set('indexnowkit.console.vocabulary', Vocabulary::class)->args([
+            '$subject' => 'entity',
+            '$subjects' => 'entities',
+            '$cli' => 'bin/console',
+            '$submitSubjects' => 'indexnow:submit-entity',
+            '$configLocation' => 'config/packages/indexnowkit.yaml and INDEXNOW_* env vars',
+            '$keyFileServedBy' => 'once the bundle routes are imported',
+            '$sitemapUrlOption' => 'indexnowkit.sitemap.url',
+        ]);
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
+        $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid()])
+            ->tag('monolog.logger', ['channel' => $channel]);
+        $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         if ($config['sitemap']['enabled']) {
             $sitemap = $config['sitemap'];
             $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
@@ -290,23 +314,25 @@ final class IndexNowKitLoader
                 ->tag('monolog.logger', ['channel' => $channel]);
             $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
             $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
-            $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url'], service('indexnowkit.result_formatter')])->tag('console.command');
+            $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url'], service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
+            $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap')])->tag('console.command');
         }
-        $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid()])
-            ->tag('monolog.logger', ['channel' => $channel]);
-        $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
 
-        $services->set(KeyGenerateCommand::class)->args(['%kernel.project_dir%'])->tag('console.command');
-        $services->set(CheckCommand::class)->args([service('indexnowkit.checker'), $config, '%kernel.environment%', '%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('console.command');
-        $services->set(SubmitCommand::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')])->tag('console.command');
+        $services->set('indexnowkit.console.key_generate', KeyGenerateRunner::class)->args([service('indexnowkit.console.vocabulary')]);
+        $services->set(KeyGenerateCommand::class)->args([service('indexnowkit.console.key_generate'), '%kernel.project_dir%'])->tag('console.command');
+        $services->set('indexnowkit.console.check', CheckRunner::class)->args([service('indexnowkit.checker'), service('indexnowkit.console.vocabulary')]);
+        $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), $config, '%kernel.environment%'])->tag('console.command');
+        $services->set('indexnowkit.console.submit', SubmitRunner::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')]);
+        $services->set(SubmitCommand::class)->args([service('indexnowkit.console.submit')])->tag('console.command');
 
         // Doctrine --------------------------------------------------------------------------------------------------
         if ($doctrine) {
             $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
-            $services->alias(EntityLoaderInterface::class, 'indexnowkit.entity_loader');
-            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')])->tag('console.command');
-            $services->set(ExplainCommand::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer')])->tag('console.command');
+            $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
+            $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
+            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity')])->tag('console.command');
+            $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);
+            $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain')])->tag('console.command');
         }
         if ($doctrine && $config['enabled']) {
             $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);

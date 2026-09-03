@@ -178,7 +178,7 @@ An invalid configuration does not throw from a flush: IndexNow is disabled, one 
 ## Compatibility
 
 Public API of the bundle: configuration nodes, command names and options, service ids and aliases listed in
-[docs/extending.md](docs/extending.md), the `Command\*Interface`s, the Messenger message and handler, and the
+[docs/extending.md](docs/extending.md), the core's `Console\*Interface`s they are aliased to, the Messenger message and handler, and the
 container parameters listed in [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` is wiring,
 not API. The core's rules apply, including the "may grow" interfaces:
 [bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). Before 1.0 a minor version may break;

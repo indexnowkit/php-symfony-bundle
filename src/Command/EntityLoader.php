@@ -6,20 +6,19 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
+use IndexNowKit\Console\SubjectLoaderInterface;
+use IndexNowKit\Event;
 use IndexNowKit\Exception\InvalidArgumentException;
 
 /**
- * Resolves the class argument (FQCN or App\Entity short name) and loads entities by id for the entity commands.
+ * Resolves the class argument (FQCN or App\Entity short name) and loads entities by id for the entity commands,
+ * through the Doctrine repositories as they are. Decorate `indexnowkit.entity_loader` to honour soft deletes,
+ * tenant scoping or a different id format.
  */
-final class EntityLoader implements EntityLoaderInterface
+final class EntityLoader implements SubjectLoaderInterface
 {
     public function __construct(private readonly ManagerRegistry $doctrine) {}
 
-    /**
-     * @return class-string
-     *
-     * @throws InvalidArgumentException when the class is unknown or not a managed entity
-     */
     public function resolveClass(string $class): string
     {
         if (!class_exists($class) && class_exists('App\\Entity\\' . $class)) {
@@ -46,13 +45,7 @@ final class EntityLoader implements EntityLoaderInterface
         return $manager;
     }
 
-    /**
-     * @param class-string $class
-     * @param list<string> $ids
-     *
-     * @return array{0: list<object>, 1: list<string>} found entities and missing ids
-     */
-    public function byIds(string $class, array $ids): array
+    public function byIds(string $class, array $ids, Event $event): array
     {
         $repository = $this->manager($class)->getRepository($class);
         $found = [];
@@ -69,12 +62,7 @@ final class EntityLoader implements EntityLoaderInterface
         return [$found, $missing];
     }
 
-    /**
-     * @param class-string $class
-     *
-     * @return iterable<object>
-     */
-    public function all(string $class, int $limit): iterable
+    public function all(string $class, int $limit, Event $event): iterable
     {
         return $this->manager($class)->getRepository($class)->findBy([], null, max(1, $limit));
     }

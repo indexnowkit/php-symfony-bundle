@@ -298,10 +298,12 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Throttle\ThrottleInterface` | `indexnowkit.throttle` |
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
 | `Sitemap\SitemapSourceInterface` (and `Sitemap\SitemapReader`) | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
-| `Command\EntityLoaderInterface` | `indexnowkit.entity_loader` (only with Doctrine) |
+| `Console\SubjectLoaderInterface` (core) | `indexnowkit.entity_loader` (only with Doctrine) |
 | `Check\CheckerInterface` | `indexnowkit.checker` (runs every `Check\CheckInterface` service, autoconfigured with the `indexnowkit.check` tag) |
-| `Command\SubmitterFactoryInterface` | `indexnowkit.command_submitter_factory` |
-| `Command\ResultFormatterInterface` | `indexnowkit.result_formatter` |
+| `Console\SubmitterFactoryInterface` (core) | `indexnowkit.command_submitter_factory` |
+| `Console\ResultFormatterInterface` (core) | `indexnowkit.result_formatter` |
+| `Console\Vocabulary`, `Console\*Runner` (core) | `indexnowkit.console.vocabulary`, `indexnowkit.console.{check,submit,submit_entity,explain,sitemap,key_generate}` |
+| `Check\WiringCheck`, core `Check\SitemapSpoolCheck` | `indexnowkit.check.wiring`, `indexnowkit.check.sitemap_spool` (tagged `indexnowkit.check`) |
 | `Routing\KeyFileRouteLoader` | `indexnowkit.key_file_routes` |
 
 Only `indexnowkit`, `IndexNowKit\IndexNowKit` and the key file controller are public; inject the rest by type where you need them. How to

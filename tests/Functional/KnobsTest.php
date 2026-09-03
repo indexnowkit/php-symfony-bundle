@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Config;
+use IndexNowKit\Console\SubjectLoaderInterface;
 use IndexNowKit\Http\Response;
 use IndexNowKit\IndexNowKit;
-use IndexNowKit\SymfonyBundle\Command\EntityLoaderInterface;
 use IndexNowKit\SymfonyBundle\Tests\App\ResultRecorderListener;
 /**
  * The options added by the configurability audit reach the core: previous keys are served, per-host engines route,
@@ -37,9 +37,9 @@ final class KnobsTest extends BundleTestCase
         self::assertSame('seo', static::getContainer()->getParameter('indexnowkit.log_channel'));
         self::assertSame('seo_key_file', static::getContainer()->getParameter('indexnowkit.key_file.route_name'));
         self::assertFalse(static::getContainer()->has('indexnowkit.data_collector'));
-        self::assertTrue(static::getContainer()->has(EntityLoaderInterface::class));
-        self::assertTrue(static::getContainer()->has(\IndexNowKit\SymfonyBundle\Command\ResultFormatterInterface::class));
-        self::assertTrue(static::getContainer()->has(\IndexNowKit\SymfonyBundle\Command\SubmitterFactoryInterface::class));
+        self::assertTrue(static::getContainer()->has(SubjectLoaderInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\Console\ResultFormatterInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\Console\SubmitterFactoryInterface::class));
         self::assertTrue(static::getContainer()->has(\IndexNowKit\Check\CheckerInterface::class));
     }
 
