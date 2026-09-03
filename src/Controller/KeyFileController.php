@@ -14,7 +14,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class KeyFileController
 {
-    public function __construct(private readonly KeyFileResponder $responder, private readonly int $maxAge = KeyFileResponder::DEFAULT_MAX_AGE) {}
+    /**
+     * @param bool $varyHost `Vary: Host` on the response (set when a `hosts` map is configured)
+     */
+    public function __construct(private readonly KeyFileResponder $responder, private readonly int $maxAge = KeyFileResponder::DEFAULT_MAX_AGE, private readonly bool $varyHost = false) {}
 
     public function __invoke(Request $request, string $key): Response
     {
@@ -23,6 +26,6 @@ final class KeyFileController
             throw new NotFoundHttpException();
         }
 
-        return new Response($body, 200, KeyFileResponder::headers($this->maxAge));
+        return new Response($body, 200, KeyFileResponder::headers($this->maxAge, $this->varyHost));
     }
 }

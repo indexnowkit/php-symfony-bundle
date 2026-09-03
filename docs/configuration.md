@@ -24,6 +24,10 @@ indexnowkit:
     # Must be on the host of base_url.
     key_location:         null
 
+    # The key before a rotation: /<previous_key>.txt keeps being served while engines re-verify,
+    # nothing is ever submitted under it. Remove it once the rotation settled.
+    previous_key:         null
+
     # Multi-domain: one entry per additional host. Hosts not listed here use the default key,
     # unless strict_hosts is on. An array node cannot come from a single env var, so use
     # per-entry %env(...)% placeholders.
@@ -32,10 +36,20 @@ indexnowkit:
         #     key:          '%env(INDEXNOW_KEY_DE)%'
         #     key_location: 'https://example.de/keys/indexnow.txt'   # optional
         #     base_url:     'https://example.de'                     # console/worker URL generation
+        #     engines:      [yandex]                                 # this host only; default: `engines`
+        #     previous_key: '%env(INDEXNOW_KEY_DE_OLD)%'             # rotation window
 
     # Refuse URLs of hosts that are neither base_url nor listed in `hosts`, instead of announcing
-    # them under the default key. Recommended for multi-domain setups.
+    # them under the default key. Recommended for multi-domain setups, and for any production
+    # app that is also reachable under a staging or internal hostname (indexnow:check warns).
     strict_hosts:         false
+
+    # Environment names treated as production: no dry-run safety net there, and indexnow:check
+    # flags dry_run. Replace (not extend) the list when yours is not prod/production.
+    production_environments: [prod, production]
+
+    # URLs longer than this many bytes are skipped as invalid_url. The protocol sets no limit.
+    max_url_length:       2048
 
     # api = api.indexnow.org, the shared endpoint reaching Yandex, Bing, Naver, Seznam and Yep.
     # Name a single engine only to target it, or give a full https endpoint URL.
@@ -51,6 +65,11 @@ indexnowkit:
         # Transport name from framework.messenger.transports. When set, the bundle adds the routing
         # for SubmitUrlsMessage itself, so messenger.yaml needs no edit.
         transport:        null                    # e.g. 'async'
+        # Milliseconds: a DelayStamp on every SubmitUrlsMessage. Needs a transport that supports
+        # delays (doctrine, amqp, redis, sqs); in-memory and sync transports ignore it.
+        delay:            0
+        # Service ids of extra stamps added to every message (a FIFO group id, a priority).
+        stamps:           []
 
     batch:
         # URLs per request. The protocol maximum is 10000; larger sets are split.
@@ -63,6 +82,8 @@ indexnowkit:
         # 'memory' (per process: CLI, tests), 'none', or a PSR-6 cache pool service id shared by all
         # processes.
         store:            cache.app
+        # Cache key prefix. Give each application sharing one pool its own.
+        key_prefix:       indexnowkit_
 
     throttle:
         # Outgoing requests per minute, per process. 0 = unlimited.
@@ -93,6 +114,36 @@ indexnowkit:
 
     # Log the request instead of sending it. Switched on automatically outside prod when no key is set.
     dry_run:              false
+
+    logging:
+        # Monolog channel every bundle service logs to.
+        channel:          indexnow
+        # URLs listed in one log line (the count is always logged). 0 = no URLs in logs (PII policies).
+        max_urls:         20
+        # Consecutive 403s for one host before the log level escalates to critical (the line to page on).
+        forbidden_escalation: 5
+        # Override the level of an outcome. Events and their defaults: ok (debug), pending (info),
+        # invalid_request (error), unprocessable (warning), rate_limited (warning), server_error (warning),
+        # unexpected (error), transport (warning), no_key (warning), dry_run (info), disabled (info),
+        # debounced (debug), invalid_url (warning).
+        levels:           {}                      # e.g. { debounced: info, rate_limited: error }
+
+    resolver:
+        # How many "via:" hops a rule may follow (Comment -> Post -> Author).
+        max_via_depth:    3
+        # How many related objects one "via:" hop may yield; the rest is dropped with a warning.
+        max_via_fanout:   100
+
+    collector:
+        # Flush as soon as this many URLs were collected in one request or command (0 = only at the
+        # end). Bounds memory in long imports; the flush goes through the normal dispatcher.
+        max_urls:         0
+        # Warn at shutdown about collected URLs that were never flushed.
+        detect_leaks:     true
+
+    profiler:
+        # Register the profiler panel when WebProfilerBundle is present.
+        enabled:          true
 
     sitemap:
         # Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing
@@ -144,7 +195,11 @@ The container fails to build when:
 | a literal `key` outside `[A-Za-z0-9-]{8,128}` | |
 | a literal `base_url` that is not an absolute http(s) URL | |
 | an `engines` entry that is neither a known engine nor an `http(s)` URL | |
-| `key_file.path` without `{key}` | |
+| `key_file.path` not starting with `/` or without `{key}` | |
+| a literal `key_location` that is not an absolute http(s) URL | |
+| a literal `previous_key` outside `[A-Za-z0-9-]{8,128}` | |
+| a literal `http.user_agent` containing a line break | |
+| `logging.levels` with an unknown event | the message lists the known events |
 | literal `sitemap.url` that is not an absolute http(s) URL | |
 | `dispatch: messenger` without `symfony/messenger` installed | install it, or use `dispatch: sync` |
 
@@ -213,12 +268,14 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Url\RouteUrlResolverInterface` | `indexnowkit.route_url_resolver` |
 | `Url\ResolverLocatorInterface` | `indexnowkit.resolver_locator` |
 | `Attribute\AttributeReaderInterface` | `indexnowkit.attribute_reader` |
+| `ClientInterface` | `indexnowkit.client` |
 | `SubmitterInterface` | `indexnowkit.submitter` |
 | `Collector\CollectorInterface` | `indexnowkit.collector` |
 | `Debounce\DebounceStoreInterface` | `indexnowkit.debounce_store` |
 | `Throttle\ThrottleInterface` | `indexnowkit.throttle` |
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
 | `Sitemap\SitemapSourceInterface` (and `Sitemap\SitemapReader`) | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
+| `Command\EntityLoaderInterface` | `indexnowkit.entity_loader` (only with Doctrine) |
 
 Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them. How to
 decorate or replace each one: [extending.md](extending.md).
@@ -227,4 +284,4 @@ decorate or replace each one: [extending.md](extending.md).
 
 `indexnowkit.dispatch` (the resolved mode, after `auto`), `indexnowkit.messenger.transport`,
 `indexnowkit.messenger_routed`, `indexnowkit.doctrine_hooked`, `indexnowkit.key_file.path`,
-`indexnowkit.key_file.host`. `indexnow:check` prints the first, third and fourth.
+`indexnowkit.key_file.host`, `indexnowkit.log_channel`. `indexnow:check` prints the first, third and fourth.

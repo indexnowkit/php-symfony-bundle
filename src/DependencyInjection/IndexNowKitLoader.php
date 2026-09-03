@@ -8,6 +8,7 @@ use IndexNowKit\Attribute\AttributeReader;
 use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Client;
+use IndexNowKit\ClientInterface;
 use IndexNowKit\Collector\Collector;
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
@@ -32,6 +33,8 @@ use IndexNowKit\Sitemap\SpoolMode;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
+use IndexNowKit\SymfonyBundle\Command\EntityLoader;
+use IndexNowKit\SymfonyBundle\Command\EntityLoaderInterface;
 use IndexNowKit\SymfonyBundle\Command\ExplainCommand;
 use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
 use IndexNowKit\SymfonyBundle\Command\SitemapCommand;
@@ -78,6 +81,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 final class IndexNowKitLoader
 {
+    /** Default of `logging.channel`. */
     public const LOG_CHANNEL = 'indexnow';
 
     /**
@@ -85,10 +89,12 @@ final class IndexNowKitLoader
      */
     public function load(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool, spool: string, spool_dir: ?string, fetch_retries: int}} $config */
+        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int}, serve_key_file: ?bool, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool, spool: string, spool_dir: ?string, fetch_retries: int}} $config */
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
         $logger = service('logger')->nullOnInvalid();
+        $channel = $config['logging']['channel'];
+        $builder->setParameter('indexnowkit.log_channel', $channel);
 
         // Dispatch mode (resolved first so Config reports the effective mode) ----------------------------------------
         $dispatch = $config['dispatch'];
@@ -128,17 +134,18 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.transport', LazyTransport::class)->args([service_closure('indexnowkit.transport.real')]);
         $services->alias(TransportInterface::class, 'indexnowkit.transport');
 
-        $services->set('indexnowkit.url_normalizer', UrlNormalizer::class)->args([$config['base_url']]);
+        $services->set('indexnowkit.url_normalizer', UrlNormalizer::class)->args([$config['base_url'], $config['max_url_length'] ?? Config::DEFAULT_MAX_URL_LENGTH]);
         $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
 
         $services->set('indexnowkit.throttle', TokenBucket::class)
             ->args([$config['throttle']['max_requests_per_minute'], null, null, $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ThrottleInterface::class, 'indexnowkit.throttle');
 
         $services->set('indexnowkit.client', Client::class)
             ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), $logger, service('indexnowkit.throttle'), service('indexnowkit.url_normalizer')])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
+        $services->alias(ClientInterface::class, 'indexnowkit.client');
 
         $store = $config['debounce']['store'];
         if ($store === 'memory') {
@@ -147,20 +154,20 @@ final class IndexNowKitLoader
             $services->set('indexnowkit.debounce_store', NullDebounceStore::class);
         } else {
             $services->set('indexnowkit.debounce_store.psr16', Psr16Cache::class)->args([service($store)]);
-            $services->set('indexnowkit.debounce_store', Psr16DebounceStore::class)->args([service('indexnowkit.debounce_store.psr16'), 'indexnowkit_']);
+            $services->set('indexnowkit.debounce_store', Psr16DebounceStore::class)->args([service('indexnowkit.debounce_store.psr16'), $config['debounce']['key_prefix'] ?? Config::DEFAULT_DEBOUNCE_KEY_PREFIX]);
         }
         $services->alias(DebounceStoreInterface::class, 'indexnowkit.debounce_store');
 
         $services->set('indexnowkit.submitter', Submitter::class)
             ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), $logger, service('indexnowkit.url_normalizer'), service('event_dispatcher')->nullOnInvalid()])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Submitter::class, 'indexnowkit.submitter');
         $services->alias(SubmitterInterface::class, 'indexnowkit.submitter');
 
         $services->set('indexnowkit.collector', Collector::class)
-            ->args([$logger])
+            ->args([$logger, $config['collector']['detect_leaks'], $config['logging']['max_urls']])
             ->tag('kernel.reset', ['method' => 'reset'])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Collector::class, 'indexnowkit.collector');
         $services->alias(CollectorInterface::class, 'indexnowkit.collector');
 
@@ -179,29 +186,29 @@ final class IndexNowKitLoader
         $services->alias(ResolverLocatorInterface::class, 'indexnowkit.resolver_locator');
 
         $services->set('indexnowkit.url_resolver', AttributeUrlResolver::class)
-            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger, $config['resolver']['max_via_depth'], $config['resolver']['max_via_fanout']])
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(UrlResolverInterface::class, 'indexnowkit.url_resolver');
 
         $services->set('indexnowkit.guarded_url_resolver', GuardedUrlResolver::class)
             ->args([service('indexnowkit.url_resolver'), service('indexnowkit.attribute_reader'), $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(GuardedUrlResolver::class, 'indexnowkit.guarded_url_resolver');
 
         $services->set('indexnowkit.change_handler', ObjectChangeHandler::class)
             ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ObjectChangeHandler::class, 'indexnowkit.change_handler');
 
         // Dispatch --------------------------------------------------------------------------------------------------
         match ($dispatch) {
             'none' => $services->set('indexnowkit.dispatcher', NullDispatcher::class),
             'messenger' => $services->set('indexnowkit.dispatcher', MessengerDispatcher::class)
-                ->args([service($config['messenger']['bus']), $logger])
-                ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]),
+                ->args([service($config['messenger']['bus']), $logger, $config['messenger']['delay'], array_map(static fn(string $id) => service($id), $config['messenger']['stamps']), $config['logging']['max_urls']])
+                ->tag('monolog.logger', ['channel' => $channel]),
             default => $services->set('indexnowkit.dispatcher', SyncDispatcher::class)
-                ->args([service('indexnowkit.submitter'), $logger])
-                ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]),
+                ->args([service('indexnowkit.submitter'), $logger, $config['logging']['max_urls']])
+                ->tag('monolog.logger', ['channel' => $channel]),
         };
         $services->alias(DispatcherInterface::class, 'indexnowkit.dispatcher');
 
@@ -209,7 +216,7 @@ final class IndexNowKitLoader
             $services->set('indexnowkit.messenger.handler', SubmitUrlsHandler::class)
                 ->args([service('indexnowkit.submitter'), $logger])
                 ->tag('messenger.message_handler')
-                ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+                ->tag('monolog.logger', ['channel' => $channel]);
         }
 
         // Facade ----------------------------------------------------------------------------------------------------
@@ -226,7 +233,7 @@ final class IndexNowKitLoader
                 '$transport' => service('indexnowkit.transport'),
                 '$sitemap' => service('indexnowkit.sitemap_reader')->nullOnInvalid(),
             ])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL])
+            ->tag('monolog.logger', ['channel' => $channel])
             ->public();
         $services->alias(IndexNowKit::class, 'indexnowkit')->public();
 
@@ -241,12 +248,12 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.key_provider'), $keyFileEnabled]);
         $services->alias(KeyFileResponder::class, 'indexnowkit.key_file_responder');
         $services->set(KeyFileController::class)
-            ->args([service('indexnowkit.key_file_responder'), $config['key_file']['cache_max_age']])
+            ->args([service('indexnowkit.key_file_responder'), $config['key_file']['cache_max_age'], $config['hosts'] !== []])
             ->tag('controller.service_arguments')
             ->public();
 
         // Profiler --------------------------------------------------------------------------------------------------
-        if ($this->bundleEnabled($builder, 'WebProfilerBundle')) {
+        if ($config['profiler']['enabled'] && $this->bundleEnabled($builder, 'WebProfilerBundle')) {
             $services->set('indexnowkit.result_recorder', ResultRecorder::class)
                 ->args([service('indexnowkit.submitter')])
                 ->tag('kernel.reset', ['method' => 'reset']);
@@ -265,14 +272,14 @@ final class IndexNowKitLoader
             $sitemap = $config['sitemap'];
             $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
                 ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts'], SpoolMode::from($sitemap['spool']), $sitemap['spool_dir'], $sitemap['fetch_retries']])
-                ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+                ->tag('monolog.logger', ['channel' => $channel]);
             $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
             $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
             $services->set(SitemapCommand::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url']])->tag('console.command');
         }
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid()])
+            ->tag('monolog.logger', ['channel' => $channel]);
 
         $services->set(KeyGenerateCommand::class)->args(['%kernel.project_dir%'])->tag('console.command');
         $services->set(CheckCommand::class)->args([service('indexnowkit.checker'), $config, '%kernel.environment%', '%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('console.command');
@@ -280,28 +287,30 @@ final class IndexNowKitLoader
 
         // Doctrine --------------------------------------------------------------------------------------------------
         if ($doctrine) {
-            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit'), service('doctrine'), service('indexnowkit.command_submitter_factory')])->tag('console.command');
-            $services->set(ExplainCommand::class)->args([service('indexnowkit'), service('doctrine'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer')])->tag('console.command');
+            $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
+            $services->alias(EntityLoaderInterface::class, 'indexnowkit.entity_loader');
+            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory')])->tag('console.command');
+            $services->set(ExplainCommand::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer')])->tag('console.command');
         }
         if ($doctrine && $config['enabled']) {
-            $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger);
+            $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);
         }
     }
 
     /**
      * @param list<string> $connections
      */
-    private function loadDoctrine(ServicesConfigurator $services, int $priority, array $connections, mixed $logger): void
+    private function loadDoctrine(ServicesConfigurator $services, int $priority, array $connections, mixed $logger, string $channel): void
     {
         $services->set('indexnowkit.doctrine.staging', TransactionStaging::class)
             ->args([null, $logger])
             ->call('setSink', [[service('indexnowkit.doctrine.sink'), 'deliver']])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->set('indexnowkit.doctrine.sink', StagingSink::class)->args([service('indexnowkit')]);
         $middleware = $services->set('indexnowkit.doctrine.middleware', IndexNowMiddleware::class)->args([service('indexnowkit.doctrine.staging')]);
         $listener = $services->set('indexnowkit.doctrine.listener', IndexNowListener::class)
             ->args(['$indexNow' => service('indexnowkit'), '$resolver' => null, '$staging' => service('indexnowkit.doctrine.staging'), '$logger' => $logger, '$autoFlush' => false])
-            ->tag('monolog.logger', ['channel' => self::LOG_CHANNEL]);
+            ->tag('monolog.logger', ['channel' => $channel]);
         foreach ($connections === [] ? [null] : $connections as $connection) {
             $scope = $connection === null ? [] : ['connection' => $connection];
             $middleware->tag('doctrine.middleware', $scope);

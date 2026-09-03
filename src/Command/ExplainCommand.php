@@ -6,7 +6,6 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use BackedEnum;
 use Closure;
-use Doctrine\Persistence\ManagerRegistry;
 use IndexNowKit\Attribute\Param\Equals;
 use IndexNowKit\Attribute\UrlRule;
 use IndexNowKit\Config;
@@ -34,18 +33,15 @@ use Throwable;
 #[AsCommand(name: 'indexnow:explain', description: 'Explain what IndexNow would do for one entity: rules, guards, URLs, key, debounce (sends nothing)')]
 final class ExplainCommand extends Command
 {
-    private readonly EntityLoader $entities;
-
     public function __construct(
         private readonly IndexNowKit $indexNow,
-        ManagerRegistry $doctrine,
+        private readonly EntityLoaderInterface $entities,
         private readonly Config $config,
         private readonly KeyProviderInterface $keys,
         private readonly DebounceStoreInterface $debounce,
         private readonly UrlNormalizerInterface $normalizer,
     ) {
         parent::__construct();
-        $this->entities = new EntityLoader($doctrine);
     }
 
     protected function configure(): void

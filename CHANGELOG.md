@@ -59,6 +59,18 @@ contain breaking changes, listed under "Changed".
   takes a local path or `file://` URL and reads text sitemaps.
 - **[docs/extending.md](docs/extending.md)**: every service id, its interface, its config knob, and whether to
   configure, decorate or replace it; worked examples for the sitemap source, the transport and the key provider.
+- **Configurability round.** New nodes: `previous_key` and `hosts.<host>.previous_key` (key rotation without
+  downtime), `hosts.<host>.engines` (per-host engines), `production_environments`, `max_url_length`,
+  `logging.{channel, max_urls, forbidden_escalation, levels}`, `resolver.{max_via_depth, max_via_fanout}`,
+  `collector.{max_urls, detect_leaks}`, `profiler.enabled`, `debounce.key_prefix`, `messenger.{delay, stamps}`.
+  `indexnow:check --probe-url`. New aliases: `ClientInterface` (`indexnowkit.client`) and
+  `Command\EntityLoaderInterface` (`indexnowkit.entity_loader`, the entity lookup of `submit-entity` / `explain`).
+- The key file answers with `Vary: Host` when a `hosts` map is configured, so a shared cache never serves one
+  host's key to another.
+- Compile-time validation for literal `key_location`, `previous_key`, `http.user_agent` (no line breaks),
+  `key_file.path` (leading `/`) and `logging.levels`; `serve_key_file` is formally deprecated.
+- `indexnow:check` warns in production when `strict_hosts` is off: a staging copy reached under another hostname
+  would submit its URLs under the production key.
 - `indexnow:key:generate --write-env` is idempotent: an existing `INDEXNOW_KEY` line is left alone and reported as
   success, and `--force` rotates it with a warning about the propagation window.
 
@@ -88,6 +100,9 @@ contain breaking changes, listed under "Changed".
 - `kernel.environment` feeds the core's `environment`, which enables the dry-run safety net outside `prod`.
 
 ### Fixed
+
+- `--force` / `--dry-run` submitters built by `SubmitterFactory` now dispatch `Result` events too: PSR-14
+  listeners (metrics) no longer miss manual submissions.
 
 - The Flex recipe ships a working multi-environment default: `dry_run: true` in `dev` and `test`, with the
   multi-domain, Messenger and scoped-client blocks present as commented examples.

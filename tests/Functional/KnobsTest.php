@@ -1,0 +1,81 @@
+<?php
+
+declare(strict_types=1);
+
+namespace IndexNowKit\SymfonyBundle\Tests\Functional;
+
+use IndexNowKit\Config;
+use IndexNowKit\Http\Response;
+use IndexNowKit\IndexNowKit;
+use IndexNowKit\SymfonyBundle\Command\EntityLoaderInterface;
+use IndexNowKit\SymfonyBundle\Tests\App\ResultRecorderListener;
+
+/**
+ * The options added by the configurability audit reach the core: previous keys are served, per-host engines route,
+ * log channel/levels/sampling apply, resolver and collector limits are wired, the profiler can be switched off.
+ */
+final class KnobsTest extends BundleTestCase
+{
+    protected static string $dispatch = 'knobs';
+
+    public function testConfigReachesTheCore(): void
+    {
+        static::bootKernel();
+        $config = static::getContainer()->get(Config::class);
+        \assert($config instanceof Config);
+
+        self::assertSame('previous1234567890', $config->previousKey);
+        self::assertSame(['live'], $config->productionEnvironments);
+        self::assertSame(300, $config->maxUrlLength);
+        self::assertSame('info', $config->logLevel('debounced'));
+        self::assertSame(['a'], $config->logSample(['a', 'b']));
+        self::assertSame(1, $config->resolverMaxViaDepth);
+        self::assertSame(2, $config->collectorMaxUrls);
+        self::assertSame(['https://yandex.com/indexnow'], $config->endpointsFor('example.ru'));
+        self::assertSame('seo', static::getContainer()->getParameter('indexnowkit.log_channel'));
+        self::assertFalse(static::getContainer()->has('indexnowkit.data_collector'));
+        self::assertTrue(static::getContainer()->has(EntityLoaderInterface::class));
+    }
+
+    public function testPreviousKeyFileIsServedWithVaryHost(): void
+    {
+        $client = $this->browser();
+        $client->request('GET', '/previous1234567890.txt');
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertResponseHeaderSame('Vary', 'Host');
+    }
+
+    public function testSubmitForceStillFiresResultEvents(): void
+    {
+        $tester = $this->tester('indexnow:submit');
+        self::assertSame(0, $tester->execute(['urls' => ['https://www.example.com/a', 'https://example.ru/b'], '--force' => true]));
+
+        $listener = static::getContainer()->get(ResultRecorderListener::class);
+        \assert($listener instanceof ResultRecorderListener);
+        self::assertCount(2, $listener->results, 'one Result per host, both dispatched as events by the --force submitter');
+        self::assertSame(['https://api.indexnow.org/indexnow', 'https://yandex.com/indexnow'], array_column($this->transport()->posts, 'url'));
+    }
+
+    public function testCheckAcceptsAProbeUrl(): void
+    {
+        $this->transport()->onGet('https://www.example.com/' . \IndexNowKit\Tests\Support\Factory::KEY . '.txt', new Response(200, \IndexNowKit\Tests\Support\Factory::KEY));
+        $this->transport()->onGet('https://example.ru/ru1234567890abcd.txt', new Response(200, 'ru1234567890abcd'));
+        $tester = $this->tester('indexnow:check');
+
+        $tester->execute(['--live' => true, '--host' => 'www.example.com', '--probe-url' => 'https://www.example.com/blog/hello']);
+
+        self::assertSame(['https://www.example.com/blog/hello'], $this->transport()->posts[0]['body']['urlList']);
+    }
+
+    public function testCollectorMaxUrlsFlushesEarlyThroughTheFacade(): void
+    {
+        static::bootKernel();
+        $kit = static::getContainer()->get('indexnowkit');
+        \assert($kit instanceof IndexNowKit);
+
+        $kit->collect(['https://www.example.com/1', 'https://www.example.com/2']);
+
+        self::assertSame(['https://www.example.com/1', 'https://www.example.com/2'], $this->sentUrls(), 'collector.max_urls: 2 flushed without waiting for kernel.terminate');
+    }
+}

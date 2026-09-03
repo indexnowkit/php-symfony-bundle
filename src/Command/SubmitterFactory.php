@@ -14,6 +14,7 @@ use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\Throttle\ThrottleInterface;
 use IndexNowKit\Url\UrlNormalizerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -30,6 +31,7 @@ final class SubmitterFactory
         private readonly ThrottleInterface $throttle,
         private readonly UrlNormalizerInterface $normalizer,
         private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly ?EventDispatcherInterface $events = null,
     ) {}
 
     public function create(bool $force, bool $dryRun): SubmitterInterface
@@ -37,6 +39,6 @@ final class SubmitterFactory
         $config = $dryRun ? $this->config->with(dryRun: true) : $this->config;
         $client = new Client($this->transport, $this->keys, $config, $this->logger, $this->throttle, $this->normalizer);
 
-        return new Submitter($client, $config, $force ? new NullDebounceStore() : $this->debounce, $this->logger, $this->normalizer);
+        return new Submitter($client, $config, $force ? new NullDebounceStore() : $this->debounce, $this->logger, $this->normalizer, $this->events);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\App;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use IndexNowKit\Result;
 use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
@@ -102,7 +103,7 @@ final class TestKernel extends Kernel
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
         }
-        if ($this->dispatch === 'messenger') {
+        if ($this->dispatch === 'messenger' || $this->dispatch === 'messengerdelay') {
             $framework['messenger'] = [
                 'transports' => ['async' => 'in-memory://'],
                 'routing' => [SubmitUrlsMessage::class => 'async'],
@@ -130,6 +131,7 @@ final class TestKernel extends Kernel
             $container->services()->set(CustomUrlResolver::class)->autoconfigure();
         }
         $container->services()->set(FakeTransport::class)->public();
+        $container->services()->set(ResultRecorderListener::class)->public()->tag('kernel.event_listener', ['event' => Result::class, 'method' => '__invoke']);
         if ($this->dispatch === 'sitemapsource') {
             $container->services()->set(FilteringSitemapSource::class)->autowire()->autoconfigure();
         }
@@ -148,7 +150,7 @@ final class TestKernel extends Kernel
             'base_url' => 'https://www.example.com',
             'dispatch' => 'sync',
             'debounce' => ['per_url' => 0],
-            'serve_key_file' => $this->dispatch !== 'nokey',
+            'key_file' => ['enabled' => $this->dispatch !== 'nokey'],
         ];
         switch ($this->dispatch) {
             case 'messenger':
@@ -179,7 +181,20 @@ final class TestKernel extends Kernel
                 break;
             case 'keyfilepath':
                 $config['key_file'] = ['path' => '/keys/{key}.txt', 'cache_max_age' => 3600];
-                unset($config['serve_key_file']);
+                break;
+            case 'knobs':
+                $config['previous_key'] = 'previous1234567890';
+                $config['production_environments'] = ['live'];
+                $config['max_url_length'] = 300;
+                $config['logging'] = ['channel' => 'seo', 'max_urls' => 1, 'levels' => ['debounced' => 'info']];
+                $config['resolver'] = ['max_via_depth' => 1, 'max_via_fanout' => 5];
+                $config['collector'] = ['max_urls' => 2, 'detect_leaks' => false];
+                $config['hosts'] = ['example.ru' => ['key' => 'ru1234567890abcd', 'engines' => ['yandex']]];
+                $config['profiler'] = ['enabled' => false];
+                break;
+            case 'messengerdelay':
+                $config['dispatch'] = 'messenger';
+                $config['messenger'] = ['delay' => 30000];
                 break;
             case 'scopedclient':
                 $config['http'] = ['client' => 'app.scoped_http_client'];

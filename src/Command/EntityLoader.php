@@ -11,7 +11,7 @@ use IndexNowKit\Exception\InvalidArgumentException;
 /**
  * Resolves the class argument (FQCN or App\Entity short name) and loads entities by id for the entity commands.
  */
-final class EntityLoader
+final class EntityLoader implements EntityLoaderInterface
 {
     public function __construct(private readonly ManagerRegistry $doctrine) {}
 

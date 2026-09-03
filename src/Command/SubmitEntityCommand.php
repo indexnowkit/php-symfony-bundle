@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
-use Doctrine\Persistence\ManagerRegistry;
 use IndexNowKit\Event;
 use IndexNowKit\Exception\InvalidArgumentException;
 use IndexNowKit\IndexNowKit;
@@ -20,12 +19,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve the URLs of Doctrine entities through their #[IndexNow] rules and submit them')]
 final class SubmitEntityCommand extends Command
 {
-    private readonly EntityLoader $entities;
-
-    public function __construct(private readonly IndexNowKit $indexNow, ManagerRegistry $doctrine, private readonly SubmitterFactory $submitters)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly EntityLoaderInterface $entities, private readonly SubmitterFactory $submitters)
     {
         parent::__construct();
-        $this->entities = new EntityLoader($doctrine);
     }
 
     protected function configure(): void

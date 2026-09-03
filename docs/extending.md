@@ -16,19 +16,22 @@ the order you should try them:
 |---|---|---|---|---|
 | HTTP client | `indexnowkit.transport.real` (built by `TransportFactory`) | PSR-18 `ClientInterface` or symfony `HttpClientInterface` | `http.client`, `http.timeout`, `http.user_agent` | point `http.client` at any client service: scoped client, proxy, `RetryableHttpClient`, extra headers |
 | Transport | `indexnowkit.transport` (lazy, wraps the real one) | `Http\TransportInterface`; `Http\StreamingTransportInterface` for streamed GET | | decorate; see the streaming note below |
-| Key provider | `indexnowkit.key_provider` | `Key\KeyProviderInterface` | `key`, `hosts`, `key_location`, `strict_hosts` | replace for keys from a database or a vault |
+| Key provider | `indexnowkit.key_provider` | `Key\KeyProviderInterface` | `key`, `hosts`, `key_location`, `previous_key`, `strict_hosts` | replace for keys from a database or a vault; a rotation needs only `previous_key` |
 | Key file endpoint | `indexnowkit.key_file_responder` + `KeyFileController` | `Key\KeyFileResponder` (final class) | `key_file.*` | disable it and serve the file yourself |
-| URL normalizer | `indexnowkit.url_normalizer` | `Url\UrlNormalizerInterface` | `base_url` | decorate to strip tracking parameters, force a canonical host |
-| URL resolver | `indexnowkit.url_resolver` | `Url\UrlResolverInterface` | `#[IndexNow]` rules | decorate, or add resolvers referenced by `#[IndexNow(resolver:)]` ([custom-resolvers.md](custom-resolvers.md)) |
+| URL normalizer | `indexnowkit.url_normalizer` | `Url\UrlNormalizerInterface` | `base_url`, `max_url_length` | decorate to strip tracking parameters, force a canonical host, or allow only some paths (throw `InvalidUrlException`: the URL becomes a `skipped/invalid_url` result). This is the one hook every path shares, including `--force` / `--dry-run` commands |
+| URL resolver | `indexnowkit.url_resolver` | `Url\UrlResolverInterface` | `#[IndexNow]` rules, `resolver.max_via_depth`, `resolver.max_via_fanout` | decorate, or add resolvers referenced by `#[IndexNow(resolver:)]` ([custom-resolvers.md](custom-resolvers.md)) |
 | Attribute reader | `indexnowkit.attribute_reader` | `Attribute\AttributeReaderInterface` | | decorate with `RuleRegistry` to register rules at runtime |
 | Guarded resolver / change handler | `indexnowkit.guarded_url_resolver`, `indexnowkit.change_handler` | `Url\GuardedUrlResolver`, `Url\ObjectChangeHandler` (final) | | consume them; the ORM listener and the commands do |
-| Submitter | `indexnowkit.submitter` | `SubmitterInterface` | `batch.max_urls`, `debounce.*`, `dry_run`, `engines` | decorate (`RetryingSubmitter` is an example); listeners via PSR-14 events |
-| Collector | `indexnowkit.collector` | `Collector\CollectorInterface` | | replace for a different per-request store |
-| Dispatcher | `indexnowkit.dispatcher` | `Dispatch\DispatcherInterface` | `dispatch`, `messenger.*` | replace for another queue (`dispatch: none` + your own drain of the collector) |
-| Debounce store | `indexnowkit.debounce_store` | `Debounce\DebounceStoreInterface` | `debounce.store` (any PSR-6 pool, `memory`, `none`) | replace |
+| Client (HTTP half) | `indexnowkit.client` | `ClientInterface` | `engines`, `hosts.<host>.engines`, `batch.max_urls`, `logging.*` | decorate for per-host policy or metrics at request level |
+| Submitter | `indexnowkit.submitter` | `SubmitterInterface` | `debounce.*`, `dry_run`, `enabled` | decorate (`RetryingSubmitter` is an example); listeners via PSR-14 events. Note: `--force` / `--dry-run` commands build their own `Submitter` through `SubmitterFactory` and bypass a decorator here (they do fire the PSR-14 events) |
+| Collector | `indexnowkit.collector` | `Collector\CollectorInterface` | `collector.max_urls`, `collector.detect_leaks` | replace for a different per-request store |
+| Dispatcher | `indexnowkit.dispatcher` | `Dispatch\DispatcherInterface` | `dispatch`, `messenger.transport`, `messenger.delay`, `messenger.stamps` | replace for another queue (`dispatch: none` + your own drain of the collector). A decorator cannot add stamps after the fact: use `messenger.stamps` |
+| Debounce store | `indexnowkit.debounce_store` | `Debounce\DebounceStoreInterface` | `debounce.store` (any PSR-6 pool, `memory`, `none`), `debounce.key_prefix` | replace |
 | Throttle | `indexnowkit.throttle` | `Throttle\ThrottleInterface` | `throttle.max_requests_per_minute` | replace for a shared (Redis) limiter |
 | Sitemap source | `indexnowkit.sitemap_reader` | `Sitemap\SitemapSourceInterface` | `sitemap.*` | decorate to filter or rewrite entries; replace to read from another place or format |
-| Doctrine listener | `indexnowkit.doctrine.listener` | `IndexNowListener` (final) | `doctrine.*` | disable and write your own on top of `ObjectChangeHandler` |
+| Entity loader (commands) | `indexnowkit.entity_loader` | `Command\EntityLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format |
+| Doctrine listener | `indexnowkit.doctrine.listener` | `IndexNowListener` (final) | `doctrine.*` | disable and write your own on top of `ObjectChangeHandler`; skip a namespace by decorating the attribute reader to return an empty `RuleSet` |
+| Logging | every service, channel `logging.channel` | PSR-3 | `logging.channel`, `logging.levels`, `logging.max_urls`, `logging.forbidden_escalation` | route the channel in `monolog.yaml`; per-outcome levels need no code |
 
 Not replaceable on purpose: the spool the sitemap reader parses through (`Sitemap\Spool`), the rule compiler and
 the result/reason value objects. They are the parts a wrong replacement would silently break, and they have no
@@ -121,6 +124,14 @@ services:
 
 `indexnow:check`, the key file controller, the profiler panel and `explain` all go through the alias, so they
 report your keys.
+
+## Submitting from your own domain events
+
+Nothing here needs Doctrine. Call the facade from the service that knows the page changed (a CMS publish action,
+a MongoDB document listener, an import): `$indexNow->submitEntity($page, Event::Updated)` resolves the URLs from
+the `#[IndexNow]` rules of the object and submits at once; `$indexNow->collect($urls)` + the request-end flush
+delivers through the configured dispatcher instead. Objects that cannot carry attributes get their rules from
+`RuleRegistry::registerFor()` (decorate `indexnowkit.attribute_reader`).
 
 ## Listening instead of replacing
 

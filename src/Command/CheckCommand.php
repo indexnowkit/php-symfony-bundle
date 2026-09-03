@@ -38,7 +38,8 @@ final class CheckCommand extends Command
     {
         $this
             ->addOption('live', null, InputOption::VALUE_NONE, 'Send a real probe request (site root URL) to every configured engine')
-            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Check only this host (multi-domain setups)');
+            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Check only this host (multi-domain setups)')
+            ->addOption('probe-url', null, InputOption::VALUE_REQUIRED, 'Page to send with --live (default: https://<host>/; give a real page when the root redirects)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -57,7 +58,8 @@ final class CheckCommand extends Command
         }
 
         $host = $input->getOption('host');
-        $report = $this->checker->run(liveProbe: (bool) $input->getOption('live'), onlyHost: \is_string($host) && $host !== '' ? $host : null);
+        $probeUrl = $input->getOption('probe-url');
+        $report = $this->checker->run(liveProbe: (bool) $input->getOption('live'), onlyHost: \is_string($host) && $host !== '' ? $host : null, probeUrl: \is_string($probeUrl) && $probeUrl !== '' ? $probeUrl : null);
         foreach ($report->items() as $item) {
             match ($item->level) {
                 CheckLevel::Ok => $io->writeln('  <fg=green>✔</> ' . $item->message),

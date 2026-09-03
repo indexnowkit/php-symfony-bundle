@@ -111,7 +111,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 
 | Command | Options |
 |---|---|
-| `indexnow:check` | `--live` send a real probe · `--host` check one host only |
+| `indexnow:check` | `--live` send a real probe · `--host` check one host only · `--probe-url` page to probe when the root redirects |
 | `indexnow:submit <urls...>` | `-f, --force` ignore the debounce store · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` or `deleted` · `--limit` (default 1000, when no ids) · `--explain` show rule → URL and send nothing · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` or `deleted` |
