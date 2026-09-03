@@ -46,7 +46,7 @@ final class SitemapCommand extends Command
         $since = null;
         $sinceOption = $input->getOption('changed-since');
         if (\is_string($sinceOption) && $sinceOption !== '') {
-            $since = new DateTimeImmutable(preg_match('/^\d+\s*\w+$/', $sinceOption) ? '-' . $sinceOption : $sinceOption);
+            $since = new DateTimeImmutable(preg_match('/^\d+\s*\w+$/', $sinceOption) === 1 ? '-' . $sinceOption : $sinceOption);
         }
 
         $urls = [];
@@ -54,7 +54,7 @@ final class SitemapCommand extends Command
             $urls[] = $entry->url;
         }
         $io->text(\sprintf('%d URL(s) found in %s%s', \count($urls), $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : ''));
-        if ($input->getOption('dry-run')) {
+        if ($input->getOption('dry-run') === true) {
             $io->listing($urls);
 
             return Command::SUCCESS;

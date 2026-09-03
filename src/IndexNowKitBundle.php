@@ -23,6 +23,7 @@ final class IndexNowKitBundle extends AbstractBundle
     /**
      * @param array<string, mixed> $config
      */
+    // @phpstan-ignore-next-line method.childParameterType
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         (new IndexNowKitLoader())->load($config, $container, $builder);

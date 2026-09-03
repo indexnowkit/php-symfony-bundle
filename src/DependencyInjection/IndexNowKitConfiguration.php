@@ -6,6 +6,7 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use IndexNowKit\Config;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 
 /**
@@ -15,7 +16,7 @@ final class IndexNowKitConfiguration
 {
     public static function build(DefinitionConfigurator $definition): void
     {
-        /** @var ArrayNodeDefinition $root */
+        /** @var ArrayNodeDefinition<TreeBuilder<'array'>> $root */
         $root = $definition->rootNode();
         $root
             ->children()
