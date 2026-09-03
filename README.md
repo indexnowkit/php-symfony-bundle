@@ -188,7 +188,7 @@ every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the m
 
 | | |
 |---|---|
-| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), laravel (soon) |
+| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), [laravel](https://github.com/indexnowkit/php/tree/main/packages/laravel) |
 | JS/TS | @indexnowkit/core, next, prisma (soon) |
 | Python | indexnowkit, indexnowkit-django (soon) |
 
