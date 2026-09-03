@@ -83,6 +83,8 @@ bin/console indexnow:sitemap --changed-since="1 day"
 ## Ограничения
 
 - DQL/QueryBuilder `UPDATE`/`DELETE` обходят unit of work: используйте `indexnow:submit` или `$indexNow->submit()`.
-- Поддомены — отдельные хосты, каждому свой ключ через карту `hosts`.
+- Поддомены — отдельные хосты, каждому свой ключ через карту `hosts`
+  (`shop.example.com: {key: '...', key_location: 'https://shop.example.com/keys/indexnow.txt'}`, если файл ключа не в `/{key}.txt`).
+- Вне `prod` отсутствующий `INDEXNOW_KEY` включает `dry_run` вместо ошибки: dev и test никогда не бьют в реальный API.
 
 MIT.

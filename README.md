@@ -71,7 +71,8 @@ bin/console indexnow:check --live   # also sends a probe request
   to an async transport to get retries with back-off on 429/5xx), otherwise sends synchronously after the response.
 - The same URL is not re-sent within **10 minutes** (`debounce.per_url`, stored in `cache.app`), batches are split at
   **10 000 URLs**, hosts are grouped, `202` is success, `403` tells you to check the key file.
-- Failures are logged on the `indexnow` channel and never break your request.
+- Failures are logged on the `indexnow` channel and never break your request. `http.timeout` (10 s) and
+  `throttle.max_requests_per_minute` (60, per HTTP request) apply to the discovered `symfony/http-client`.
 
 ## Manual submission
 
@@ -94,7 +95,9 @@ Logs go to the `indexnow` Monolog channel.
 ## Limitations
 
 - DQL / QueryBuilder bulk `UPDATE`/`DELETE` bypass the unit of work: use `indexnow:submit` or `$indexNow->submit()`.
-- Sub-domains are separate hosts: give each its own key with the `hosts` map.
+- Sub-domains are separate hosts: give each its own key with the `hosts` map
+  (`shop.example.com: {key: '...', key_location: 'https://shop.example.com/keys/indexnow.txt'}` when the key file is not at `/{key}.txt`).
+- Outside `prod`, a missing `INDEXNOW_KEY` switches `dry_run` on instead of failing, so dev and test environments never hit the real API.
 
 ## Other frameworks
 

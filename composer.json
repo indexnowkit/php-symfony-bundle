@@ -7,8 +7,8 @@
     "homepage": "https://indexnowkit.dev/php/symfony",
     "require": {
         "php": "^8.2",
-        "indexnowkit/core": "^0.1",
-        "indexnowkit/doctrine": "^0.1",
+        "indexnowkit/core": "^0.2",
+        "indexnowkit/doctrine": "^0.2",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/dependency-injection": "^6.4 || ^7.0",
         "symfony/http-kernel": "^6.4 || ^7.0",
@@ -27,6 +27,6 @@
         "psr-4": {"IndexNowKit\\SymfonyBundle\\": "src/"}
     },
     "extra": {
-        "branch-alias": {"dev-main": "0.1-dev"}
+        "branch-alias": {"dev-main": "0.2-dev"}
     }
 }

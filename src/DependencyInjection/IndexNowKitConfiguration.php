@@ -21,7 +21,7 @@ final class IndexNowKitConfiguration
             ->children()
                 ->booleanNode('enabled')->defaultTrue()->end()
                 ->scalarNode('key')->defaultNull()->info('Default IndexNow key, usually %env(INDEXNOW_KEY)%')->end()
-                ->arrayNode('hosts')->info('Per-host keys for multi-site setups')->useAttributeAsKey('host')->scalarPrototype()->end()->end()
+                ->arrayNode('hosts')->info('Per-host keys for multi-site setups: host => key, or host => {key, key_location}')->useAttributeAsKey('host')->variablePrototype()->end()->end()
                 ->scalarNode('key_location')->defaultNull()->end()
                 ->scalarNode('base_url')->defaultNull()->info('Absolute site URL used outside HTTP requests (console, workers)')->end()
                 ->arrayNode('engines')->defaultValue(['api'])->scalarPrototype()->end()->end()
