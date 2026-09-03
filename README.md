@@ -167,8 +167,10 @@ An invalid configuration does not throw from a flush: IndexNow is disabled, one 
   Swoole, RoadRunner or FrankenPHP prefer `dispatch: messenger`.
 - Long-running custom commands should call `$indexNow->flush()` periodically instead of accumulating URLs for the
   whole process lifetime.
-- Outside `prod`, a missing `INDEXNOW_KEY` switches `dry_run` on instead of failing, so dev and test never hit the
-  real API.
+- Outside production (`production_environments`, default `prod`/`production`), a missing `INDEXNOW_KEY` switches
+  `dry_run` on instead of failing, so dev and test never hit the real API.
+- A renamed page (changed slug) announces its old URL as deleted and the new one as updated in the same flush; an
+  entity whose slug is a `readonly` property only gets the new URL (logged at `debug`).
 
 ## Other frameworks
 

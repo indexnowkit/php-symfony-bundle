@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use IndexNowKit\Result;
 use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
+use IndexNowKit\SymfonyBundle\Tests\App\Check\CdnCheck;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\SymfonyBundle\Tests\App\Resolver\CustomUrlResolver;
 use IndexNowKit\SymfonyBundle\Tests\App\Sitemap\FilteringSitemapSource;
@@ -135,6 +136,9 @@ final class TestKernel extends Kernel
         if ($this->dispatch === 'sitemapsource') {
             $container->services()->set(FilteringSitemapSource::class)->autowire()->autoconfigure();
         }
+        if ($this->dispatch === 'knobs') {
+            $container->services()->set(CdnCheck::class)->autoconfigure();
+        }
         if ($this->dispatch === 'scopedclient') {
             $container->services()->set('app.scoped_http_client', MockHttpClient::class)->public();
         }
@@ -189,8 +193,12 @@ final class TestKernel extends Kernel
                 $config['logging'] = ['channel' => 'seo', 'max_urls' => 1, 'levels' => ['debounced' => 'info']];
                 $config['resolver'] = ['max_via_depth' => 1, 'max_via_fanout' => 5];
                 $config['collector'] = ['max_urls' => 2, 'detect_leaks' => false];
-                $config['hosts'] = ['example.ru' => ['key' => 'ru1234567890abcd', 'engines' => ['yandex']]];
+                $config['hosts'] = ['example.ru' => ['key' => 'ru1234567890abcd', 'engines' => ['yandex', 'corp']]];
+                $config['engine_aliases'] = ['corp' => 'https://index.corp.example/indexnow'];
+                $config['locale_hosts'] = ['ru' => 'example.ru'];
                 $config['profiler'] = ['enabled' => false];
+                $config['flush'] = ['priority' => -500];
+                $config['key_file'] = ['route_name' => 'seo_key_file'];
                 break;
             case 'messengerdelay':
                 $config['dispatch'] = 'messenger';

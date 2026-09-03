@@ -52,8 +52,15 @@ indexnowkit:
     max_url_length:       2048
 
     # api = api.indexnow.org, the shared endpoint reaching Yandex, Bing, Naver, Seznam and Yep.
-    # Name a single engine only to target it, or give a full https endpoint URL.
+    # Name a single engine only to target it, or give a full https endpoint URL (or an alias below).
     engines:              [api]
+
+    # Short names for custom endpoints, usable in engines and hosts.<host>.engines.
+    engine_aliases:       {}                      # { corp: 'https://index.corp.example/indexnow' }
+
+    # locale => host. A rule with `locales` and no `host` generates each locale on its host
+    # (en on www.example.com, de on example.de). List those hosts in `hosts` with their keys.
+    locale_hosts:         {}                      # { en: www.example.com, de: example.de }
 
     # auto = messenger when a Messenger transport is configured, otherwise sync.
     # sync = submit after the response was sent (kernel.terminate). none = collect, never send.
@@ -86,7 +93,8 @@ indexnowkit:
         key_prefix:       indexnowkit_
 
     throttle:
-        # Outgoing requests per minute, per process. 0 = unlimited.
+        # Outgoing requests per minute, per process: N workers get N buckets. For a site-wide limit replace
+        # indexnowkit.throttle (ThrottleInterface) with a shared limiter, e.g. on symfony/rate-limiter + Redis.
         max_requests_per_minute: 60
 
     http:
@@ -106,6 +114,8 @@ indexnowkit:
         path:             '/{key}.txt'
         # Restrict the route to this host pattern (a Symfony route host requirement). Default: any host.
         host:             null
+        # Name of the route; rename it when it clashes with an existing one.
+        route_name:       indexnowkit_key_file
         # Cache-Control max-age in seconds. Keep it short so a key rotation propagates quickly.
         cache_max_age:    300
 
@@ -122,6 +132,8 @@ indexnowkit:
         max_urls:         20
         # Consecutive 403s for one host before the log level escalates to critical (the line to page on).
         forbidden_escalation: 5
+        # Bytes of an engine response body kept in a failure log line.
+        max_body:         300
         # Override the level of an outcome. Events and their defaults: ok (debug), pending (info),
         # invalid_request (error), unprocessable (warning), rate_limited (warning), server_error (warning),
         # unexpected (error), transport (warning), no_key (warning), dry_run (info), disabled (info),
@@ -144,6 +156,13 @@ indexnowkit:
     profiler:
         # Register the profiler panel when WebProfilerBundle is present.
         enabled:          true
+
+    flush:
+        # Listener priority of the kernel.terminate flush. Default -1000: before the profiler (-1024),
+        # so results land in the panel. Raise or lower it to order against your own terminate listeners.
+        priority:         -1000
+        # Same for console.terminate and the Messenger WorkerMessageHandledEvent flush.
+        console_priority: -1024
 
     sitemap:
         # Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing
@@ -205,6 +224,9 @@ The container fails to build when:
 
 Literal values only. A `%env(...)%` placeholder is resolved at runtime, so it is skipped here and validated by the
 core's `Config` instead — see the next section.
+
+Core options with no node here: `retry.*` (Symfony retries through Messenger's `retry_strategy`, so the core
+`RetryPolicy` is not used by the bundle) and `serve_key_file`, replaced by `key_file.enabled`.
 
 ## Environment placeholders and runtime failures
 
@@ -276,6 +298,10 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
 | `Sitemap\SitemapSourceInterface` (and `Sitemap\SitemapReader`) | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
 | `Command\EntityLoaderInterface` | `indexnowkit.entity_loader` (only with Doctrine) |
+| `Check\CheckerInterface` | `indexnowkit.checker` (runs every `Check\CheckInterface` service, autoconfigured with the `indexnowkit.check` tag) |
+| `Command\SubmitterFactoryInterface` | `indexnowkit.command_submitter_factory` |
+| `Command\ResultFormatterInterface` | `indexnowkit.result_formatter` |
+| `Routing\KeyFileRouteLoader` | `indexnowkit.key_file_routes` |
 
 Only `indexnowkit` and `IndexNowKit\IndexNowKit` are public; inject the rest by type where you need them. How to
 decorate or replace each one: [extending.md](extending.md).

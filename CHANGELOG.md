@@ -71,6 +71,13 @@ contain breaking changes, listed under "Changed".
   `key_file.path` (leading `/`) and `logging.levels`; `serve_key_file` is formally deprecated.
 - `indexnow:check` warns in production when `strict_hosts` is off: a staging copy reached under another hostname
   would submit its URLs under the production key.
+- **Closing round.** `engine_aliases`, `locale_hosts`, `logging.max_body`, `flush.{priority, console_priority}`,
+  `key_file.route_name` (the route is now built by the `indexnowkit.key_file_routes` service, imported from
+  `config/routes.php`). Interfaces with aliases for everything a command depends on:
+  `Command\SubmitterFactoryInterface`, `Command\ResultFormatterInterface` (`ResultRenderer` is an instance now),
+  `Check\CheckerInterface`; `Check\CheckInterface` services are autoconfigured (`indexnowkit.check`) and printed by
+  `indexnow:check`. `tests/Functional/CoreConformanceTest.php` runs the core conformance kit against the wired
+  facade; `RenamedUrlTest` covers A21 (old URL of a renamed page announced as deleted).
 - `indexnow:key:generate --write-env` is idempotent: an existing `INDEXNOW_KEY` line is left alone and reported as
   success, and `--force` rotates it with a warning about the propagation window.
 

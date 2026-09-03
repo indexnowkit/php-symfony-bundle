@@ -6,8 +6,6 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use IndexNowKit\Result;
 use IndexNowKit\ResultStatus;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Aggregated output for commands that submit in many batches (`indexnow:sitemap`): results are folded into
@@ -52,31 +50,15 @@ final class ResultSummary
     }
 
     /**
-     * @return int exit code: failure when any result failed
+     * @return list<array{engine: string, host: string, status: string, http: ?int, reason: ?string, retryable: bool, error: ?string, url_count: int, batches: int}>
      */
-    public function render(SymfonyStyle $io, bool $json): int
+    public function rows(): array
     {
-        $rows = array_values($this->rows);
-        if ($json) {
-            $io->writeln((string) json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        return array_values($this->rows);
+    }
 
-            return $this->failed ? Command::FAILURE : Command::SUCCESS;
-        }
-        if ($rows === []) {
-            $io->warning('Nothing submitted: the sitemap yielded no URL.');
-
-            return Command::SUCCESS;
-        }
-        $table = [];
-        foreach ($rows as $row) {
-            $table[] = [$row['engine'], $row['host'], $row['url_count'], $row['batches'], $row['status'], $row['http'] ?? '-', $row['reason'] ?? '', $row['error'] ?? ''];
-        }
-        $io->table(['engine', 'host', 'urls', 'batches', 'status', 'http', 'reason', 'detail'], $table);
-        $skipped = array_filter($rows, static fn(array $row): bool => $row['status'] === ResultStatus::Skipped->value);
-        if ($skipped !== [] && \count($skipped) === \count($rows)) {
-            $io->note('Nothing was sent. The "reason" column says why (dry_run, disabled, debounced, no_key, invalid_url); use --force to bypass the debounce store.');
-        }
-
-        return $this->failed ? Command::FAILURE : Command::SUCCESS;
+    public function failed(): bool
+    {
+        return $this->failed;
     }
 }

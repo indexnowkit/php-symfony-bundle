@@ -33,8 +33,9 @@ final class SitemapCommand extends Command
     public function __construct(
         private readonly IndexNowKit $indexNow,
         private readonly SitemapSourceInterface $reader,
-        private readonly SubmitterFactory $submitters,
+        private readonly SubmitterFactoryInterface $submitters,
         private readonly ?string $defaultSitemap = null,
+        private readonly ResultFormatterInterface $formatter = new ResultRenderer(),
     ) {
         parent::__construct();
     }
@@ -116,7 +117,7 @@ final class SitemapCommand extends Command
             $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
             if ($batches > 0 && !$json) {
                 $io->text(\sprintf('%d URL(s) read before the error were submitted in %d batch(es); re-run the command once the sitemap is reachable.', $found, $batches));
-                $summary->render($io, false);
+                $this->formatter->summary($io, $summary, false);
             }
 
             return Command::FAILURE;
@@ -128,7 +129,7 @@ final class SitemapCommand extends Command
             $io->text(self::foundLine($found, $sitemap, $since));
         }
 
-        return $summary->render($io, $json);
+        return $this->formatter->summary($io, $summary, $json);
     }
 
     private function sitemapUrl(InputInterface $input): ?string

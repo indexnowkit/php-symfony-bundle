@@ -43,6 +43,16 @@ indexnowkit:
         listener_priority: -100
 ```
 
+## Renamed pages
+
+When a field a route parameter reads changes (the slug, the category the path goes through), the old URL now
+answers 404. The listener resolves the rule against the **previous** values of the change set and announces those
+URLs as deleted, next to the new URLs as updated, in the same flush (`ObjectChangeHandler::renamed()`, scenario
+A21). Only route rules; only fields that are writable properties (a `readonly` slug is logged at `debug` and
+skipped); the old page must have been public (`when` true before the change).
+
+## Listener priority
+
 The default is `-100`, low enough to run **after** listeners that compute the values URLs depend on. Gedmo Sluggable
 writes the slug in `onFlush`; if the IndexNow listener ran first it would resolve a route with an empty slug.
 

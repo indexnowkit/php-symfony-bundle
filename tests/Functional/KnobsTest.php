@@ -31,10 +31,50 @@ final class KnobsTest extends BundleTestCase
         self::assertSame(['a'], $config->logSample(['a', 'b']));
         self::assertSame(1, $config->resolverMaxViaDepth);
         self::assertSame(2, $config->collectorMaxUrls);
-        self::assertSame(['https://yandex.com/indexnow'], $config->endpointsFor('example.ru'));
+        self::assertSame(['https://yandex.com/indexnow', 'https://index.corp.example/indexnow'], $config->endpointsFor('example.ru'), 'per-host engines with an alias');
+        self::assertSame(['ru' => 'example.ru'], $config->localeHosts);
         self::assertSame('seo', static::getContainer()->getParameter('indexnowkit.log_channel'));
+        self::assertSame('seo_key_file', static::getContainer()->getParameter('indexnowkit.key_file.route_name'));
         self::assertFalse(static::getContainer()->has('indexnowkit.data_collector'));
         self::assertTrue(static::getContainer()->has(EntityLoaderInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\SymfonyBundle\Command\ResultFormatterInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\SymfonyBundle\Command\SubmitterFactoryInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\Check\CheckerInterface::class));
+    }
+
+    public function testKeyFileRouteIsRegisteredUnderTheConfiguredName(): void
+    {
+        static::bootKernel();
+        $router = static::getContainer()->get('router');
+        \assert($router instanceof \Symfony\Component\Routing\RouterInterface);
+
+        self::assertNotNull($router->getRouteCollection()->get('seo_key_file'));
+        self::assertNull($router->getRouteCollection()->get('indexnowkit_key_file'));
+    }
+
+    public function testFlushPriorityReachesTheListenerTag(): void
+    {
+        static::bootKernel();
+        $dispatcher = static::getContainer()->get('event_dispatcher');
+        \assert($dispatcher instanceof \Symfony\Component\EventDispatcher\EventDispatcherInterface);
+        $priorities = [];
+        foreach ($dispatcher->getListeners('kernel.terminate') as $listener) {
+            if (\is_array($listener) && $listener[0] instanceof \IndexNowKit\SymfonyBundle\EventListener\FlushListener) {
+                $priorities[] = $dispatcher->getListenerPriority('kernel.terminate', $listener);
+            }
+        }
+
+        self::assertSame([-500], $priorities);
+    }
+
+    public function testApplicationChecksAreRunByCheck(): void
+    {
+        $this->transport()->onGet('https://www.example.com/' . \IndexNowKit\Tests\Support\Factory::KEY . '.txt', new Response(200, \IndexNowKit\Tests\Support\Factory::KEY));
+        $this->transport()->onGet('https://example.ru/ru1234567890abcd.txt', new Response(200, 'ru1234567890abcd'));
+        $tester = $this->tester('indexnow:check');
+        $tester->execute([]);
+
+        self::assertStringContainsString('cdn: key file purged from the edge', $tester->getDisplay());
     }
 
     public function testPreviousKeyFileIsServedWithVaryHost(): void
@@ -53,8 +93,8 @@ final class KnobsTest extends BundleTestCase
 
         $listener = static::getContainer()->get(ResultRecorderListener::class);
         \assert($listener instanceof ResultRecorderListener);
-        self::assertCount(2, $listener->results, 'one Result per host, both dispatched as events by the --force submitter');
-        self::assertSame(['https://api.indexnow.org/indexnow', 'https://yandex.com/indexnow'], array_column($this->transport()->posts, 'url'));
+        self::assertCount(3, $listener->results, 'one Result per host and engine, all dispatched as events by the --force submitter');
+        self::assertSame(['https://api.indexnow.org/indexnow', 'https://yandex.com/indexnow', 'https://index.corp.example/indexnow'], array_column($this->transport()->posts, 'url'));
     }
 
     public function testCheckAcceptsAProbeUrl(): void

@@ -16,7 +16,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:submit', description: 'Submit URLs to IndexNow immediately (synchronously, bypassing the queue)')]
 final class SubmitCommand extends Command
 {
-    public function __construct(private readonly IndexNowKit $indexNow, private readonly SubmitterFactory $submitters)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly SubmitterFactoryInterface $submitters, private readonly ResultFormatterInterface $formatter = new ResultRenderer())
     {
         parent::__construct();
     }
@@ -39,6 +39,6 @@ final class SubmitCommand extends Command
         $dryRun = (bool) $input->getOption('dry-run');
         $submitter = $force || $dryRun ? $this->submitters->create($force, $dryRun) : $this->indexNow->submitter;
 
-        return ResultRenderer::render($io, $submitter->submit($urls), (bool) $input->getOption('json'));
+        return $this->formatter->results($io, $submitter->submit($urls), (bool) $input->getOption('json'));
     }
 }

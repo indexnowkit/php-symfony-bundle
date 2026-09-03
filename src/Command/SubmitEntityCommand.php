@@ -19,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve the URLs of Doctrine entities through their #[IndexNow] rules and submit them')]
 final class SubmitEntityCommand extends Command
 {
-    public function __construct(private readonly IndexNowKit $indexNow, private readonly EntityLoaderInterface $entities, private readonly SubmitterFactory $submitters)
+    public function __construct(private readonly IndexNowKit $indexNow, private readonly EntityLoaderInterface $entities, private readonly SubmitterFactoryInterface $submitters, private readonly ResultFormatterInterface $formatter = new ResultRenderer())
     {
         parent::__construct();
     }
@@ -93,7 +93,7 @@ final class SubmitEntityCommand extends Command
         $dryRun = (bool) $input->getOption('dry-run');
         $submitter = $force || $dryRun ? $this->submitters->create($force, $dryRun) : $this->indexNow->submitter;
 
-        return ResultRenderer::render($io, $submitter->submit($urls), $json);
+        return $this->formatter->results($io, $submitter->submit($urls), $json);
     }
 
     /**

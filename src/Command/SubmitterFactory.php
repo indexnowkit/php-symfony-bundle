@@ -21,7 +21,7 @@ use Psr\Log\NullLogger;
 /**
  * Submitters for console commands: `--force` bypasses the debounce store, `--dry-run` logs instead of sending.
  */
-final class SubmitterFactory
+final class SubmitterFactory implements SubmitterFactoryInterface
 {
     public function __construct(
         private readonly TransportInterface $transport,

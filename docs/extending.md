@@ -30,7 +30,12 @@ the order you should try them:
 | Throttle | `indexnowkit.throttle` | `Throttle\ThrottleInterface` | `throttle.max_requests_per_minute` | replace for a shared (Redis) limiter |
 | Sitemap source | `indexnowkit.sitemap_reader` | `Sitemap\SitemapSourceInterface` | `sitemap.*` | decorate to filter or rewrite entries; replace to read from another place or format |
 | Entity loader (commands) | `indexnowkit.entity_loader` | `Command\EntityLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format |
-| Doctrine listener | `indexnowkit.doctrine.listener` | `IndexNowListener` (final) | `doctrine.*` | disable and write your own on top of `ObjectChangeHandler`; skip a namespace by decorating the attribute reader to return an empty `RuleSet` |
+| Command submitter (`--force`, `--dry-run`) | `indexnowkit.command_submitter_factory` | `Command\SubmitterFactoryInterface` | | decorate to wrap what the manual commands submit through |
+| Command output | `indexnowkit.result_formatter` | `Command\ResultFormatterInterface` | | replace to match your CLI's JSON envelope or table style |
+| `indexnow:check` | `indexnowkit.checker` | `Check\CheckerInterface`; add lines with `Check\CheckInterface` services (autoconfigured) | | add checks rather than replacing the checker |
+| Key file route | `indexnowkit.key_file_routes` | `Routing\KeyFileRouteLoader` | `key_file.path`, `key_file.host`, `key_file.route_name` | do not import `config/routes.php` and register your own route to `KeyFileController` |
+| Doctrine listener | `indexnowkit.doctrine.listener` | `IndexNowListener` (final) | `doctrine.*` | disable and write your own on top of `ObjectChangeHandler` (`created()`, `updated()`, `deleted()`, `renamed()`); skip a namespace by decorating the attribute reader to return an empty `RuleSet` |
+| Flush timing | `indexnowkit.flush_listener` | `EventListener\FlushListener` | `flush.priority`, `flush.console_priority` | order against your own terminate listeners |
 | Logging | every service, channel `logging.channel` | PSR-3 | `logging.channel`, `logging.levels`, `logging.max_urls`, `logging.forbidden_escalation` | route the channel in `monolog.yaml`; per-outcome levels need no code |
 
 Not replaceable on purpose: the spool the sitemap reader parses through (`Sitemap\Spool`), the rule compiler and
@@ -132,6 +137,35 @@ a MongoDB document listener, an import): `$indexNow->submitEntity($page, Event::
 the `#[IndexNow]` rules of the object and submits at once; `$indexNow->collect($urls)` + the request-end flush
 delivers through the configured dispatcher instead. Objects that cannot carry attributes get their rules from
 `RuleRegistry::registerFor()` (decorate `indexnowkit.attribute_reader`).
+
+## Adding lines to `indexnow:check`
+
+A service implementing `Check\CheckInterface` is tagged `indexnowkit.check` by autoconfiguration and runs after the
+built-in checks; it adds lines, it cannot throw (an exception becomes an error line naming the class):
+
+```php
+use IndexNowKit\Check\CheckInterface;
+use IndexNowKit\Check\CheckReport;
+
+final class TenantKeysCheck implements CheckInterface
+{
+    public function __construct(private readonly TenantRepository $tenants) {}
+
+    public function check(CheckReport $report): void
+    {
+        $missing = $this->tenants->withoutIndexNowKey();
+        $missing === [] ? $report->ok('tenants: every active tenant has a key') : $report->error(\sprintf('tenants without a key: %s', implode(', ', $missing)));
+    }
+}
+```
+
+## Conformance tests for your integration
+
+`IndexNowKit\Testing\Conformance\CoreConformanceTestCase` (shipped by the core, needs PHPUnit) runs the protocol
+scenarios of the spec (C01, C03, C04, C06, C09 to C12, C14, C19, C20) against the facade *your* container built.
+The bundle's own `tests/Functional/CoreConformanceTest.php` is the reference: boot your kernel, return
+`indexnowkit` and the `FakeTransport` aliased as `indexnowkit.transport`, optionally a second configured host.
+Run it in the application that decorates or replaces bundle services to prove the pipeline still conforms.
 
 ## Listening instead of replacing
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
-use IndexNowKit\Check\Checker;
+use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckLevel;
 use IndexNowKit\Exception\ConfigurationException;
 use IndexNowKit\Sitemap\Spool;
@@ -24,7 +24,7 @@ final class CheckCommand extends Command
      * @param array<string, mixed> $rawConfig bundle config with env placeholders resolved
      */
     public function __construct(
-        private readonly Checker $checker,
+        private readonly CheckerInterface $checker,
         private readonly array $rawConfig,
         private readonly string $environment,
         private readonly string $dispatchMode,
