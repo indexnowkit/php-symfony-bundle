@@ -1,0 +1,13 @@
+{
+    "bundles": {
+        "IndexNowKit\\SymfonyBundle\\IndexNowKitBundle": ["all"]
+    },
+    "copy-from-recipe": {
+        "config/": "%CONFIG_DIR%/"
+    },
+    "env": {
+        "#1": "Generate with: bin/console indexnow:key:generate",
+        "INDEXNOW_KEY": "",
+        "INDEXNOW_BASE_URL": "https://www.example.com"
+    }
+}

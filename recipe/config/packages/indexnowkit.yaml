@@ -1,0 +1,13 @@
+indexnowkit:
+    key: '%env(INDEXNOW_KEY)%'
+    base_url: '%env(INDEXNOW_BASE_URL)%'
+    # dispatch: auto      # messenger when configured, otherwise sync after the response is sent
+    # engines: [api]      # api = api.indexnow.org, shared by Yandex, Bing, Naver, Seznam, Yep
+
+when@dev:
+    indexnowkit:
+        dry_run: true
+
+when@test:
+    indexnowkit:
+        dry_run: true
