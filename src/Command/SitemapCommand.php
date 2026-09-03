@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use DateTimeImmutable;
+use IndexNowKit\Http\Exception\TransportException;
 use IndexNowKit\IndexNow;
 use IndexNowKit\Sitemap\SitemapReader;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -50,8 +51,14 @@ final class SitemapCommand extends Command
         }
 
         $urls = [];
-        foreach ($this->reader->read($sitemap, $since) as $entry) {
-            $urls[] = $entry->url;
+        try {
+            foreach ($this->reader->read($sitemap, $since) as $entry) {
+                $urls[] = $entry->url;
+            }
+        } catch (TransportException $e) {
+            $io->error(\sprintf('Cannot read %s: %s', $sitemap, $e->getMessage()));
+
+            return Command::FAILURE;
         }
         $io->text(\sprintf('%d URL(s) found in %s%s', \count($urls), $sitemap, $since !== null ? ' changed since ' . $since->format(DATE_ATOM) : ''));
         if ($input->getOption('dry-run') === true) {
