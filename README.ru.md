@@ -190,7 +190,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 
 | | |
 |---|---|
-| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), [laravel](https://github.com/indexnowkit/php/tree/main/packages/laravel) |
+| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), [laravel](https://github.com/indexnowkit/php/tree/main/packages/laravel), [yii2](https://github.com/indexnowkit/php/tree/main/packages/yii2) |
 | JS/TS | @indexnowkit/core, next, prisma (скоро) |
 | Python | indexnowkit, indexnowkit-django (скоро) |
 
