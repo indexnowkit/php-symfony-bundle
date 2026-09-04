@@ -3,6 +3,8 @@
     "description": "Symfony bundle for IndexNow: notify Yandex, Bing, Naver, Seznam and Yep when Doctrine entities change. #[IndexNow] rules on entities, commit-safe Doctrine hooks, Messenger dispatch, key file route, console commands, profiler panel.",
     "type": "symfony-bundle",
     "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "keywords": [
         "indexnow",
         "symfony",
@@ -30,7 +32,7 @@
         "symfony/event-dispatcher": "^6.4 || ^7.0",
         "symfony/framework-bundle": "^6.4 || ^7.0",
         "symfony/http-foundation": "^6.4 || ^7.0",
-        "symfony/http-kernel": "^6.4 || ^7.0",
+        "symfony/http-kernel": "^6.4.13 || ^7.0",
         "symfony/routing": "^6.4 || ^7.0"
     },
     "require-dev": {
@@ -44,6 +46,7 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^11.5",
         "symfony/browser-kit": "^6.4 || ^7.0",
+        "symfony/error-handler": "^6.4.44 || ^7.0",
         "symfony/http-client": "^6.4 || ^7.0",
         "symfony/messenger": "^6.4 || ^7.0",
         "symfony/twig-bundle": "^6.4 || ^7.0",

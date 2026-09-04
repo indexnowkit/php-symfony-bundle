@@ -3,6 +3,13 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## Unreleased
+
+### Changed
+
+- Requires `symfony/http-kernel ^6.4.13 || ^7.0` (was `^6.4`): 6.4.0–6.4.12 leak the exception handler registered
+  during request handling, which PHPUnit 10+ reports as a risky test in every suite booting the kernel.
+
 ## [0.3.0] — 2026-09-04
 
 ### Changed
