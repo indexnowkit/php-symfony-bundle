@@ -173,3 +173,11 @@ Run it in the application that decorates or replaces bundle services to prove th
 `Submitter` dispatches every `Result` as a PSR-14 event through `event_dispatcher` when it exists; a listener on
 `IndexNowKit\Result` gets each outcome for metrics or alerting without touching the pipeline
 ([operations guide](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md)).
+
+## What is the core's
+
+`SubmitUrlsHandler` is `Retry\WorkerOutcome` (which URLs to retry, which were rejected for good, the log lines) plus
+`RecoverableMessageHandlingException` with the engine's Retry-After. The commands configure their arguments and
+options from `Console\Definitions` and `Sitemap\Console\Definitions` (`CommandDefinition::applyTo($command)`), so
+`bin/console indexnow:submit-entity --help` matches artisan and Yii2; a custom command over a core runner can call
+the same `applyTo()`.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
+use IndexNowKit\Testing\KeyFileAssertions;
 use PHPUnit\Framework\Attributes\TestDox;
 
 final class KeyFileDisabledTest extends BundleTestCase
@@ -17,6 +18,6 @@ final class KeyFileDisabledTest extends BundleTestCase
         $client = $this->browser();
         $client->request('GET', '/' . TestKernel::KEY . '.txt');
 
-        self::assertResponseStatusCodeSame(404);
+        KeyFileAssertions::assertNotServed($client->getResponse()->getStatusCode());
     }
 }

@@ -7,6 +7,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
+use IndexNowKit\Testing\CheckOutputAssertions;
 
 final class CommandsTest extends BundleTestCase
 {
@@ -44,12 +45,12 @@ final class CommandsTest extends BundleTestCase
     public function testCheckReportsMissingKeyFile(): void
     {
         $tester = $this->tester('indexnow:check');
-        self::assertSame(1, $tester->execute([]));
-        self::assertStringContainsString('HTTP 404', $tester->getDisplay());
+        CheckOutputAssertions::assertExitCode(1, $tester->execute([]), $tester->getDisplay());
+        CheckOutputAssertions::assertKeyFileHint($tester->getDisplay(), 404);
 
         $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
-        self::assertSame(0, $tester->execute([]));
-        self::assertStringContainsString('key file OK', $tester->getDisplay());
+        CheckOutputAssertions::assertExitCode(0, $tester->execute([]), $tester->getDisplay());
+        CheckOutputAssertions::assertReady($tester->getDisplay(), 'www.example.com');
     }
 
     public function testCheckPrintsDispatchAndDoctrineWiring(): void

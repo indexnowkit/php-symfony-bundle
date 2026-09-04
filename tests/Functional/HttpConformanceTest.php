@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
+use IndexNowKit\Testing\KeyFileAssertions;
 use PHPUnit\Framework\Attributes\TestDox;
 
 final class HttpConformanceTest extends BundleTestCase
 {
-    #[TestDox('H01 GET /{key}.txt -> 200 text/plain with the key')]
+    #[TestDox('H01 GET /{key}.txt -> 200 text/plain with the key, short cache; no Vary without a hosts map (KnobsTest covers Vary: Host)')]
     public function testH01KeyFile(): void
     {
         $client = $this->browser();
         $client->request('GET', '/' . TestKernel::KEY . '.txt');
 
-        self::assertResponseStatusCodeSame(200);
-        self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=utf-8');
-        self::assertSame(TestKernel::KEY, $client->getResponse()->getContent());
+        $response = $client->getResponse();
+        KeyFileAssertions::assertKeyFileResponse($response->getStatusCode(), $response->headers->all(), (string) $response->getContent(), TestKernel::KEY, expectVaryHost: false);
     }
 
     #[TestDox('H02 GET /other.txt -> 404')]
@@ -26,7 +26,7 @@ final class HttpConformanceTest extends BundleTestCase
         $client = $this->browser();
         $client->request('GET', '/abcdefghijklmnop.txt');
 
-        self::assertResponseStatusCodeSame(404);
+        KeyFileAssertions::assertNotServed($client->getResponse()->getStatusCode());
     }
 
     #[TestDox('A01/H06 entity created in a request -> POST sent on kernel.terminate with URLs for every enabled locale')]

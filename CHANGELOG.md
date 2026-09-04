@@ -3,6 +3,27 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.5.0] — 2026-09-05
+
+The core 0.5 "adapter kit" release, second wave: the Messenger handler and the commands are built on the core's
+`Retry\WorkerOutcome` and `Console\Definitions`. Configuration tree, command names, arguments, options, service
+ids and the tests' `ArrayInput` keys do not change.
+
+### Changed
+
+- Requires `indexnowkit/core ^0.5` and `indexnowkit/sitemap ^0.1.1`.
+- `Messenger\SubmitUrlsHandler` on `Retry\WorkerOutcome`: the retry line now reads
+  `indexnow: {count} URL(s) of job {id} will be retried` (was "message {id}"), and final failures (400, 403,
+  422) are logged at `error` as `indexnow: {count} URL(s) of job {id} rejected permanently ({reasons}); run
+  "bin/console indexnow:check"` before the message is acknowledged. `docs/messenger.md` follows.
+- The commands configure their inputs from `Console\Definitions` / `Sitemap\Console\Definitions`
+  (`CommandDefinition::applyTo()`): the same names, shortcuts, defaults and descriptions as artisan and Yii2. Two
+  descriptions changed wording: `indexnow:submit-entity` ("Resolve the URLs of entities through their #[IndexNow]
+  rules and submit them (the manual path after bulk updates)") and the class argument ("Entity class (FQCN or
+  short name)"). `SubmitEntityCommand` and `ExplainCommand` take the `indexnowkit.console.vocabulary` service as a
+  second constructor argument (only relevant if you instantiate them yourself).
+- Tests: H01–H05 assert through the core's `Testing\KeyFileAssertions` and `Testing\CheckOutputAssertions`.
+
 ## [0.4.0] — 2026-09-05
 
 The core 0.4 "adapter kit" release: the services are built through the core's factories and `Adapter\ConfigFactory`,
