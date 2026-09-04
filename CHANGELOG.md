@@ -3,6 +3,15 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.6.1] — 2026-09-05
+
+### Changed
+
+- Internal refactor, no API change: `DependencyInjection\IndexNowKitLoader::load()` is a sequence of private methods
+  per block of services (config, http, pipeline, urls, dispatch, facade, key file, profiler, checks, console,
+  doctrine). Service ids, arguments, tags, aliases and their registration order are unchanged; a new
+  `ContainerShapeTest` records them per configuration variant and fails on any difference.
+
 ## [0.6.0] — 2026-09-05
 
 `indexnowkit/sitemap` is optional again (docs/spec/16, wave C): the bundle suggests it instead of requiring it.

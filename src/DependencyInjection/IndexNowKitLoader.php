@@ -78,6 +78,7 @@ use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException as DiInvalidArgumentException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_closure;
@@ -94,6 +95,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
  * Service wiring. Every service that logs is tagged with the `indexnow` Monolog channel. The sitemap services come
  * from {@see SitemapServices} when `indexnowkit/sitemap` is installed; without it `indexnow:sitemap` is
  * {@see SitemapNotInstalledCommand} and `check` prints one `StaticCheck` line (nothing is logged at boot).
+ *
+ * @phpstan-type Tree array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>}
  */
 final class IndexNowKitLoader
 {
@@ -115,18 +118,52 @@ final class IndexNowKitLoader
     }
 
     /**
+     * The blocks in registration order; the service ids, arguments and tags of every block are the bundle's public
+     * surface (docs/services.md), a block only groups them.
+     *
      * @param array<string, mixed> $config
      */
     public function load(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>} $config */
+        /** @var Tree $config */
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
         $logger = service('logger')->nullOnInvalid();
         $channel = $config['logging']['channel'];
         $builder->setParameter('indexnowkit.log_channel', $channel);
 
-        // Dispatch mode (resolved first so Config reports the effective mode) ----------------------------------------
+        $config['dispatch'] = $this->resolveDispatch($config, $builder);
+        $builder->setParameter('indexnowkit.key_file.path', $config['key_file']['path']);
+        $builder->setParameter('indexnowkit.key_file.host', $config['key_file']['host'] ?? '');
+        $builder->setParameter('indexnowkit.key_file.route_name', $config['key_file']['route_name']);
+
+        $this->loadConfig($services, $config, $logger);
+        $this->loadHttp($services, $config);
+        $this->loadPipeline($services, $config, $logger, $channel);
+        $this->loadUrls($services, $builder, $config, $logger, $channel);
+        $this->loadDispatch($services, $config, $logger, $channel);
+        $this->loadFacade($services, $config, $logger, $channel);
+        $this->loadKeyFile($services, $config);
+        $this->loadProfiler($services, $builder, $config);
+
+        $doctrine = $config['doctrine']['enabled'] && $this->doctrineBundleEnabled($builder) && class_exists(IndexNowListener::class);
+        $builder->setParameter('indexnowkit.doctrine_hooked', $doctrine && $config['enabled']);
+        $this->loadChecks($services, $builder);
+        $this->loadConsole($services, $config, $logger, $channel, $doctrine);
+        if ($doctrine && $config['enabled']) {
+            $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);
+        }
+    }
+
+    /**
+     * The effective dispatch mode (resolved first so Config reports it) and the parameters the checks and the
+     * profiler read.
+     *
+     * @param Tree $config
+     *
+     */
+    private function resolveDispatch(array $config, ContainerBuilder $builder): string
+    {
         $dispatch = $config['dispatch'];
         $hasMessenger = interface_exists(MessageBusInterface::class) && $this->detected($builder, 'framework');
         if ($dispatch === 'auto') {
@@ -141,12 +178,15 @@ final class IndexNowKitLoader
         $builder->setParameter('indexnowkit.dispatch', $dispatch);
         $builder->setParameter('indexnowkit.messenger.transport', $config['messenger']['transport']);
         $builder->setParameter('indexnowkit.messenger_routed', $dispatch === 'messenger' && $this->detected($builder, 'messenger_routed'));
-        $config['dispatch'] = $dispatch;
-        $builder->setParameter('indexnowkit.key_file.path', $config['key_file']['path']);
-        $builder->setParameter('indexnowkit.key_file.host', $config['key_file']['host'] ?? '');
-        $builder->setParameter('indexnowkit.key_file.route_name', $config['key_file']['route_name']);
 
-        // Config ----------------------------------------------------------------------------------------------------
+        return $dispatch;
+    }
+
+    /**
+     * @param Tree $config
+     */
+    private function loadConfig(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger): void
+    {
         $services->set('indexnowkit.config', Config::class)
             ->factory([ConfigFactory::class, 'create'])
             ->args([$config, '%kernel.environment%', $logger]);
@@ -156,14 +196,29 @@ final class IndexNowKitLoader
             ->factory([StaticKeyProvider::class, 'fromConfig'])
             ->args([service('indexnowkit.config')]);
         $services->alias(KeyProviderInterface::class, 'indexnowkit.key_provider');
+    }
 
-        // Transport: built on first use only -----------------------------------------------------------------------
+    /**
+     * Transport: built on first use only.
+     *
+     * @param Tree $config
+     */
+    private function loadHttp(ServicesConfigurator $services, array $config): void
+    {
         $services->set('indexnowkit.transport.real', TransportInterface::class)
             ->factory([TransportFactory::class, 'create'])
             ->args([\is_string($config['http']['client']) ? service($config['http']['client']) : null, $config['http']['timeout'], \is_string($config['http']['client']) ? $config['http']['client'] : 'indexnowkit.http.client']);
         $services->set('indexnowkit.transport', LazyTransport::class)->args([service_closure('indexnowkit.transport.real')]);
         $services->alias(TransportInterface::class, 'indexnowkit.transport');
+    }
 
+    /**
+     * Normalizer, throttle, client, debounce store, submitter, collector.
+     *
+     * @param Tree $config
+     */
+    private function loadPipeline(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel): void
+    {
         $services->set('indexnowkit.url_normalizer', UrlNormalizer::class)->args([$config['base_url'], $config['max_url_length'] ?? Config::DEFAULT_MAX_URL_LENGTH]);
         $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
 
@@ -202,8 +257,15 @@ final class IndexNowKitLoader
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Collector::class, 'indexnowkit.collector');
         $services->alias(CollectorInterface::class, 'indexnowkit.collector');
+    }
 
-        // URL resolution --------------------------------------------------------------------------------------------
+    /**
+     * URL resolution: attribute reader, router bridge, resolver locator, attribute resolver, guard, change handler.
+     *
+     * @param Tree $config
+     */
+    private function loadUrls(ServicesConfigurator $services, ContainerBuilder $builder, array $config, ReferenceConfigurator $logger, string $channel): void
+    {
         $services->set('indexnowkit.attribute_reader', AttributeReader::class);
         $services->alias(AttributeReader::class, 'indexnowkit.attribute_reader');
         $services->alias(AttributeReaderInterface::class, 'indexnowkit.attribute_reader');
@@ -233,8 +295,16 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ObjectChangeHandler::class, 'indexnowkit.change_handler');
+    }
 
-        // Dispatch --------------------------------------------------------------------------------------------------
+    /**
+     * The dispatcher of the effective mode and, with Messenger, the message handler.
+     *
+     * @param Tree $config
+     */
+    private function loadDispatch(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel): void
+    {
+        $dispatch = $config['dispatch'];
         match ($dispatch) {
             'none' => $services->set('indexnowkit.dispatcher', NullDispatcher::class),
             'messenger' => $services->set('indexnowkit.dispatcher', MessengerDispatcher::class)
@@ -252,8 +322,15 @@ final class IndexNowKitLoader
                 ->tag('messenger.message_handler')
                 ->tag('monolog.logger', ['channel' => $channel]);
         }
+    }
 
-        // Facade ----------------------------------------------------------------------------------------------------
+    /**
+     * The facade and the flush listener.
+     *
+     * @param Tree $config
+     */
+    private function loadFacade(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel): void
+    {
         $services->set('indexnowkit', IndexNowKit::class)
             ->args([
                 '$config' => service('indexnowkit.config'),
@@ -275,8 +352,13 @@ final class IndexNowKitLoader
             ->tag('kernel.event_listener', ['event' => 'kernel.terminate', 'method' => 'onTerminate', 'priority' => $config['flush']['priority']]) // default -1000: before ProfilerListener (-1024) so results land in the profile
             ->tag('kernel.event_listener', ['event' => 'console.terminate', 'method' => 'onTerminate', 'priority' => $config['flush']['console_priority']])
             ->tag('kernel.event_listener', ['event' => 'Symfony\Component\Messenger\Event\WorkerMessageHandledEvent', 'method' => 'onTerminate', 'priority' => $config['flush']['console_priority']]);
+    }
 
-        // Key file --------------------------------------------------------------------------------------------------
+    /**
+     * @param Tree $config
+     */
+    private function loadKeyFile(ServicesConfigurator $services, array $config): void
+    {
         $services->set('indexnowkit.key_file_responder', KeyFileResponder::class)
             ->factory([KeyFileResponder::class, 'fromConfig'])
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider')]);
@@ -288,26 +370,47 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.key_file_responder'), $config['key_file']['cache_max_age'], $config['hosts'] !== []])
             ->tag('controller.service_arguments')
             ->public();
+    }
 
-        // Profiler --------------------------------------------------------------------------------------------------
-        if ($config['profiler']['enabled'] && $this->bundleEnabled($builder, 'WebProfilerBundle')) {
-            $services->set('indexnowkit.result_recorder', ResultRecorder::class)
-                ->args([service('indexnowkit.submitter')])
-                ->tag('kernel.reset', ['method' => 'reset']);
-            $services->set('indexnowkit.data_collector', IndexNowDataCollector::class)
-                ->args([service('indexnowkit.collector'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.result_recorder'), '%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%'])
-                ->tag('data_collector', ['template' => '@IndexNowKit/data_collector/indexnow.html.twig', 'id' => 'indexnow', 'priority' => 250]);
+    /**
+     * The data collector, with `profiler.enabled` and WebProfilerBundle only.
+     *
+     * @param Tree $config
+     */
+    private function loadProfiler(ServicesConfigurator $services, ContainerBuilder $builder, array $config): void
+    {
+        if (!$config['profiler']['enabled'] || !$this->bundleEnabled($builder, 'WebProfilerBundle')) {
+            return;
         }
+        $services->set('indexnowkit.result_recorder', ResultRecorder::class)
+            ->args([service('indexnowkit.submitter')])
+            ->tag('kernel.reset', ['method' => 'reset']);
+        $services->set('indexnowkit.data_collector', IndexNowDataCollector::class)
+            ->args([service('indexnowkit.collector'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.result_recorder'), '%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%'])
+            ->tag('data_collector', ['template' => '@IndexNowKit/data_collector/indexnow.html.twig', 'id' => 'indexnow', 'priority' => 250]);
+    }
 
-        // Commands --------------------------------------------------------------------------------------------------
-        $doctrine = $config['doctrine']['enabled'] && $this->doctrineBundleEnabled($builder) && class_exists(IndexNowListener::class);
-        $builder->setParameter('indexnowkit.doctrine_hooked', $doctrine && $config['enabled']);
-
+    /**
+     * The `indexnowkit.check` tag, the wiring check and the checker over every tagged check.
+     */
+    private function loadChecks(ServicesConfigurator $services, ContainerBuilder $builder): void
+    {
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport'), tagged_iterator('indexnowkit.check')]);
         $services->alias(CheckerInterface::class, 'indexnowkit.checker');
+    }
+
+    /**
+     * The commands over the core runners: vocabulary, formatter, the submitter factory of --force/--dry-run, the
+     * sitemap pieces (or their stand-ins), key:generate, check, submit and, with Doctrine, submit-entity and explain.
+     *
+     * @param Tree $config
+     * @param bool $doctrine the entity commands are registered (DoctrineBundle present and `doctrine.enabled`)
+     */
+    private function loadConsole(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel, bool $doctrine): void
+    {
         $services->set('indexnowkit.console.vocabulary', Vocabulary::class)->args([
             '$subject' => 'entity',
             '$subjects' => 'entities',
@@ -337,24 +440,21 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.console.submit', SubmitRunner::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')]);
         $services->set(SubmitCommand::class)->args([service('indexnowkit.console.submit')])->tag('console.command');
 
-        // Doctrine --------------------------------------------------------------------------------------------------
-        if ($doctrine) {
-            $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
-            $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
-            $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
-            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command');
-            $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);
-            $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain'), service('indexnowkit.console.vocabulary')])->tag('console.command');
+        if (!$doctrine) {
+            return;
         }
-        if ($doctrine && $config['enabled']) {
-            $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);
-        }
+        $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
+        $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
+        $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
+        $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command');
+        $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);
+        $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain'), service('indexnowkit.console.vocabulary')])->tag('console.command');
     }
 
     /**
      * @param list<string> $connections
      */
-    private function loadDoctrine(ServicesConfigurator $services, int $priority, array $connections, mixed $logger, string $channel): void
+    private function loadDoctrine(ServicesConfigurator $services, int $priority, array $connections, ReferenceConfigurator $logger, string $channel): void
     {
         $services->set('indexnowkit.doctrine.staging', TransactionStaging::class)
             ->args([null, $logger])
