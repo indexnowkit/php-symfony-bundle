@@ -335,9 +335,9 @@ final class IndexNowKitLoader
             $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
             $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
             $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
-            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity')])->tag('console.command');
+            $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command');
             $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);
-            $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain')])->tag('console.command');
+            $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain'), service('indexnowkit.console.vocabulary')])->tag('console.command');
         }
         if ($doctrine && $config['enabled']) {
             $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Messenger;
 
-use IndexNowKit\Result;
+use IndexNowKit\Retry\WorkerOutcome;
 use IndexNowKit\SubmitterInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -14,7 +14,8 @@ use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 
 /**
  * Retryable outcomes (429, 5xx, network) throw RecoverableMessageHandlingException so the transport's
- * retry strategy applies; everything else is final and only logged.
+ * retry strategy applies (with the engine's Retry-After as the delay on Symfony >= 7.2); final failures (400, 403,
+ * 422) are logged at error and acknowledged, a retry would not help. `Retry\WorkerOutcome` does the sorting.
  */
 #[AsMessageHandler]
 final class SubmitUrlsHandler
@@ -31,23 +32,20 @@ final class SubmitUrlsHandler
 
     public function __invoke(SubmitUrlsMessage $message): void
     {
-        $results = $this->submitter->submit($message->urls);
-        $retryUrls = Result::retryableUrls($results);
-        $retryAfter = null;
-        foreach ($results as $result) {
-            if ($result->retryable && $result->retryAfter !== null) {
-                $retryAfter = max($retryAfter ?? 0, $result->retryAfter);
-            }
+        $outcome = WorkerOutcome::of($this->submitter->submit($message->urls));
+        if ($outcome->hasFinalFailures()) {
+            $this->logger->error(...$outcome->finalLog($message->id, 'bin/console indexnow:check'));
         }
-        if ($retryUrls !== []) {
-            $this->logger->info('indexnow: {count} URL(s) of message {id} will be retried', ['count' => \count($retryUrls), 'id' => $message->id]);
-            $message = \sprintf('IndexNow: %d URL(s) temporarily rejected (message %s)', \count($retryUrls), $message->id);
-            if ($retryAfter !== null && $retryAfter > 0 && self::supportsRetryDelay()) {
-                // @phpstan-ignore arguments.count (Symfony < 7.2 has no $retryDelay; supportsRetryDelay() guards the call)
-                throw new RecoverableMessageHandlingException($message, 0, null, $retryAfter * 1000);
-            }
+        if (!$outcome->hasRetryable()) {
+            return;
+        }
+        $this->logger->info(...$outcome->retryLog($message->id));
+        $text = \sprintf('IndexNow: %d URL(s) temporarily rejected (job %s)', \count($outcome->retryUrls), $message->id);
+        if ($outcome->retryAfter !== null && $outcome->retryAfter > 0 && self::supportsRetryDelay()) {
+            // @phpstan-ignore arguments.count (Symfony < 7.2 has no $retryDelay; supportsRetryDelay() guards the call)
+            throw new RecoverableMessageHandlingException($text, 0, null, $outcome->retryAfter * 1000);
+        }
 
-            throw new RecoverableMessageHandlingException($message);
-        }
+        throw new RecoverableMessageHandlingException($text);
     }
 }

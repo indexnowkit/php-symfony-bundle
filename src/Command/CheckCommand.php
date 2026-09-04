@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Command;
 
 use IndexNowKit\Console\CheckRunner;
+use IndexNowKit\Console\Definitions;
 use IndexNowKit\SymfonyBundle\DependencyInjection\ConfigFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -26,10 +26,7 @@ final class CheckCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->addOption('live', null, InputOption::VALUE_NONE, 'Send a real probe request (site root URL) to every configured engine')
-            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Check only this host (multi-domain setups)')
-            ->addOption('probe-url', null, InputOption::VALUE_REQUIRED, 'Page to send with --live (default: https://<host>/; give a real page when the root redirects)');
+        Definitions::check()->applyTo($this);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

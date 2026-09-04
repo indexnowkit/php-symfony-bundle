@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
+use IndexNowKit\Console\Definitions;
 use IndexNowKit\Console\ExplainRunner;
+use IndexNowKit\Console\Vocabulary;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -20,17 +20,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'indexnow:explain', description: 'Explain what IndexNow would do for one entity: rules, guards, URLs, key, debounce (sends nothing)')]
 final class ExplainCommand extends Command
 {
-    public function __construct(private readonly ExplainRunner $runner)
+    public function __construct(private readonly ExplainRunner $runner, private readonly Vocabulary $words)
     {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this
-            ->addArgument('class', InputArgument::REQUIRED, 'Entity class (FQCN or App\Entity short name)')
-            ->addArgument('id', InputArgument::REQUIRED, 'Identifier')
-            ->addOption('event', null, InputOption::VALUE_REQUIRED, 'created | updated | deleted', 'updated');
+        Definitions::explain($this->words)->applyTo($this);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

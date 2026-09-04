@@ -4,35 +4,27 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
+use IndexNowKit\Console\Definitions;
 use IndexNowKit\Console\SubmitSubjectsOptions;
 use IndexNowKit\Console\SubmitSubjectsRunner;
+use IndexNowKit\Console\Vocabulary;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve the URLs of Doctrine entities through their #[IndexNow] rules and submit them')]
+#[AsCommand(name: 'indexnow:submit-entity', description: 'Resolve the URLs of entities through their #[IndexNow] rules and submit them (the manual path after bulk updates)')]
 final class SubmitEntityCommand extends Command
 {
-    public function __construct(private readonly SubmitSubjectsRunner $runner)
+    public function __construct(private readonly SubmitSubjectsRunner $runner, private readonly Vocabulary $words)
     {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this
-            ->addArgument('class', InputArgument::REQUIRED, 'Entity class (FQCN or App\Entity short name)')
-            ->addArgument('ids', InputArgument::IS_ARRAY, 'Identifiers; none = every entity of the class up to --limit')
-            ->addOption('event', null, InputOption::VALUE_REQUIRED, 'created | updated | deleted', 'updated')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Max entities when no ids are given', '1000')
-            ->addOption('explain', null, InputOption::VALUE_NONE, 'Show which rule produced which URL and submit nothing')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store')
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Log the request instead of sending it')
-            ->addOption('json', null, InputOption::VALUE_NONE, 'Machine-readable output');
+        Definitions::submitSubjects($this->words)->applyTo($this);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

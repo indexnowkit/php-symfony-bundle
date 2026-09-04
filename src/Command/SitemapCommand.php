@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
+use IndexNowKit\Sitemap\Console\Definitions;
 use IndexNowKit\Sitemap\Console\SitemapOptions;
 use IndexNowKit\Sitemap\Console\SitemapRunner;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -29,13 +28,7 @@ final class SitemapCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->addArgument('sitemap', InputArgument::OPTIONAL, 'Sitemap URL or local file (default: sitemap.url from the config, else <base_url>/sitemap.xml)')
-            ->addOption('changed-since', null, InputOption::VALUE_REQUIRED, 'Only URLs whose <lastmod> is newer, e.g. "1 day" or "2026-09-01"')
-            ->addOption('allow-foreign-hosts', null, InputOption::VALUE_NONE, 'Follow nested sitemaps hosted on another origin (CDN) for this run')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Ignore the debounce store')
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'List URLs without submitting')
-            ->addOption('json', null, InputOption::VALUE_NONE, 'Machine-readable output');
+        Definitions::sitemap()->applyTo($this);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

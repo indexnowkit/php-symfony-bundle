@@ -87,9 +87,10 @@ A failure to dispatch never breaks the request: it is logged as
 
 `SubmitUrlsHandler` submits the batch and then decides:
 
-- Nothing retryable — the handler returns. Failures that are final (400, 403, 422) are already logged by the client
-  with the reason; the message is acknowledged and not retried, because retrying a bad key changes nothing.
-- Something retryable (429, 5xx, network) — it logs `indexnow: {count} URL(s) of message {id} will be retried` at `info` and throws
+- Nothing retryable — the handler returns. Failures that are final (400, 403, 422) are logged once more at `error`
+  as `indexnow: {count} URL(s) of job {id} rejected permanently ({reasons}); run "bin/console indexnow:check"`; the
+  message is acknowledged and not retried, because retrying a bad key changes nothing.
+- Something retryable (429, 5xx, network) — it logs `indexnow: {count} URL(s) of job {id} will be retried` at `info` and throws
   `RecoverableMessageHandlingException`, which hands the decision to the transport's `retry_strategy`.
 
 On Symfony 7.2 and later, when the engine sent a `Retry-After`, the largest value in the batch is passed to that
@@ -130,7 +131,8 @@ periodically, or the collector grows for the life of the process and the URLs go
 
 | Signal | Where |
 |---|---|
-| `indexnow: {count} URL(s) of message {id} will be retried` | `indexnow` channel, `info`, in the worker |
+| `indexnow: {count} URL(s) of job {id} will be retried` | `indexnow` channel, `info`, in the worker |
+| `indexnow: {count} URL(s) of job {id} rejected permanently ({reasons}); run "bin/console indexnow:check"` | `indexnow` channel, `error`, in the worker |
 | `indexnow: cannot dispatch {count} URL(s) to messenger (message {id}), they are lost` | `indexnow` channel, `error`, in the web request |
 | exhausted retries | Messenger's failure transport, default channel |
 | the URLs a request handed over | Web Profiler panel, which also says results appear in the worker's log |
