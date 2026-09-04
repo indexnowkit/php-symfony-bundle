@@ -25,6 +25,7 @@ Indexing API is restricted to `JobPosting` / `BroadcastEvent`. This bundle will 
 composer require indexnowkit/symfony-bundle
 composer require symfony/http-client nyholm/psr7  # any PSR-18 client works; this pair is auto-configured
 composer require indexnowkit/doctrine        # for automatic submission when entities change
+composer require indexnowkit/sitemap         # optional: the indexnow:sitemap command
 bin/console indexnow:key:generate --write-env     # adds INDEXNOW_KEY to .env.local
 ```
 
@@ -121,11 +122,20 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` |
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
+`<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and `indexnow:explain` need Doctrine.
+
+### Sitemaps
+
+`composer require indexnowkit/sitemap   # optional: the indexnow:sitemap command`
+
 `indexnow:sitemap` with no argument reads `sitemap.url`, else `<base_url>/sitemap.xml`; a local path or `file://`
-URL reads the file without the web server. XML and text sitemaps, indexes and gzip are handled by the [`indexnowkit/sitemap`](https://github.com/indexnowkit/php/tree/main/packages/sitemap) package the bundle requires; the command streams
+URL reads the file without the web server. XML and text sitemaps, indexes and gzip are handled by the
+[`indexnowkit/sitemap`](https://github.com/indexnowkit/php/tree/main/packages/sitemap) package; the command streams
 and submits every `batch.max_urls` URLs, so size is not a concern. `sitemap.enabled: false` removes the command;
-decorating `indexnowkit.sitemap_reader` shapes what it submits ([docs/extending.md](docs/extending.md)). `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and
-`indexnow:explain` need Doctrine.
+decorating `indexnowkit.sitemap_reader` shapes what it submits ([docs/extending.md](docs/extending.md)). Without the
+package everything else works unchanged: `indexnow:sitemap` says `indexnowkit/sitemap is not installed: composer
+require indexnowkit/sitemap` and exits 1, `indexnow:check` prints `sitemap: not installed (…)`, a `sitemap` block
+left in the yaml still compiles and is ignored. Nothing is logged about it.
 
 ## Configuration
 

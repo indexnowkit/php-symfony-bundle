@@ -16,9 +16,15 @@ final class IndexNowKitBundle extends AbstractBundle
 {
     protected string $extensionAlias = 'indexnowkit';
 
+    /**
+     * @param bool|null $sitemapInstalled whether `indexnowkit/sitemap` is installed; null = detect (the default). Tests
+     *                                    pass false to boot the kernel as if the optional package were absent.
+     */
+    public function __construct(private readonly ?bool $sitemapInstalled = null) {}
+
     public function configure(DefinitionConfigurator $definition): void
     {
-        IndexNowKitConfiguration::build($definition);
+        (new IndexNowKitConfiguration($this->sitemapInstalled))->build($definition);
     }
 
     /**
@@ -59,7 +65,7 @@ final class IndexNowKitBundle extends AbstractBundle
     // @phpstan-ignore-next-line method.childParameterType
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        (new IndexNowKitLoader())->load($config, $container, $builder);
+        (new IndexNowKitLoader($this->sitemapInstalled))->load($config, $container, $builder);
     }
 
     public function getPath(): string

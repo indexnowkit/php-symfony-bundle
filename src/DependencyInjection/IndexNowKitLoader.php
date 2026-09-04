@@ -9,6 +9,8 @@ use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
+use IndexNowKit\Check\CheckLevel;
+use IndexNowKit\Check\StaticCheck;
 use IndexNowKit\Client;
 use IndexNowKit\ClientInterface;
 use IndexNowKit\Collector\Collector;
@@ -40,11 +42,6 @@ use IndexNowKit\IndexNowKit;
 use IndexNowKit\Key\KeyFileResponder;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
-use IndexNowKit\Sitemap\Check\SitemapSpoolCheck;
-use IndexNowKit\Sitemap\Console\SitemapRunner;
-use IndexNowKit\Sitemap\SitemapConfig;
-use IndexNowKit\Sitemap\SitemapReader;
-use IndexNowKit\Sitemap\SitemapSourceInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
@@ -52,7 +49,7 @@ use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
 use IndexNowKit\SymfonyBundle\Command\ExplainCommand;
 use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
-use IndexNowKit\SymfonyBundle\Command\SitemapCommand;
+use IndexNowKit\SymfonyBundle\Command\SitemapNotInstalledCommand;
 use IndexNowKit\SymfonyBundle\Command\SubmitCommand;
 use IndexNowKit\SymfonyBundle\Command\SubmitEntityCommand;
 use IndexNowKit\SymfonyBundle\Controller\KeyFileController;
@@ -94,19 +91,35 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_lo
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * Service wiring. Every service that logs is tagged with the `indexnow` Monolog channel.
+ * Service wiring. Every service that logs is tagged with the `indexnow` Monolog channel. The sitemap services come
+ * from {@see SitemapServices} when `indexnowkit/sitemap` is installed; without it `indexnow:sitemap` is
+ * {@see SitemapNotInstalledCommand} and `check` prints one `StaticCheck` line (nothing is logged at boot).
  */
 final class IndexNowKitLoader
 {
     /** Default of `logging.channel`. */
     public const LOG_CHANNEL = 'indexnow';
 
+    /** What `indexnow:check` prints without `indexnowkit/sitemap`, with and without a `sitemap` block in the configuration. */
+    public const SITEMAP_MISSING = 'sitemap: not installed (composer require indexnowkit/sitemap)';
+    public const SITEMAP_MISSING_BLOCK_IGNORED = 'sitemap: not installed, the sitemap block in the configuration is ignored (composer require indexnowkit/sitemap)';
+
+    private readonly bool $sitemapInstalled;
+
+    /**
+     * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
+     */
+    public function __construct(?bool $sitemapInstalled = null)
+    {
+        $this->sitemapInstalled = $sitemapInstalled ?? SitemapServices::installed();
+    }
+
     /**
      * @param array<string, mixed> $config
      */
     public function load(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap: array{enabled: bool, url: ?string, max_depth: int, max_sitemaps: int, max_bytes: int, allow_foreign_hosts: bool, spool: string, spool_dir: ?string, fetch_retries: int}} $config */
+        /** @var array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>} $config */
         $services = $container->services();
         $services->defaults()->autowire(false)->autoconfigure(false);
         $logger = service('logger')->nullOnInvalid();
@@ -292,9 +305,6 @@ final class IndexNowKitLoader
 
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
-        $services->set('indexnowkit.sitemap_config', SitemapConfig::class)->factory([SitemapConfig::class, 'fromArray'])->args([$config['sitemap']]);
-        $services->alias(SitemapConfig::class, 'indexnowkit.sitemap_config');
-        $services->set('indexnowkit.check.sitemap_spool', SitemapSpoolCheck::class)->args([service('indexnowkit.sitemap_config')])->tag('indexnowkit.check');
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport'), tagged_iterator('indexnowkit.check')]);
         $services->alias(CheckerInterface::class, 'indexnowkit.checker');
@@ -312,15 +322,12 @@ final class IndexNowKitLoader
             ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid()])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
-        if ($config['sitemap']['enabled']) {
-            $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
-                ->factory([SitemapReader::class, 'fromConfig'])
-                ->args([service('indexnowkit.sitemap_config'), service('indexnowkit.transport'), $logger])
-                ->tag('monolog.logger', ['channel' => $channel]);
-            $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
-            $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
-            $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $config['sitemap']['url'], service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url']);
-            $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap')])->tag('console.command');
+        $sitemap = $config['sitemap'] ?? [];
+        if ($this->sitemapInstalled) {
+            SitemapServices::register($services, $sitemap, $logger, $channel);
+        } else {
+            $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([CheckLevel::Ok, $sitemap === [] ? self::SITEMAP_MISSING : self::SITEMAP_MISSING_BLOCK_IGNORED])->tag('indexnowkit.check');
+            $services->set(SitemapNotInstalledCommand::class)->tag('console.command');
         }
 
         $services->set('indexnowkit.console.key_generate', KeyGenerateRunner::class)->args([service('indexnowkit.console.vocabulary')]);

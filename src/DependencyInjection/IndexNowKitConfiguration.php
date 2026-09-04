@@ -8,8 +8,6 @@ use Closure;
 use IndexNowKit\Config;
 use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyValidator;
-use IndexNowKit\Sitemap\SitemapReader;
-use IndexNowKit\Sitemap\SpoolMode;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -17,17 +15,29 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 /**
  * Config tree of the `indexnowkit` extension. Mirrors the shared schema (docs/spec/02) plus Symfony-only
  * blocks (messenger, key_file, doctrine). Everything that is not an env placeholder is validated at compile time.
+ * The `sitemap` node is the full node of {@see SitemapServices} when `indexnowkit/sitemap` is installed, else a
+ * node that accepts any keys and validates none (an old yaml still compiles; the block is reported by `check`).
  */
 final class IndexNowKitConfiguration
 {
     public const DISPATCH_MODES = ['auto', 'sync', 'messenger', 'none'];
 
-    public static function build(DefinitionConfigurator $definition): void
+    private readonly bool $sitemapInstalled;
+
+    /**
+     * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
+     */
+    public function __construct(?bool $sitemapInstalled = null)
+    {
+        $this->sitemapInstalled = $sitemapInstalled ?? SitemapServices::installed();
+    }
+
+    public function build(DefinitionConfigurator $definition): void
     {
         /** @var ArrayNodeDefinition<TreeBuilder<'array'>> $root */
         $root = $definition->rootNode(); // @phpstan-ignore generics.notGeneric, generics.notGeneric (Symfony 6.4 declares no generics on the node definitions)
-        $root
-            ->children()
+        $children = $root->children();
+        $children
                 ->booleanNode('enabled')->defaultTrue()
                     ->info('Master switch. false = collect nothing, submit nothing, register no listeners. Prefer dry_run to keep logs and the profiler panel.')->end()
                 // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
@@ -105,23 +115,15 @@ final class IndexNowKitConfiguration
                     ->integerNode('cache_max_age')->defaultValue(300)->min(0)->info('Cache-Control max-age in seconds. Keep it short so a key rotation propagates quickly.')->end()
                 ->end()->end()
                 ->booleanNode('serve_key_file')->defaultNull()->info('Deprecated alias of key_file.enabled.')
-                    ->setDeprecated('indexnowkit/symfony-bundle', '0.2', 'The "serve_key_file" option is deprecated, use "key_file.enabled" instead.')->end()
-                ->arrayNode('sitemap')->addDefaultsIfNotSet()->children()
-                    ->booleanNode('enabled')->defaultTrue()->info('Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing else reads sitemaps.')->end()
-                    ->scalarNode('url')->defaultNull()
-                        ->info('Sitemap read by indexnow:sitemap when no argument is given. Default: <base_url>/sitemap.xml.')
-                        ->validate()->ifTrue(self::literal(static fn(string $v): bool => !self::isAbsoluteUrl($v)))->thenInvalid('indexnowkit.sitemap.url must be an absolute http(s) URL, got %s.')->end()
-                    ->end()
-                    ->integerNode('max_depth')->defaultValue(3)->min(0)->info('Levels of <sitemapindex> followed below the root (0 = the root only).')->end()
-                    ->integerNode('max_sitemaps')->defaultValue(SitemapReader::MAX_SITEMAPS)->min(1)->info('Documents fetched per run, root included.')->end()
-                    ->integerNode('max_bytes')->defaultValue(SitemapReader::MAX_XML_BYTES)->min(1024)->info('Size cap of one uncompressed sitemap document (protocol maximum 50 MiB). Documents are spooled to disk, not memory.')->end()
-                    ->booleanNode('allow_foreign_hosts')->defaultFalse()->info('Follow nested sitemaps on other origins (CDN-hosted sitemaps). Off by default: a sitemap then decides which hosts this server fetches from. --allow-foreign-hosts enables it for one run.')->end()
-                    ->enumNode('spool')->values(array_map(static fn(SpoolMode $m): string => $m->value, SpoolMode::cases()))->defaultValue(SpoolMode::Auto->value)
-                        ->info('Where a document is kept while parsing: auto = temp file, memory when the temp dir is not writable (read-only container); disk = temp file or fail; memory = never touch the disk (at most max_bytes per document).')->end()
-                    ->scalarNode('spool_dir')->defaultNull()->info('Directory for the temp files (default: sys_get_temp_dir(), i.e. TMPDIR). Point it at a writable volume on a read-only filesystem.')->end()
-                    ->integerNode('fetch_retries')->defaultValue(2)->min(0)->info('Extra attempts (1 s, 2 s, 4 s apart) when fetching a sitemap document fails on the network or with a 5xx. 4xx and broken documents are never retried.')->end()
-                ->end()->end()
+                    ->setDeprecated('indexnowkit/symfony-bundle', '0.2', 'The "serve_key_file" option is deprecated, use "key_file.enabled" instead.')->end();
+        if ($this->sitemapInstalled) {
+            SitemapServices::configure($children);
+        } else {
+            $children->arrayNode('sitemap')->ignoreExtraKeys(false)->info('Needs indexnowkit/sitemap (composer require indexnowkit/sitemap); ignored until it is installed.')->end();
+        }
+        $children
                 ->booleanNode('dry_run')->defaultFalse()->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured.')->end()
+                // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
                 ->arrayNode('logging')->addDefaultsIfNotSet()->children()
                     ->scalarNode('channel')->defaultValue('indexnow')->cannotBeEmpty()->info('Monolog channel every bundle service logs to.')->end()
                     ->integerNode('max_urls')->defaultValue(Config::DEFAULT_LOG_URLS)->min(0)->info('URLs listed in one log line (0 = counts only, no URLs in logs).')->end()
@@ -151,8 +153,8 @@ final class IndexNowKitConfiguration
                     ->booleanNode('enabled')->defaultTrue()->info('Hook Doctrine ORM (needs indexnowkit/doctrine + doctrine/doctrine-bundle).')->end()
                     ->integerNode('listener_priority')->defaultValue(-100)->info('Lower than Gedmo so slugs exist before URLs are resolved.')->end()
                     ->arrayNode('connections')->scalarPrototype()->end()->info('Restrict the listener and the commit-safety middleware to these DBAL connection names (empty = all).')->end()
-                ->end()->end()
-            ->end()
+                ->end()->end();
+        $root
             ->validate()
                 ->ifTrue(static fn(array $v): bool => $v['dispatch'] === 'messenger' && ($v['base_url'] ?? null) === null)
                 ->thenInvalid('indexnowkit: "dispatch: messenger" needs "base_url": a Messenger worker has no request context and would generate http://localhost/... URLs.')
@@ -174,14 +176,17 @@ final class IndexNowKitConfiguration
     /**
      * Validates literal values only: env placeholders are resolved at runtime and checked by Config then.
      *
+     * @internal shared with {@see SitemapServices}
+     *
      * @param callable(string): bool $invalid
      */
-    private static function literal(callable $invalid): Closure
+    public static function literal(callable $invalid): Closure
     {
         return static fn(mixed $v): bool => \is_string($v) && $v !== '' && !str_contains($v, '%env(') && !str_starts_with($v, '%') && $invalid($v);
     }
 
-    private static function isAbsoluteUrl(string $url): bool
+    /** @internal shared with {@see SitemapServices} */
+    public static function isAbsoluteUrl(string $url): bool
     {
         $parts = parse_url($url);
 

@@ -25,8 +25,7 @@
     "require": {
         "php": "^8.2",
         "ext-json": "*",
-        "indexnowkit/core": "^0.5",
-        "indexnowkit/sitemap": "^0.1.1",
+        "indexnowkit/core": "^0.5.1",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
         "symfony/dependency-injection": "^6.4 || ^7.0",
@@ -42,6 +41,7 @@
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
         "indexnowkit/doctrine": "^0.3",
+        "indexnowkit/sitemap": "^0.1.1",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
         "phpstan/phpstan-strict-rules": "^2.0.12",
@@ -55,6 +55,7 @@
         "symfony/yaml": "^6.4 || ^7.0"
     },
     "suggest": {
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.1.1)",
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.3, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
@@ -84,7 +85,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.5.x-dev"
+            "dev-main": "0.6.x-dev"
         }
     }
 }

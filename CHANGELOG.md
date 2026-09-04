@@ -3,6 +3,28 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.6.0] — 2026-09-05
+
+`indexnowkit/sitemap` is optional again (docs/spec/16, wave C): the bundle suggests it instead of requiring it.
+Configuration tree, command names, service ids and everything else do not change.
+
+### Changed
+
+- **`indexnowkit/sitemap` is no longer installed automatically.** If you use `indexnow:sitemap`, run
+  `composer require indexnowkit/sitemap`; otherwise, after `composer update`, the command reports that the package is
+  missing and exits with code 1. Requires `indexnowkit/core ^0.5.1`.
+- Without the package: `indexnow:sitemap` is `Command\SitemapNotInstalledCommand` (same name, every argument and
+  option accepted and ignored, prints `indexnowkit/sitemap is not installed: composer require indexnowkit/sitemap`,
+  exit 1); `indexnow:check` prints `sitemap: not installed (composer require indexnowkit/sitemap)`, or `sitemap: not
+  installed, the sitemap block in the configuration is ignored (…)` when the yaml still has a `sitemap` block; that
+  block compiles without validation; the services `indexnowkit.sitemap_config`, `indexnowkit.sitemap_reader`,
+  `indexnowkit.check.sitemap_spool` and `indexnowkit.console.sitemap` do not exist. Nothing is logged at boot or on
+  a request.
+- `IndexNowKitBundle`, `DependencyInjection\IndexNowKitConfiguration` and `DependencyInjection\IndexNowKitLoader`
+  take `?bool $sitemapInstalled = null` (null = detect; tests pass false). `IndexNowKitConfiguration::build()` is an
+  instance method now; the `sitemap` node and services moved to `DependencyInjection\SitemapServices`, the only
+  wiring that reads `IndexNowKit\Sitemap\*`. Only relevant if you call these classes yourself.
+
 ## [0.5.0] — 2026-09-05
 
 The core 0.5 "adapter kit" release, second wave: the Messenger handler and the commands are built on the core's

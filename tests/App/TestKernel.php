@@ -42,6 +42,9 @@ final class TestKernel extends Kernel
     /** @var list<string> variants that boot without DoctrineBundle */
     private const NO_DOCTRINE = ['nodoctrine'];
 
+    /** @var list<string> variants that boot as if indexnowkit/sitemap were not installed */
+    private const NO_SITEMAP_PACKAGE = ['nositemappkg', 'nositemappkgcfg'];
+
     public function __construct(string $environment = 'test', bool $debug = false, private readonly string $dispatch = 'sync')
     {
         if ($this->dispatch === 'invalidconfig') {
@@ -69,7 +72,7 @@ final class TestKernel extends Kernel
         if ($this->hasDoctrine()) {
             $bundles[] = new DoctrineBundle();
         }
-        $bundles[] = new IndexNowKitBundle();
+        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true));
         if ($this->isProfilerVariant()) {
             $bundles[] = new TwigBundle();
             $bundles[] = new WebProfilerBundle();
@@ -220,6 +223,10 @@ final class TestKernel extends Kernel
                 break;
             case 'sitemapsource':
                 $config['sitemap'] = ['spool' => 'memory'];
+                break;
+            case 'nositemappkgcfg':
+                // A block written for the package, with a key the package's tree would reject: nothing validates it without the package.
+                $config['sitemap'] = ['url' => 'https://www.example.com/sitemaps/root.xml', 'spool' => 'memory', 'spol' => 'disk'];
                 break;
         }
 

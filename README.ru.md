@@ -25,6 +25,7 @@
 composer require indexnowkit/symfony-bundle
 composer require symfony/http-client nyholm/psr7  # подойдёт любой PSR-18 клиент; эта пара настраивается сама
 composer require indexnowkit/doctrine        # для автоматической отправки при изменении сущностей
+composer require indexnowkit/sitemap         # опционально: команда indexnow:sitemap
 bin/console indexnow:key:generate --write-env     # добавит INDEXNOW_KEY в .env.local
 ```
 
@@ -122,10 +123,20 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 | `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` обходить части на CDN · `-f, --force` · `--dry-run` только список · `--json` |
 | `indexnow:key:generate` | `-l, --length` (8–128, по умолчанию 32) · `--alphanumeric` · `--write-env[=FILE]` (по умолчанию `.env.local`) · `--force` ротация существующего ключа |
 
+`<class>` принимает FQCN или короткое имя из `App\Entity`.
+
+### Sitemap
+
+`composer require indexnowkit/sitemap   # опционально: команда indexnow:sitemap`
+
 `indexnow:sitemap` без аргумента читает `sitemap.url`, иначе `<base_url>/sitemap.xml`; локальный путь или
-`file://` читает файл без веб-сервера. XML и текстовые sitemap, индексы и gzip поддерживаются; команда читает
-потоком и отправляет каждые `batch.max_urls` записей, так что размер не важен. `sitemap.enabled: false` убирает
-команду; декоратор `indexnowkit.sitemap_reader` управляет тем, что уходит ([docs/extending.md](docs/extending.md)). `<class>` принимает FQCN или короткое имя из `App\Entity`.
+`file://` читает файл без веб-сервера. XML и текстовые sitemap, индексы и gzip обрабатывает пакет
+[`indexnowkit/sitemap`](https://github.com/indexnowkit/php/tree/main/packages/sitemap); команда читает потоком и
+отправляет каждые `batch.max_urls` записей, так что размер не важен. `sitemap.enabled: false` убирает команду;
+декоратор `indexnowkit.sitemap_reader` управляет тем, что уходит ([docs/extending.md](docs/extending.md)). Без пакета
+всё остальное работает как прежде: `indexnow:sitemap` отвечает `indexnowkit/sitemap is not installed: composer
+require indexnowkit/sitemap` и завершается с кодом 1, `indexnow:check` печатает `sitemap: not installed (…)`, блок
+`sitemap`, оставшийся в yaml, компилируется и игнорируется. В логи ничего не пишется.
 `indexnow:submit-entity` и `indexnow:explain` требуют Doctrine.
 
 ## Конфигурация

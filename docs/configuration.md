@@ -164,6 +164,8 @@ indexnowkit:
         # Same for console.terminate and the Messenger WorkerMessageHandledEvent flush.
         console_priority: -1024
 
+    # Needs indexnowkit/sitemap (composer require indexnowkit/sitemap). Without the package the block is
+    # accepted as is and ignored; indexnow:check says so.
     sitemap:
         # Register indexnow:sitemap and the sitemap reader. false = the command does not exist; nothing
         # else in the bundle reads sitemaps.
