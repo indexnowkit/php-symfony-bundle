@@ -1,13 +1,16 @@
-# CI of the read-only split repository indexnowkit/php-symfony-bundle. Development happens in
-# https://github.com/indexnowkit/php (monorepo), whose CI covers all packages together.
-# Between releases indexnowkit/core and indexnowkit/doctrine ^0.2 resolve to their main branches (0.2.x-dev),
-# hence minimum-stability dev.
+# CI of the read-only split repository indexnowkit/php-symfony-bundle. Development happens in the monorepo
+# https://github.com/indexnowkit/php, whose CI runs the same ci:install:* scripts of composer.json against the
+# working copy of the sibling packages. Between releases the indexnowkit/* constraints resolve to the
+# siblings' main branches, hence minimum-stability dev here.
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   tests:
@@ -19,8 +22,8 @@ jobs:
         php: ['8.2', '8.3', '8.4', '8.5']
         deps: [highest]
         include:
-          - php: '8.3'
-            deps: symfony64
+          - { php: '8.2', deps: lowest }
+          - { php: '8.3', deps: symfony64 }
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -28,13 +31,10 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: pdo_sqlite, intl
           coverage: none
-      - run: composer config minimum-stability dev && composer config prefer-stable true
-      - name: Install (highest)
-        if: matrix.deps == 'highest'
-        run: composer update --no-interaction --prefer-dist
-      - name: Install (Symfony 6.4 / DBAL 3 / ORM 2)
-        if: matrix.deps == 'symfony64'
-        run: composer update --no-interaction --prefer-dist --with symfony/framework-bundle:^6.4 --with doctrine/dbal:^3.8 --with doctrine/orm:^2.19
+      - name: Allow the unreleased sibling branches
+        run: composer config minimum-stability dev && composer config prefer-stable true
+      - name: Install (${{ matrix.deps }})
+        run: composer run ci:install:${{ matrix.deps }}
       - run: vendor/bin/phpunit
       - run: vendor/bin/phpstan analyse --memory-limit=1G
         if: matrix.deps == 'highest'
