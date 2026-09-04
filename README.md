@@ -122,7 +122,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
 `indexnow:sitemap` with no argument reads `sitemap.url`, else `<base_url>/sitemap.xml`; a local path or `file://`
-URL reads the file without the web server. XML and text sitemaps, indexes and gzip are handled; the command streams
+URL reads the file without the web server. XML and text sitemaps, indexes and gzip are handled by the [`indexnowkit/sitemap`](https://github.com/indexnowkit/php/tree/main/packages/sitemap) package the bundle requires; the command streams
 and submits every `batch.max_urls` URLs, so size is not a concern. `sitemap.enabled: false` removes the command;
 decorating `indexnowkit.sitemap_reader` shapes what it submits ([docs/extending.md](docs/extending.md)). `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and
 `indexnow:explain` need Doctrine.

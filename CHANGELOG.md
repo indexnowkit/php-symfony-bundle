@@ -3,6 +3,29 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.4.0] — 2026-09-04
+
+The core 0.4 "adapter kit" release: the services are built through the core's factories and `Adapter\ConfigFactory`,
+and the sitemap reader is `indexnowkit/sitemap` (required by this bundle, installed transitively). Configuration
+tree, commands and service ids do not change.
+
+### Changed
+
+- Requires `indexnowkit/core ^0.4`, `indexnowkit/sitemap ^0.1` and, for the Doctrine hook, `indexnowkit/doctrine ^0.3`.
+  The sitemap classes moved: `IndexNowKit\Sitemap\*` keep their names, `Console\SitemapRunner`/`SitemapOptions`
+  are `Sitemap\Console\*`, `Check\SitemapSpoolCheck` is `Sitemap\Check\SitemapSpoolCheck`. `IndexNowKit::sitemap()`
+  is gone: inject `SitemapSourceInterface` (alias of `indexnowkit.sitemap_reader`). New service
+  `indexnowkit.sitemap_config` (`SitemapConfig`, alias by class).
+- `DependencyInjection\ConfigFactory` is a declaration of the core's `Adapter\ConfigFactory` (`dispatch: auto` is
+  still resolved at compile time by the loader); `coreOptions()` is gone. `serve_key_file` is deprecated in the core
+  too; `key_file.enabled` and `key_file.cache_max_age` are core options.
+- `indexnowkit.throttle`, `collector`, `url_resolver`, `key_file_responder`, `sitemap_reader` are factory services
+  over the core's `fromConfig()`; `indexnowkit.resolver_locator` is the core's `ArrayResolverLocator` built by
+  `Url\ResolverLocatorFactory` (`Url\ContainerResolverLocator` is removed); `EntityLoader` delegates to
+  `Console\ClassNameResolver` and takes an optional list of namespaces. `DependencyInjection\TransportFactory::create()`
+  gained a third parameter (the service id, for the error text).
+- Dev tooling: phpstan runs on the `lowest` and `symfony64` flavours too (inline ignores for Symfony 6.4 stubs).
+
 ## [0.3.1] — 2026-09-04
 
 ### Changed
