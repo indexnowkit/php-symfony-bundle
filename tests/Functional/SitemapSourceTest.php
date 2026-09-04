@@ -6,11 +6,12 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Http\Response;
 use IndexNowKit\IndexNowKit;
+use IndexNowKit\Sitemap\SitemapSourceInterface;
 use IndexNowKit\SymfonyBundle\Tests\App\Sitemap\FilteringSitemapSource;
 
 /**
- * An application decorates `indexnowkit.sitemap_reader` (SitemapSourceInterface): the command and the facade's
- * sitemap() both go through the decorator; the shipped reader keeps doing the fetching and parsing underneath.
+ * An application decorates `indexnowkit.sitemap_reader` (SitemapSourceInterface): the command goes through the
+ * decorator; the shipped reader keeps doing the fetching and parsing underneath, over the bundle's transport.
  */
 final class SitemapSourceTest extends BundleTestCase
 {
@@ -26,13 +27,13 @@ final class SitemapSourceTest extends BundleTestCase
         self::assertSame(['https://www.example.com/public/a'], $this->sentUrls());
     }
 
-    public function testFacadeExposesTheSameSource(): void
+    public function testSourceAliasResolvesToTheDecoratorOverTheSharedTransport(): void
     {
         static::bootKernel();
         $kit = static::getContainer()->get('indexnowkit');
         \assert($kit instanceof IndexNowKit);
 
-        self::assertInstanceOf(FilteringSitemapSource::class, $kit->sitemap());
-        self::assertNotNull($kit->transport, 'the bundle transport is shared with the facade');
+        self::assertInstanceOf(FilteringSitemapSource::class, static::getContainer()->get(SitemapSourceInterface::class));
+        self::assertNotNull($kit->transport, 'the bundle transport is shared with the reader');
     }
 }

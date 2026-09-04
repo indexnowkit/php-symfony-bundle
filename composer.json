@@ -25,7 +25,8 @@
     "require": {
         "php": "^8.2",
         "ext-json": "*",
-        "indexnowkit/core": "^0.3",
+        "indexnowkit/core": "^0.4",
+        "indexnowkit/sitemap": "^0.1",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
         "symfony/dependency-injection": "^6.4 || ^7.0",
@@ -40,7 +41,7 @@
         "doctrine/doctrine-bundle": "^2.13 || ^3.0",
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
-        "indexnowkit/doctrine": "^0.2",
+        "indexnowkit/doctrine": "^0.3",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.0",
@@ -54,7 +55,7 @@
         "symfony/yaml": "^6.4 || ^7.0"
     },
     "suggest": {
-        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.2, together with doctrine/doctrine-bundle)",
+        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.3, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
@@ -83,7 +84,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.3.x-dev"
+            "dev-main": "0.4.x-dev"
         }
     }
 }

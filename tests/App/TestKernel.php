@@ -212,6 +212,9 @@ final class TestKernel extends Kernel
                 $config['sitemap'] = ['url' => 'https://www.example.com/sitemaps/root.xml', 'allow_foreign_hosts' => true, 'max_depth' => 1, 'max_sitemaps' => 3, 'spool' => 'memory', 'fetch_retries' => 0];
                 $config['batch'] = ['max_urls' => 2];
                 break;
+            case 'keyfiletypo':
+                $config['key_file'] = ['enabld' => false];
+                break;
             case 'nositemap':
                 $config['sitemap'] = ['enabled' => false];
                 break;

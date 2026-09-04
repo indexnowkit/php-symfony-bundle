@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
-use IndexNowKit\Console\SitemapOptions;
-use IndexNowKit\Console\SitemapRunner;
+use IndexNowKit\Sitemap\Console\SitemapOptions;
+use IndexNowKit\Sitemap\Console\SitemapRunner;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

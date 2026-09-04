@@ -9,7 +9,6 @@ use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
-use IndexNowKit\Check\SitemapSpoolCheck;
 use IndexNowKit\Client;
 use IndexNowKit\ClientInterface;
 use IndexNowKit\Collector\Collector;
@@ -20,7 +19,6 @@ use IndexNowKit\Console\ExplainRunner;
 use IndexNowKit\Console\KeyGenerateRunner;
 use IndexNowKit\Console\ResultFormatterInterface;
 use IndexNowKit\Console\ResultRenderer;
-use IndexNowKit\Console\SitemapRunner;
 use IndexNowKit\Console\SubjectLoaderInterface;
 use IndexNowKit\Console\SubmitRunner;
 use IndexNowKit\Console\SubmitSubjectsRunner;
@@ -42,9 +40,11 @@ use IndexNowKit\IndexNowKit;
 use IndexNowKit\Key\KeyFileResponder;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
+use IndexNowKit\Sitemap\Check\SitemapSpoolCheck;
+use IndexNowKit\Sitemap\Console\SitemapRunner;
+use IndexNowKit\Sitemap\SitemapConfig;
 use IndexNowKit\Sitemap\SitemapReader;
 use IndexNowKit\Sitemap\SitemapSourceInterface;
-use IndexNowKit\Sitemap\SpoolMode;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
@@ -248,7 +248,6 @@ final class IndexNowKitLoader
                 '$resolver' => service('indexnowkit.guarded_url_resolver'),
                 '$logger' => $logger,
                 '$transport' => service('indexnowkit.transport'),
-                '$sitemap' => service('indexnowkit.sitemap_reader')->nullOnInvalid(),
             ])
             ->tag('monolog.logger', ['channel' => $channel])
             ->public();
@@ -288,7 +287,9 @@ final class IndexNowKitLoader
 
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
-        $services->set('indexnowkit.check.sitemap_spool', SitemapSpoolCheck::class)->args([$config['sitemap']])->tag('indexnowkit.check');
+        $services->set('indexnowkit.sitemap_config', SitemapConfig::class)->factory([SitemapConfig::class, 'fromArray'])->args([$config['sitemap']]);
+        $services->alias(SitemapConfig::class, 'indexnowkit.sitemap_config');
+        $services->set('indexnowkit.check.sitemap_spool', SitemapSpoolCheck::class)->args([service('indexnowkit.sitemap_config')])->tag('indexnowkit.check');
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport'), tagged_iterator('indexnowkit.check')]);
         $services->alias(CheckerInterface::class, 'indexnowkit.checker');
@@ -299,7 +300,6 @@ final class IndexNowKitLoader
             '$submitSubjects' => 'indexnow:submit-entity',
             '$configLocation' => 'config/packages/indexnowkit.yaml and INDEXNOW_* env vars',
             '$keyFileServedBy' => 'once the bundle routes are imported',
-            '$sitemapUrlOption' => 'indexnowkit.sitemap.url',
         ]);
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
@@ -308,13 +308,13 @@ final class IndexNowKitLoader
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         if ($config['sitemap']['enabled']) {
-            $sitemap = $config['sitemap'];
             $services->set('indexnowkit.sitemap_reader', SitemapReader::class)
-                ->args([service('indexnowkit.transport'), $sitemap['max_depth'], $logger, $sitemap['max_sitemaps'], $sitemap['max_bytes'], $sitemap['allow_foreign_hosts'], SpoolMode::from($sitemap['spool']), $sitemap['spool_dir'], $sitemap['fetch_retries']])
+                ->factory([SitemapReader::class, 'fromConfig'])
+                ->args([service('indexnowkit.sitemap_config'), service('indexnowkit.transport'), $logger])
                 ->tag('monolog.logger', ['channel' => $channel]);
             $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
             $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
-            $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $sitemap['url'], service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
+            $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), $config['sitemap']['url'], service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url']);
             $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap')])->tag('console.command');
         }
 
