@@ -25,11 +25,12 @@ final class IndexNowKitConfiguration
     public static function build(DefinitionConfigurator $definition): void
     {
         /** @var ArrayNodeDefinition<TreeBuilder<'array'>> $root */
-        $root = $definition->rootNode();
+        $root = $definition->rootNode(); // @phpstan-ignore generics.notGeneric, generics.notGeneric (Symfony 6.4 declares no generics on the node definitions)
         $root
             ->children()
                 ->booleanNode('enabled')->defaultTrue()
                     ->info('Master switch. false = collect nothing, submit nothing, register no listeners. Prefer dry_run to keep logs and the profiler panel.')->end()
+                // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
                 ->scalarNode('key')->defaultNull()
                     ->info('Default IndexNow key (8-128 chars of [A-Za-z0-9-]), usually %env(INDEXNOW_KEY)%. Generate: bin/console indexnow:key:generate --write-env')
                     ->validate()->ifTrue(self::literal(static fn(string $v): bool => !KeyValidator::isValid($v)))->thenInvalid('indexnowkit.key must be 8-128 characters of [A-Za-z0-9-], got %s.')->end()

@@ -43,6 +43,7 @@ final class SubmitUrlsHandler
             $this->logger->info('indexnow: {count} URL(s) of message {id} will be retried', ['count' => \count($retryUrls), 'id' => $message->id]);
             $message = \sprintf('IndexNow: %d URL(s) temporarily rejected (message %s)', \count($retryUrls), $message->id);
             if ($retryAfter !== null && $retryAfter > 0 && self::supportsRetryDelay()) {
+                // @phpstan-ignore arguments.count (Symfony < 7.2 has no $retryDelay; supportsRetryDelay() guards the call)
                 throw new RecoverableMessageHandlingException($message, 0, null, $retryAfter * 1000);
             }
 

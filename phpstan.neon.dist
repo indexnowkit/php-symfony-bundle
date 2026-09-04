@@ -6,3 +6,5 @@ parameters:
     paths:
         - src
     treatPhpDocTypesAsCertain: false
+    # The lowest flavour runs on Symfony 6.4, whose stubs lack the generics and signatures of 7.x; the inline ignores for it are unmatched on 7.x.
+    reportUnmatchedIgnoredErrors: false

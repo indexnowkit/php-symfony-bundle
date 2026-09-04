@@ -63,11 +63,12 @@ use IndexNowKit\SymfonyBundle\EventListener\FlushListener;
 use IndexNowKit\SymfonyBundle\Messenger\MessengerDispatcher;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsHandler;
 use IndexNowKit\SymfonyBundle\Routing\KeyFileRouteLoader;
-use IndexNowKit\SymfonyBundle\Url\ContainerResolverLocator;
+use IndexNowKit\SymfonyBundle\Url\ResolverLocatorFactory;
 use IndexNowKit\SymfonyBundle\Url\SymfonyRouteUrlResolver;
 use IndexNowKit\Throttle\ThrottleInterface;
 use IndexNowKit\Throttle\TokenBucket;
 use IndexNowKit\Transaction\TransactionStaging;
+use IndexNowKit\Url\ArrayResolverLocator;
 use IndexNowKit\Url\AttributeUrlResolver;
 use IndexNowKit\Url\GuardedUrlResolver;
 use IndexNowKit\Url\ObjectChangeHandler;
@@ -128,7 +129,6 @@ final class IndexNowKitLoader
         $builder->setParameter('indexnowkit.messenger.transport', $config['messenger']['transport']);
         $builder->setParameter('indexnowkit.messenger_routed', $dispatch === 'messenger' && $this->detected($builder, 'messenger_routed'));
         $config['dispatch'] = $dispatch;
-        $keyFileEnabled = $config['serve_key_file'] ?? $config['key_file']['enabled'];
         $builder->setParameter('indexnowkit.key_file.path', $config['key_file']['path']);
         $builder->setParameter('indexnowkit.key_file.host', $config['key_file']['host'] ?? '');
         $builder->setParameter('indexnowkit.key_file.route_name', $config['key_file']['route_name']);
@@ -147,7 +147,7 @@ final class IndexNowKitLoader
         // Transport: built on first use only -----------------------------------------------------------------------
         $services->set('indexnowkit.transport.real', TransportInterface::class)
             ->factory([TransportFactory::class, 'create'])
-            ->args([\is_string($config['http']['client']) ? service($config['http']['client']) : null, $config['http']['timeout']]);
+            ->args([\is_string($config['http']['client']) ? service($config['http']['client']) : null, $config['http']['timeout'], \is_string($config['http']['client']) ? $config['http']['client'] : 'indexnowkit.http.client']);
         $services->set('indexnowkit.transport', LazyTransport::class)->args([service_closure('indexnowkit.transport.real')]);
         $services->alias(TransportInterface::class, 'indexnowkit.transport');
 
@@ -155,7 +155,8 @@ final class IndexNowKitLoader
         $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
 
         $services->set('indexnowkit.throttle', TokenBucket::class)
-            ->args([$config['throttle']['max_requests_per_minute'], null, null, $logger])
+            ->factory([TokenBucket::class, 'fromConfig'])
+            ->args([service('indexnowkit.config'), $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ThrottleInterface::class, 'indexnowkit.throttle');
 
@@ -182,7 +183,8 @@ final class IndexNowKitLoader
         $services->alias(SubmitterInterface::class, 'indexnowkit.submitter');
 
         $services->set('indexnowkit.collector', Collector::class)
-            ->args([$logger, $config['collector']['detect_leaks'], $config['logging']['max_urls']])
+            ->factory([Collector::class, 'fromConfig'])
+            ->args([service('indexnowkit.config'), $logger])
             ->tag('kernel.reset', ['method' => 'reset'])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Collector::class, 'indexnowkit.collector');
@@ -198,12 +200,14 @@ final class IndexNowKitLoader
         $services->alias(RouteUrlResolverInterface::class, 'indexnowkit.route_url_resolver');
 
         $builder->registerForAutoconfiguration(UrlResolverInterface::class)->addTag('indexnowkit.url_resolver');
-        $services->set('indexnowkit.resolver_locator', ContainerResolverLocator::class)
+        $services->set('indexnowkit.resolver_locator', ArrayResolverLocator::class)
+            ->factory([ResolverLocatorFactory::class, 'create'])
             ->args([tagged_locator('indexnowkit.url_resolver')]);
         $services->alias(ResolverLocatorInterface::class, 'indexnowkit.resolver_locator');
 
         $services->set('indexnowkit.url_resolver', AttributeUrlResolver::class)
-            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger, $config['resolver']['max_via_depth'], $config['resolver']['max_via_fanout'], array_change_key_case($config['locale_hosts'], CASE_LOWER)])
+            ->factory([AttributeUrlResolver::class, 'fromConfig'])
+            ->args([service('indexnowkit.config'), service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(UrlResolverInterface::class, 'indexnowkit.url_resolver');
 
@@ -261,7 +265,8 @@ final class IndexNowKitLoader
 
         // Key file --------------------------------------------------------------------------------------------------
         $services->set('indexnowkit.key_file_responder', KeyFileResponder::class)
-            ->args([service('indexnowkit.key_provider'), $keyFileEnabled]);
+            ->factory([KeyFileResponder::class, 'fromConfig'])
+            ->args([service('indexnowkit.config'), service('indexnowkit.key_provider')]);
         $services->alias(KeyFileResponder::class, 'indexnowkit.key_file_responder');
         $services->set('indexnowkit.key_file_routes', KeyFileRouteLoader::class)
             ->args([$config['key_file']['route_name'], $config['key_file']['path'], $config['key_file']['host'] ?? ''])

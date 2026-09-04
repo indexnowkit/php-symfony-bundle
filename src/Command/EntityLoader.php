@@ -6,9 +6,9 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
+use IndexNowKit\Console\ClassNameResolver;
 use IndexNowKit\Console\SubjectLoaderInterface;
 use IndexNowKit\Event;
-use IndexNowKit\Exception\InvalidArgumentException;
 
 /**
  * Resolves the class argument (FQCN or App\Entity short name) and loads entities by id for the entity commands,
@@ -17,21 +17,19 @@ use IndexNowKit\Exception\InvalidArgumentException;
  */
 final class EntityLoader implements SubjectLoaderInterface
 {
-    public function __construct(private readonly ManagerRegistry $doctrine) {}
+    private readonly ClassNameResolver $classes;
+
+    /**
+     * @param list<string> $namespaces namespaces a short class name is looked up in
+     */
+    public function __construct(private readonly ManagerRegistry $doctrine, array $namespaces = ['App\\Entity'])
+    {
+        $this->classes = new ClassNameResolver($namespaces, fn(string $class): bool => $this->doctrine->getManagerForClass($class) !== null, 'a managed Doctrine entity');
+    }
 
     public function resolveClass(string $class): string
     {
-        if (!class_exists($class) && class_exists('App\\Entity\\' . $class)) {
-            $class = 'App\\Entity\\' . $class;
-        }
-        if (!class_exists($class)) {
-            throw new InvalidArgumentException(\sprintf('Class "%s" not found.', $class));
-        }
-        if ($this->doctrine->getManagerForClass($class) === null) {
-            throw new InvalidArgumentException(\sprintf('"%s" is not a managed Doctrine entity.', $class));
-        }
-
-        return $class;
+        return $this->classes->resolve($class);
     }
 
     /**
