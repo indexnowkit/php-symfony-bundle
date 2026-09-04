@@ -3,7 +3,7 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
-## Unreleased
+## [0.3.1] — 2026-09-04
 
 ### Changed
 
@@ -167,6 +167,7 @@ contain breaking changes, listed under "Changed".
 - Commands `indexnow:key:generate`, `indexnow:check`, `indexnow:submit`, `indexnow:submit-entity`,
   `indexnow:sitemap`. Web Profiler panel. Flex recipe in `recipe/`.
 
+[0.3.1]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/indexnowkit/php-symfony-bundle/compare/0.1.0...0.1.1
