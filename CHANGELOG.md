@@ -11,6 +11,8 @@ contain breaking changes, listed under "Changed".
   `wiring.doctrine`, plus the core's `debounce.store` and `sitemap.installed`. Listed in the core's `docs/check-codes.md`.
 - `indexnow:check --json` (the report as JSON, schema `docs/check.schema.json` of `indexnowkit/console`), `--strict`
   (warnings fail the command: put it in the deploy pipeline) and a repeatable `--host` (console 0.2).
+- `indexnow:key:generate --force` keeps the replaced key as `INDEXNOW_PREVIOUS_KEY` and refuses a second rotation while
+  it is set; `--no-previous` and `--yes` decide (console 0.2).
 
 ## [0.8.0] — 2026-09-06
 

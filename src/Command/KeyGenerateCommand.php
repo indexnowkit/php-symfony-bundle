@@ -35,6 +35,6 @@ final class KeyGenerateCommand extends Command
             default => $this->projectDir . '/.env.local',
         };
 
-        return $this->runner->run(new SymfonyStyle($input, $output), is_numeric($length) ? (int) $length : 32, !(bool) $input->getOption('alphanumeric'), $envFile, (bool) $input->getOption('force'));
+        return $this->runner->run(new SymfonyStyle($input, $output), is_numeric($length) ? (int) $length : 32, !(bool) $input->getOption('alphanumeric'), $envFile, (bool) $input->getOption('force'), (bool) $input->getOption('no-previous'), (bool) $input->getOption('yes'));
     }
 }
