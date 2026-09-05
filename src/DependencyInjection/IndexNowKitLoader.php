@@ -228,12 +228,14 @@ final class IndexNowKitLoader
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ThrottleInterface::class, 'indexnowkit.throttle');
 
+        $store = $config['debounce']['store'];
+        // The 403 counter shares the PSR-16 view of the debounce pool; memory/none leave it in the process.
+        $failureCache = \in_array($store, ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16');
         $services->set('indexnowkit.client', Client::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), $logger, service('indexnowkit.throttle'), service('indexnowkit.url_normalizer')])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), $logger, service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $failureCache])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ClientInterface::class, 'indexnowkit.client');
 
-        $store = $config['debounce']['store'];
         if ($store === 'memory') {
             $services->set('indexnowkit.debounce_store', MemoryDebounceStore::class);
         } elseif ($store === 'none') {
@@ -430,7 +432,7 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid()])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         $sitemap = $config['sitemap'] ?? [];
