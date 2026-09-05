@@ -127,7 +127,7 @@ class Post
 | `name` | стабильный id правила для логов, `indexnow:explain` и переопределения в наследнике |
 
 Полная модель, типизированные параметры, наследование и таблица семантики:
-[справочник по атрибутам](https://github.com/indexnowkit/php/blob/main/packages/core/docs/attribute-reference.md).
+[справочник по атрибутам](https://github.com/indexnowkit/php/blob/main/packages/core/docs/attribute-reference.ru.md).
 
 ## Проверка
 
@@ -207,7 +207,7 @@ require indexnowkit/sitemap` и завершается с кодом 1, `indexno
 | Свои резолверы | [docs/custom-resolvers.md](docs/custom-resolvers.md) |
 | Расширение: что заменяемо, декорирование сервисов | [docs/extending.md](docs/extending.md) |
 | Тестирование интеграции | [docs/testing.md](docs/testing.md) |
-| Диагностика проблем | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Диагностика проблем | [docs/troubleshooting.ru.md](docs/troubleshooting.ru.md) |
 
 ## Эксплуатация
 
@@ -217,7 +217,7 @@ require indexnowkit/sitemap` и завершается с кодом 1, `indexno
 - [Правила мониторинга и фильтр Sentry](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#monitoring-rules),
   [удалённые страницы](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#deleted-pages-what-your-site-must-return),
   [что не отправлять](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#what-not-to-submit).
-- [Мультидомен: хосты, www и apex, hreflang](docs/multi-domain.md) · [troubleshooting](docs/troubleshooting.md).
+- [Мультидомен: хосты, www и apex, hreflang](docs/multi-domain.md) · [troubleshooting](docs/troubleshooting.ru.md).
 
 ## Отладка
 

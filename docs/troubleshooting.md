@@ -1,5 +1,7 @@
 # Troubleshooting
 
+[Русская версия](troubleshooting.ru.md)
+
 Start here:
 
 ```bash
