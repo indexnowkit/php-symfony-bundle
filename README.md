@@ -217,6 +217,34 @@ not API. The core's rules apply, including the "may grow" interfaces:
 [bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md); what this package itself keeps stable: [docs/bc.md](docs/bc.md). Before 1.0 a minor version may break;
 every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the migration.
 
+## Notes for AI assistants
+
+- Composer package `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, on `indexnowkit/core`); entity hooks need `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; the `sitemap` command needs `indexnowkit/sitemap`. Configuration: `config/packages/indexnowkit.yaml`, root key `indexnowkit`.
+- Minimal complete snippet (every `use` included):
+
+```php
+use Doctrine\ORM\Mapping as ORM;
+use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
+
+#[ORM\Entity]
+#[IndexNowDefaults(when: 'isPublished', fields: ['slug', 'title', 'published'])]
+#[IndexNow(route: 'post_show', params: ['slug' => 'slug'])]
+#[IndexNow(urls: ['/'])]
+class Post { /* ORM columns, isPublished() */ }
+```
+
+- Verify: `bin/console indexnow:check` (exit 1 on any error), `bin/console indexnow:explain App\\Entity\\Post 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity App\\Entity\\Post 1 --dry-run`.
+- Pitfalls:
+  - `dispatch: auto` exists in Symfony (`auto` | `messenger` | `sync` | `none`) and Yii2 (`auto` | `queue` | `sync` | `none`), **not** in Laravel (`queue` | `sync` | `none`).
+  - Locales: `router.locales` in Laravel, `router.languages` in Yii2, `framework.enabled_locales` in Symfony; `locales: 'all'` on a rule uses that list.
+  - `url:` names an accessor (method or property) that returns the URL; `urls:` is a list of literal URLs. Never put a literal in `url:`.
+  - A string in `when:` is an accessor read as truthy (`published`, `isPublished`). A status string needs `Equals`: `when: new Equals('status', 'published')` (`IndexNowKit\Attribute\Param\Equals`).
+  - Manual submission is `submitEntity()` in Symfony, `submitModel()` in Laravel, `submitRecord()` in Yii2; the commands are `indexnow:submit-entity`, `indexnow:submit-model`, `indexnow/submit-record`. Bulk queries (`update()`, `DB::table()`, `updateAll()`) fire no hooks: submit afterwards with those.
+  - Laravel has two classes called `IndexNowKit`: the facade `IndexNowKit\Laravel\Facades\IndexNowKit` and the core service `IndexNowKit\IndexNowKit` (inject by type). Yii2 exposes the core through `Yii::$app->indexnow->kit()`.
+  - Outside production a configured key with `dry_run` unset makes `check` fail (a staging copy would submit real URLs): set `dry_run: true` there, or `dry_run: false` explicitly when it submits on purpose.
+  - Unknown configuration keys are warned about at boot (typos such as debounce.per_urls); the key list is `Config::OPTIONS` plus the adapter's own keys.
+
+
 ## Other frameworks
 
 | | |
