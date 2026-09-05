@@ -3,6 +3,12 @@
     "description": "Symfony bundle for IndexNow: notify Yandex, Bing, Naver, Seznam and Yep when Doctrine entities change. #[IndexNow] rules on entities, commit-safe Doctrine hooks, Messenger dispatch, key file route, console commands, profiler panel.",
     "type": "symfony-bundle",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Igor Pinchuk",
+            "email": "i.pinchuk.work@gmail.com"
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true,
     "keywords": [
@@ -13,7 +19,9 @@
         "seo",
         "yandex",
         "bing",
-        "messenger"
+        "messenger",
+        "psr-18",
+        "psr-3"
     ],
     "homepage": "https://github.com/indexnowkit/php-symfony-bundle",
     "support": {
@@ -25,7 +33,7 @@
     "require": {
         "php": "^8.2",
         "ext-json": "*",
-        "indexnowkit/core": "^0.5.1",
+        "indexnowkit/core": "^0.6",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
         "symfony/dependency-injection": "^6.4 || ^7.0",
@@ -40,12 +48,13 @@
         "doctrine/doctrine-bundle": "^2.13 || ^3.0",
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
-        "indexnowkit/doctrine": "^0.3",
-        "indexnowkit/sitemap": "^0.1.1",
+        "indexnowkit/doctrine": "^0.4",
+        "indexnowkit/sitemap": "^0.2",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
         "phpstan/phpstan-strict-rules": "^2.0.12",
         "phpunit/phpunit": "^11.5",
+        "roave/security-advisories": "dev-latest",
         "symfony/browser-kit": "^6.4 || ^7.0",
         "symfony/error-handler": "^6.4.44 || ^7.0",
         "symfony/http-client": "^6.4 || ^7.0",
@@ -55,8 +64,8 @@
         "symfony/yaml": "^6.4 || ^7.0"
     },
     "suggest": {
-        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.1.1)",
-        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.3, together with doctrine/doctrine-bundle)",
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.2)",
+        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.4, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
@@ -81,11 +90,14 @@
         "ci:install:symfony64": "@composer update --no-interaction --prefer-dist --with symfony/framework-bundle:^6.4 --with doctrine/dbal:^3.8 --with doctrine/orm:^2.19"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.6.x-dev"
+            "dev-main": "0.7.x-dev"
         }
     }
 }

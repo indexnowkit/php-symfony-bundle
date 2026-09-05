@@ -7,7 +7,9 @@
 [![Downloads](https://img.shields.io/packagist/dt/indexnowkit/symfony-bundle)](https://packagist.org/packages/indexnowkit/symfony-bundle)
 [![CI](https://github.com/indexnowkit/php/actions/workflows/ci.yml/badge.svg)](https://github.com/indexnowkit/php/actions)
 [![Conformance](https://img.shields.io/badge/conformance-core%2022%2F22%20%C2%B7%20orm%2014%2F14%20%C2%B7%20http%206%2F6-brightgreen)](https://github.com/indexnowkit/spec)
+![PHPStan](https://img.shields.io/badge/phpstan-level%209-4c1)
 ![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4) ![Symfony](https://img.shields.io/badge/symfony-6.4%20%7C%207.x-000)
+[![License](https://img.shields.io/packagist/l/indexnowkit/symfony-bundle)](LICENSE)
 
 [English version](README.md) · Issues и pull requests: [github.com/indexnowkit/php](https://github.com/indexnowkit/php/issues) (репозитории `php-*` — read-only сплиты)
 
