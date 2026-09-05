@@ -6,7 +6,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Testing\CheckOutputAssertions;
+use IndexNowKit\Testing\Conformance\CheckOutputAssertions;
 
 /**
  * A staging copy with the production key and no `dry_run` line submits real URLs: `indexnow:check` must fail on

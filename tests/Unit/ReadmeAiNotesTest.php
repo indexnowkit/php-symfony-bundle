@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Unit;
 
 use IndexNowKit\Sitemap\SitemapConfig;
-use IndexNowKit\Testing\ReadmeAssertions;
+use IndexNowKit\Testing\Conformance\ReadmeAssertions;
 use PHPUnit\Framework\TestCase;
 
 /**

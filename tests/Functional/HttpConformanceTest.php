@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Testing\KeyFileAssertions;
+use IndexNowKit\Testing\Conformance\KeyFileAssertions;
 use PHPUnit\Framework\Attributes\TestDox;
 
 final class HttpConformanceTest extends BundleTestCase

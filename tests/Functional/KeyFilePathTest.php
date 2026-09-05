@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Testing\KeyFileAssertions;
+use IndexNowKit\Testing\Conformance\KeyFileAssertions;
 
 /**
  * key_file.path can move the route away from the protocol default (/{key}.txt); cache_max_age controls

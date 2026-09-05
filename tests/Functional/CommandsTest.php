@@ -7,7 +7,7 @@ namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
-use IndexNowKit\Testing\CheckOutputAssertions;
+use IndexNowKit\Testing\Conformance\CheckOutputAssertions;
 
 final class CommandsTest extends BundleTestCase
 {
