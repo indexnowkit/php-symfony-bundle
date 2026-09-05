@@ -31,15 +31,17 @@ final class CheckCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $host = $input->getOption('host');
+        $hosts = $input->getOption('host');
         $probeUrl = $input->getOption('probe-url');
 
         return $this->runner->run(
             new SymfonyStyle($input, $output),
             fn(): mixed => ConfigFactory::build($this->rawConfig, $this->environment),
             (bool) $input->getOption('live'),
-            \is_string($host) ? $host : null,
+            \is_array($hosts) ? array_values(array_filter($hosts, 'is_string')) : (\is_string($hosts) ? $hosts : null),
             \is_string($probeUrl) ? $probeUrl : null,
+            (bool) $input->getOption('json'),
+            (bool) $input->getOption('strict'),
         );
     }
 }
