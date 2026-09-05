@@ -15,6 +15,9 @@ contain breaking changes, listed under "Changed".
   it is set; `--no-previous` and `--yes` decide (console 0.2).
 - The 403 escalation of `Client` counts in the PSR-16 view of the `debounce.store` pool (core 0.8): one `critical`
   line per streak for every worker of the application; with `memory`/`none` the counter stays per process.
+- Service `indexnowkit.submission_store` (alias `Submission\SubmissionStoreInterface`, `NullSubmissionStore` by default):
+  the store the submitter and the command submitters record every `Result` in (core 0.8); replace it with your own or
+  with the `indexnowkit/history` package.
 
 ## [0.8.0] — 2026-09-06
 

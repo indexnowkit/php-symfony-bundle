@@ -44,6 +44,8 @@ use IndexNowKit\IndexNowKit;
 use IndexNowKit\Key\KeyFileResponder;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
+use IndexNowKit\Submission\NullSubmissionStore;
+use IndexNowKit\Submission\SubmissionStoreInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\CacheProbe;
@@ -246,8 +248,12 @@ final class IndexNowKitLoader
         }
         $services->alias(DebounceStoreInterface::class, 'indexnowkit.debounce_store');
 
+        // Where the submitter records every Result: nothing by default; replace the service (indexnowkit/history, or your own).
+        $services->set('indexnowkit.submission_store', NullSubmissionStore::class);
+        $services->alias(SubmissionStoreInterface::class, 'indexnowkit.submission_store');
+
         $services->set('indexnowkit.submitter', Submitter::class)
-            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), $logger, service('indexnowkit.url_normalizer'), service('event_dispatcher')->nullOnInvalid()])
+            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), $logger, service('indexnowkit.url_normalizer'), service('event_dispatcher')->nullOnInvalid(), service('indexnowkit.submission_store')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Submitter::class, 'indexnowkit.submitter');
         $services->alias(SubmitterInterface::class, 'indexnowkit.submitter');
@@ -432,7 +438,7 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16')])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16'), service('indexnowkit.submission_store')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         $sitemap = $config['sitemap'] ?? [];
