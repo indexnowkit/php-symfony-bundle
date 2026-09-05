@@ -90,11 +90,16 @@ class Post
     public ?Category $category = null;
 
     public function __construct(
-        #[ORM\Column(unique: true)] public string $slug,
-        #[ORM\Column] public string $title = '',
-        #[ORM\Column(type: 'text')] public string $body = '',
-        #[ORM\Column] public bool $published = true,
-        #[ORM\Column] public bool $amp = false,
+        #[ORM\Column(unique: true)]
+        public string $slug,
+        #[ORM\Column]
+        public string $title = '',
+        #[ORM\Column(type: 'text')]
+        public string $body = '',
+        #[ORM\Column]
+        public bool $published = true,
+        #[ORM\Column]
+        public bool $amp = false,
     ) {}
 
     public function isPublished(): bool
@@ -202,6 +207,16 @@ The full annotated tree, every default and every compile-time validation:
 | Extending: what is replaceable, decorating services | [docs/extending.md](docs/extending.md) |
 | Testing your integration | [docs/testing.md](docs/testing.md) |
 | Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
+
+## Operations
+
+- [Production checklist](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#production-checklist)
+  — key and base URL, `check` in the deploy pipeline, `strict_hosts`, a shared debounce store, a monitored queue,
+  staging that cannot submit, the three lines to alert on.
+- [Monitoring rules and the Sentry filter](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#monitoring-rules),
+  [deleted pages](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#deleted-pages-what-your-site-must-return),
+  [what not to submit](https://github.com/indexnowkit/php/blob/main/packages/core/docs/operations.md#what-not-to-submit).
+- [Multi-domain: hosts, www and apex, hreflang](docs/multi-domain.md) · [troubleshooting](docs/troubleshooting.md).
 
 ## Debugging
 
