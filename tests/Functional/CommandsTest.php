@@ -203,7 +203,7 @@ final class CommandsTest extends BundleTestCase
         $display = $tester->getDisplay();
         self::assertSame([], $this->transport()->posts, 'explain sends nothing');
         self::assertStringContainsString('Rule "article_show"', $display);
-        self::assertStringContainsString('when: published -> ', $display);
+        self::assertMatchesRegularExpression('/when: published \((true|false)\) -> /', $display, 'the value the condition read is shown');
         self::assertStringContainsString('https://www.example.com/en/articles/one', $display);
         self::assertStringContainsString(substr(TestKernel::KEY, 0, 4) . '****', $display, 'the key is masked, never printed in full');
     }

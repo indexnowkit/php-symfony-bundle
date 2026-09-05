@@ -36,6 +36,6 @@ final class ExplainCommand extends Command
         $id = $input->getArgument('id');
         $event = $input->getOption('event');
 
-        return $this->runner->run(new SymfonyStyle($input, $output), \is_string($class) ? $class : '', \is_scalar($id) ? (string) $id : '', \is_string($event) ? $event : '');
+        return $this->runner->run(new SymfonyStyle($input, $output), \is_string($class) ? $class : '', \is_scalar($id) ? (string) $id : '', \is_string($event) ? $event : '', (bool) $input->getOption('json'));
     }
 }
