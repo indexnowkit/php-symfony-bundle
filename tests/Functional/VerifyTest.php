@@ -100,6 +100,22 @@ final class VerifyTest extends BundleTestCase
         self::assertContains('verify sample https://www.example.com/de/articles/sampled: HTTP 200, index, canonical: self, robots: allowed', $messages);
     }
 
+    #[TestDox('indexnow:sitemap verifies through the decorated command factory; the no-verify flag takes the plain one')]
+    public function testSitemapNoVerify(): void
+    {
+        $this->transport()
+            ->onGet('https://www.example.com/sitemap.xml', new Response(200, '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://www.example.com/s1</loc></url><url><loc>https://www.example.com/s2</loc></url></urlset>'))
+            ->onGet('https://www.example.com/s1', new Response(200))
+            ->onGet('https://www.example.com/s2', new Response(200, '<head><meta name="robots" content="noindex"></head>'));
+        $tester = $this->tester('indexnow:sitemap');
+
+        self::assertSame(0, $tester->execute(['--force' => true]));
+        self::assertSame(['https://www.example.com/s1'], $this->sentUrls(), 'the command factory is decorated');
+
+        self::assertSame(0, $tester->execute(['--force' => true, '--no-verify' => true]));
+        self::assertSame(['https://www.example.com/s1', 'https://www.example.com/s1', 'https://www.example.com/s2'], $this->sentUrls(), 'the plain factory submits everything');
+    }
+
     public function testConfigJsonHasTheVerifySection(): void
     {
         $tester = $this->tester('indexnow:config');

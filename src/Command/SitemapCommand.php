@@ -43,6 +43,7 @@ final class SitemapCommand extends Command
             force: (bool) $input->getOption('force'),
             dryRun: (bool) $input->getOption('dry-run'),
             json: (bool) $input->getOption('json'),
+            noVerify: (bool) $input->getOption('no-verify'),
         ));
     }
 }

@@ -78,7 +78,7 @@ final class SitemapServices
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
         $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
-        $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), \is_string($url) ? $url : null, service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url']);
+        $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), \is_string($url) ? $url : null, service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url', service('indexnowkit.command_submitter_factory.unverified')]);
         $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap')])->tag('console.command');
     }
 }
