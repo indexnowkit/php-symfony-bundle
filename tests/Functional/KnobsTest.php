@@ -39,7 +39,7 @@ final class KnobsTest extends BundleTestCase
         self::assertFalse(static::getContainer()->has('indexnowkit.data_collector'));
         self::assertTrue(static::getContainer()->has(SubjectLoaderInterface::class));
         self::assertTrue(static::getContainer()->has(\IndexNowKit\Console\ResultFormatterInterface::class));
-        self::assertTrue(static::getContainer()->has(\IndexNowKit\Console\SubmitterFactoryInterface::class));
+        self::assertTrue(static::getContainer()->has(\IndexNowKit\Adapter\SubmitterFactoryInterface::class));
         self::assertTrue(static::getContainer()->has(\IndexNowKit\Check\CheckerInterface::class));
     }
 

@@ -30,7 +30,7 @@ the order you should try them:
 | Throttle | `indexnowkit.throttle` | `Throttle\ThrottleInterface` | `throttle.max_requests_per_minute` | replace for a shared (Redis) limiter |
 | Sitemap source | `indexnowkit.sitemap_reader` | `Sitemap\SitemapSourceInterface` | `sitemap.*` | decorate to filter or rewrite entries; replace to read from another place or format. Registered only with `indexnowkit/sitemap` installed and `sitemap.enabled: true` (the default) |
 | Entity loader (commands) | `indexnowkit.entity_loader` | core `Console\SubjectLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format (`byIds()` / `all()` receive the `Event`). Registered only when the Doctrine integration is active ([doctrine.md](doctrine.md)) |
-| Command submitter (`--force`, `--dry-run`) | `indexnowkit.command_submitter_factory` | core `Console\SubmitterFactoryInterface` | | decorate to wrap what the manual commands submit through |
+| Command submitter (`--force`, `--dry-run`) | `indexnowkit.command_submitter_factory` | core `Adapter\SubmitterFactoryInterface` | | decorate to wrap what the manual commands submit through |
 | Command output | `indexnowkit.result_formatter` | core `Console\ResultFormatterInterface` | | replace to match your CLI's JSON envelope or table style |
 | Command bodies | `indexnowkit.console.*` | core `Console\*Runner` | | the commands are input parsing over these; reuse a runner from your own command (a tenant loop over `SubmitSubjectsRunner`) |
 | `indexnow:check` | `indexnowkit.checker` | `Check\CheckerInterface`; add lines with `Check\CheckInterface` services (autoconfigured) | | add checks rather than replacing the checker |

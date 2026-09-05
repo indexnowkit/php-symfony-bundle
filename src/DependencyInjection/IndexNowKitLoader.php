@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use Closure;
+use IndexNowKit\Adapter\SubmitterFactory;
+use IndexNowKit\Adapter\SubmitterFactoryInterface;
 use IndexNowKit\Attribute\AttributeReader;
 use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
@@ -26,8 +28,6 @@ use IndexNowKit\Console\ResultRenderer;
 use IndexNowKit\Console\SubjectLoaderInterface;
 use IndexNowKit\Console\SubmitRunner;
 use IndexNowKit\Console\SubmitSubjectsRunner;
-use IndexNowKit\Console\SubmitterFactory;
-use IndexNowKit\Console\SubmitterFactoryInterface;
 use IndexNowKit\Console\Vocabulary;
 use IndexNowKit\Debounce\DebounceStoreInterface;
 use IndexNowKit\Debounce\MemoryDebounceStore;

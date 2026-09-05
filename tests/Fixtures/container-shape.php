@@ -366,7 +366,7 @@ return  [
                ],
               'indexnowkit.command_submitter_factory' =>
                [
-                   'class' => 'IndexNowKit\\Console\\SubmitterFactory',
+                   'class' => 'IndexNowKit\\Adapter\\SubmitterFactory',
                    'tags' =>
                     [
                         'monolog.logger' =>
@@ -645,7 +645,7 @@ return  [
               'IndexNowKit\\Key\\KeyFileResponder' => 'indexnowkit.key_file_responder',
               'IndexNowKit\\Check\\CheckerInterface' => 'indexnowkit.checker',
               'IndexNowKit\\Console\\ResultFormatterInterface' => 'indexnowkit.result_formatter',
-              'IndexNowKit\\Console\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
+              'IndexNowKit\\Adapter\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
               'IndexNowKit\\Sitemap\\SitemapConfig' => 'indexnowkit.sitemap_config',
               'IndexNowKit\\Sitemap\\SitemapReader' => 'indexnowkit.sitemap_reader',
               'IndexNowKit\\Sitemap\\SitemapSourceInterface' => 'indexnowkit.sitemap_reader',
@@ -1003,7 +1003,7 @@ return  [
                ],
               'indexnowkit.command_submitter_factory' =>
                [
-                   'class' => 'IndexNowKit\\Console\\SubmitterFactory',
+                   'class' => 'IndexNowKit\\Adapter\\SubmitterFactory',
                    'tags' =>
                     [
                         'monolog.logger' =>
@@ -1127,7 +1127,7 @@ return  [
               'IndexNowKit\\Key\\KeyFileResponder' => 'indexnowkit.key_file_responder',
               'IndexNowKit\\Check\\CheckerInterface' => 'indexnowkit.checker',
               'IndexNowKit\\Console\\ResultFormatterInterface' => 'indexnowkit.result_formatter',
-              'IndexNowKit\\Console\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
+              'IndexNowKit\\Adapter\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
           ],
      ],
     'disabled' =>
@@ -1433,7 +1433,7 @@ return  [
                ],
               'indexnowkit.command_submitter_factory' =>
                [
-                   'class' => 'IndexNowKit\\Console\\SubmitterFactory',
+                   'class' => 'IndexNowKit\\Adapter\\SubmitterFactory',
                    'tags' =>
                     [
                         'monolog.logger' =>
@@ -1632,7 +1632,7 @@ return  [
               'IndexNowKit\\Key\\KeyFileResponder' => 'indexnowkit.key_file_responder',
               'IndexNowKit\\Check\\CheckerInterface' => 'indexnowkit.checker',
               'IndexNowKit\\Console\\ResultFormatterInterface' => 'indexnowkit.result_formatter',
-              'IndexNowKit\\Console\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
+              'IndexNowKit\\Adapter\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
               'IndexNowKit\\Sitemap\\SitemapConfig' => 'indexnowkit.sitemap_config',
               'IndexNowKit\\Sitemap\\SitemapReader' => 'indexnowkit.sitemap_reader',
               'IndexNowKit\\Sitemap\\SitemapSourceInterface' => 'indexnowkit.sitemap_reader',
