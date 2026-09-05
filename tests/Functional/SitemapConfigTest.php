@@ -59,8 +59,9 @@ final class SitemapConfigTest extends BundleTestCase
         $tester = $this->tester('indexnow:sitemap');
         $this->transport()->onGet('https://www.example.com/sitemaps/root.xml', new Response(200, '<?xml version="1.0"?><urlset ' . self::NS . '><url><loc>https://www.example.com/j1</loc></url><url><loc>https://www.example.com/j2</loc></url><url><loc>https://www.example.com/j3</loc></url></urlset>'));
 
-        self::assertSame(0, $tester->execute(['--json' => true]));
+        self::assertSame(0, $tester->execute(['--json' => true], ['capture_stderr_separately' => true]));
 
+        self::assertStringContainsString('whole sitemap', $tester->getErrorOutput(), 'a full run above batch.max_urls warns on stderr, stdout stays JSON');
         /** @var list<array{engine: string, host: string, status: string, url_count: int, batches: int}> $rows */
         $rows = json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR);
         self::assertCount(1, $rows, 'one row per engine/host/status, not one per batch');
