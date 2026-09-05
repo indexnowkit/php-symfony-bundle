@@ -44,6 +44,8 @@ final class TestKernel extends Kernel
 
     /** @var list<string> variants that boot as if indexnowkit/sitemap were not installed */
     private const NO_SITEMAP_PACKAGE = ['nositemappkg', 'nositemappkgcfg'];
+    /** @var list<string> variants that boot as if indexnowkit/verify were not installed */
+    private const NO_VERIFY_PACKAGE = ['noverifypkg'];
 
     public function __construct(string $environment = 'test', bool $debug = false, private readonly string $dispatch = 'sync')
     {
@@ -63,7 +65,7 @@ final class TestKernel extends Kernel
 
     private function isProfilerVariant(): bool
     {
-        return \in_array($this->dispatch, ['profiler', 'profilerdryrun'], true);
+        return \in_array($this->dispatch, ['profiler', 'profilerdryrun', 'verify'], true);
     }
 
     public function registerBundles(): iterable
@@ -72,7 +74,7 @@ final class TestKernel extends Kernel
         if ($this->hasDoctrine()) {
             $bundles[] = new DoctrineBundle();
         }
-        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true));
+        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true), verifyInstalled: !\in_array($this->dispatch, self::NO_VERIFY_PACKAGE, true));
         if ($this->isProfilerVariant()) {
             $bundles[] = new TwigBundle();
             $bundles[] = new WebProfilerBundle();
@@ -108,7 +110,7 @@ final class TestKernel extends Kernel
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
         }
-        if ($this->dispatch === 'messenger' || $this->dispatch === 'messengerdelay') {
+        if ($this->dispatch === 'messenger' || $this->dispatch === 'messengerdelay' || $this->dispatch === 'verifymessenger') {
             $framework['messenger'] = [
                 'transports' => ['async' => 'in-memory://'],
                 'routing' => [SubmitUrlsMessage::class => 'async'],
@@ -231,6 +233,16 @@ final class TestKernel extends Kernel
             case 'sitemapsource':
                 $config['sitemap'] = ['spool' => 'memory'];
                 break;
+            case 'verify':
+                $config['verify'] = ['enabled' => true, 'redirect' => 'follow', 'user_agent' => 'test-verify/1'];
+                break;
+            case 'verifymessenger':
+                $config['dispatch'] = 'messenger';
+                $config['verify'] = ['enabled' => true];
+                break;
+            case 'noverifypkg':
+                $config['verify'] = ['enabled' => true, 'redirect' => 'follow'];
+                break;
             case 'nositemappkgcfg':
                 // A block written for the package, with a key the package's tree would reject: nothing validates it without the package.
                 $config['sitemap'] = ['url' => 'https://www.example.com/sitemaps/root.xml', 'spool' => 'memory', 'spol' => 'disk'];
@@ -250,6 +262,9 @@ final class TestKernel extends Kernel
             {
                 if ($this->useFake) {
                     $container->setAlias('indexnowkit.transport', FakeTransport::class)->setPublic(true);
+                    if ($container->hasDefinition('indexnowkit.verify.transport')) {
+                        $container->setAlias('indexnowkit.verify.transport', FakeTransport::class)->setPublic(true);
+                    }
                 }
                 if ($container->hasDefinition('indexnowkit.transport.real')) {
                     $container->getDefinition('indexnowkit.transport.real')->setPublic(true);

@@ -52,6 +52,7 @@
         "indexnowkit/doctrine": "^0.7",
         "indexnowkit/sitemap": "^0.5",
         "indexnowkit/testing": "^0.2",
+        "indexnowkit/verify": "^0.1",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
         "phpstan/phpstan-strict-rules": "^2.0.12",
@@ -67,6 +68,7 @@
     },
     "suggest": {
         "indexnowkit/sitemap": "The indexnow:sitemap command (^0.5)",
+        "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.1; verify.enabled: true)",
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.7, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",

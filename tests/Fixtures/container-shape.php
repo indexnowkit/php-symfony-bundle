@@ -439,6 +439,81 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.samples' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify_config' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\VerifyConfig',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.verify.transport.real' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.transport' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.robots' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\RobotsCache',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_sample.factory' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify_sample' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -522,6 +597,20 @@ return  [
               'indexnowkit.entity_loader' =>
                [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Command\\EntityLoader',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.entity_sampler.callable' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.entity_sampler' =>
+               [
+                   'class' => 'Closure',
                    'tags' =>
                     [
                     ],
@@ -677,6 +766,8 @@ return  [
               'IndexNowKit\\Sitemap\\SitemapConfig' => 'indexnowkit.sitemap_config',
               'IndexNowKit\\Sitemap\\SitemapReader' => 'indexnowkit.sitemap_reader',
               'IndexNowKit\\Sitemap\\SitemapSourceInterface' => 'indexnowkit.sitemap_reader',
+              'IndexNowKit\\Verify\\VerifyConfig' => 'indexnowkit.verify_config',
+              'indexnowkit.command_submitter_factory.unverified' => 'indexnowkit.command_submitter_factory',
               'IndexNowKit\\Console\\SubjectLoaderInterface' => 'indexnowkit.entity_loader',
           ],
      ],
@@ -1562,6 +1653,81 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.samples' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify_config' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\VerifyConfig',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.verify.transport.real' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.transport' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.robots' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\RobotsCache',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_sample.factory' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify_sample' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -1649,6 +1815,20 @@ return  [
                     [
                     ],
                ],
+              'indexnowkit.check.entity_sampler.callable' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.entity_sampler' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.console.submit_entity' =>
                [
                    'class' => 'IndexNowKit\\Console\\SubmitSubjectsRunner',
@@ -1720,6 +1900,1300 @@ return  [
               'IndexNowKit\\Sitemap\\SitemapConfig' => 'indexnowkit.sitemap_config',
               'IndexNowKit\\Sitemap\\SitemapReader' => 'indexnowkit.sitemap_reader',
               'IndexNowKit\\Sitemap\\SitemapSourceInterface' => 'indexnowkit.sitemap_reader',
+              'IndexNowKit\\Verify\\VerifyConfig' => 'indexnowkit.verify_config',
+              'indexnowkit.command_submitter_factory.unverified' => 'indexnowkit.command_submitter_factory',
+              'IndexNowKit\\Console\\SubjectLoaderInterface' => 'indexnowkit.entity_loader',
+          ],
+     ],
+    'messenger without doctrine, psr16 store, sitemap and verify not installed' =>
+     [
+         'definitions' =>
+          [
+              'indexnowkit.config' =>
+               [
+                   'class' => 'IndexNowKit\\Config',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.key_provider' =>
+               [
+                   'class' => 'IndexNowKit\\Key\\StaticKeyProvider',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.transport.real' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\TransportInterface',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.transport' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.url_normalizer' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\UrlNormalizerInterface',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.throttle' =>
+               [
+                   'class' => 'IndexNowKit\\Throttle\\TokenBucket',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.client' =>
+               [
+                   'class' => 'IndexNowKit\\Client',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.debounce_store.psr16' =>
+               [
+                   'class' => 'Symfony\\Component\\Cache\\Psr16Cache',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Debounce\\Psr16DebounceStore',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.submission_store' =>
+               [
+                   'class' => 'IndexNowKit\\Submission\\NullSubmissionStore',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.submitter' =>
+               [
+                   'class' => 'IndexNowKit\\Submitter',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.collector' =>
+               [
+                   'class' => 'IndexNowKit\\Collector\\Collector',
+                   'tags' =>
+                    [
+                        'kernel.reset' =>
+                         [
+                             0 =>
+                              [
+                                  'method' => 'reset',
+                              ],
+                         ],
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.attribute_reader' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\AttributeReader',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.route_url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.resolver_locator' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\AttributeUrlResolver',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.guarded_url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\GuardedUrlResolver',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.change_handler' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\ObjectChangeHandler',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.dispatcher' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Messenger\\MessengerDispatcher',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.messenger.handler' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Messenger\\SubmitUrlsHandler',
+                   'tags' =>
+                    [
+                        'messenger.message_handler' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit' =>
+               [
+                   'class' => 'IndexNowKit\\IndexNowKit',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.flush_listener' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\EventListener\\FlushListener',
+                   'tags' =>
+                    [
+                        'kernel.event_listener' =>
+                         [
+                             0 =>
+                              [
+                                  'event' => 'kernel.terminate',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1000,
+                              ],
+                             1 =>
+                              [
+                                  'event' => 'console.terminate',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1024,
+                              ],
+                             2 =>
+                              [
+                                  'event' => 'Symfony\\Component\\Messenger\\Event\\WorkerMessageHandledEvent',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1024,
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.key_file_responder' =>
+               [
+                   'class' => 'IndexNowKit\\Key\\KeyFileResponder',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.key_file_routes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Routing\\KeyFileRouteLoader',
+                   'tags' =>
+                    [
+                        'routing.route_loader' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Controller\\KeyFileController' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'controller.service_arguments' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.wiring' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\WiringCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.checker' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\Checker',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.console.vocabulary' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\Vocabulary',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.result_formatter' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ResultRenderer',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.command_submitter_factory' =>
+               [
+                   'class' => 'IndexNowKit\\Adapter\\SubmitterFactory',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.sitemap_missing' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\SitemapNotInstalledCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.samples' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify_sample' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.key_generate' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.check' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\CheckRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.config' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ConfigRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.submit' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\SubmitRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+          ],
+         'aliases' =>
+          [
+              'IndexNowKit\\Config' => 'indexnowkit.config',
+              'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
+              'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
+              'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
+              'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
+              'IndexNowKit\\Debounce\\DebounceStoreInterface' => 'indexnowkit.debounce_store',
+              'IndexNowKit\\Submission\\SubmissionStoreInterface' => 'indexnowkit.submission_store',
+              'IndexNowKit\\Submitter' => 'indexnowkit.submitter',
+              'IndexNowKit\\SubmitterInterface' => 'indexnowkit.submitter',
+              'IndexNowKit\\Collector\\Collector' => 'indexnowkit.collector',
+              'IndexNowKit\\Collector\\CollectorInterface' => 'indexnowkit.collector',
+              'IndexNowKit\\Attribute\\AttributeReader' => 'indexnowkit.attribute_reader',
+              'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
+              'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
+              'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
+              'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
+              'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
+              'IndexNowKit\\Dispatch\\DispatcherInterface' => 'indexnowkit.dispatcher',
+              'IndexNowKit\\IndexNowKit' => 'indexnowkit',
+              'IndexNowKit\\Key\\KeyFileResponder' => 'indexnowkit.key_file_responder',
+              'IndexNowKit\\Check\\CheckerInterface' => 'indexnowkit.checker',
+              'IndexNowKit\\Console\\ResultFormatterInterface' => 'indexnowkit.result_formatter',
+              'IndexNowKit\\Adapter\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
+              'indexnowkit.command_submitter_factory.unverified' => 'indexnowkit.command_submitter_factory',
+          ],
+     ],
+    'messenger with doctrine, psr16 store, verify enabled' =>
+     [
+         'definitions' =>
+          [
+              'indexnowkit.config' =>
+               [
+                   'class' => 'IndexNowKit\\Config',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.key_provider' =>
+               [
+                   'class' => 'IndexNowKit\\Key\\StaticKeyProvider',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.transport.real' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\TransportInterface',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.transport' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.url_normalizer' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\UrlNormalizerInterface',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.throttle' =>
+               [
+                   'class' => 'IndexNowKit\\Throttle\\TokenBucket',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.client' =>
+               [
+                   'class' => 'IndexNowKit\\Client',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.debounce_store.psr16' =>
+               [
+                   'class' => 'Symfony\\Component\\Cache\\Psr16Cache',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Debounce\\Psr16DebounceStore',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.submission_store' =>
+               [
+                   'class' => 'IndexNowKit\\Submission\\NullSubmissionStore',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.submitter' =>
+               [
+                   'class' => 'IndexNowKit\\Submitter',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.collector' =>
+               [
+                   'class' => 'IndexNowKit\\Collector\\Collector',
+                   'tags' =>
+                    [
+                        'kernel.reset' =>
+                         [
+                             0 =>
+                              [
+                                  'method' => 'reset',
+                              ],
+                         ],
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.attribute_reader' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\AttributeReader',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.route_url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.resolver_locator' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\AttributeUrlResolver',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.guarded_url_resolver' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\GuardedUrlResolver',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.change_handler' =>
+               [
+                   'class' => 'IndexNowKit\\Url\\ObjectChangeHandler',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.dispatcher' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Messenger\\MessengerDispatcher',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.messenger.handler' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Messenger\\SubmitUrlsHandler',
+                   'tags' =>
+                    [
+                        'messenger.message_handler' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit' =>
+               [
+                   'class' => 'IndexNowKit\\IndexNowKit',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.flush_listener' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\EventListener\\FlushListener',
+                   'tags' =>
+                    [
+                        'kernel.event_listener' =>
+                         [
+                             0 =>
+                              [
+                                  'event' => 'kernel.terminate',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1000,
+                              ],
+                             1 =>
+                              [
+                                  'event' => 'console.terminate',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1024,
+                              ],
+                             2 =>
+                              [
+                                  'event' => 'Symfony\\Component\\Messenger\\Event\\WorkerMessageHandledEvent',
+                                  'method' => 'onTerminate',
+                                  'priority' => -1024,
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.key_file_responder' =>
+               [
+                   'class' => 'IndexNowKit\\Key\\KeyFileResponder',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.key_file_routes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Routing\\KeyFileRouteLoader',
+                   'tags' =>
+                    [
+                        'routing.route_loader' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Controller\\KeyFileController' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'controller.service_arguments' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.wiring' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\WiringCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.checker' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\Checker',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.console.vocabulary' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\Vocabulary',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.result_formatter' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ResultRenderer',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.command_submitter_factory' =>
+               [
+                   'class' => 'IndexNowKit\\Adapter\\SubmitterFactory',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.sitemap_config' =>
+               [
+                   'class' => 'IndexNowKit\\Sitemap\\SitemapConfig',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.sitemap_spool' =>
+               [
+                   'class' => 'IndexNowKit\\Sitemap\\Check\\SitemapSpoolCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.sitemap_reader' =>
+               [
+                   'class' => 'IndexNowKit\\Sitemap\\SitemapReader',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.sitemap' =>
+               [
+                   'class' => 'IndexNowKit\\Sitemap\\Console\\SitemapRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\SitemapCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.samples' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify_config' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\VerifyConfig',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.verify.transport.real' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.transport' =>
+               [
+                   'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.verify.robots' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\RobotsCache',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_sample.factory' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.verify_sample' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.verify.submitter' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\VerifyingSubmitter',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.verify.command_submitter_factory' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\VerifyingSubmitterFactory',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.key_generate' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.check' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\CheckRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.config' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ConfigRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.submit' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\SubmitRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.entity_loader' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Command\\EntityLoader',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.entity_sampler.callable' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.entity_sampler' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.console.submit_entity' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\SubmitSubjectsRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\SubmitEntityCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.explain' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ExplainRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ExplainCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.doctrine.staging' =>
+               [
+                   'class' => 'IndexNowKit\\Transaction\\TransactionStaging',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.doctrine.sink' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Doctrine\\StagingSink',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.doctrine.middleware' =>
+               [
+                   'class' => 'IndexNowKit\\Doctrine\\Middleware\\IndexNowMiddleware',
+                   'tags' =>
+                    [
+                        'doctrine.middleware' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.doctrine.listener' =>
+               [
+                   'class' => 'IndexNowKit\\Doctrine\\IndexNowListener',
+                   'tags' =>
+                    [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
+                        'doctrine.event_listener' =>
+                         [
+                             0 =>
+                              [
+                                  'event' => 'onFlush',
+                                  'priority' => -100,
+                              ],
+                             1 =>
+                              [
+                                  'event' => 'postFlush',
+                                  'priority' => -100,
+                              ],
+                         ],
+                    ],
+               ],
+          ],
+         'aliases' =>
+          [
+              'IndexNowKit\\Config' => 'indexnowkit.config',
+              'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
+              'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
+              'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
+              'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
+              'IndexNowKit\\Debounce\\DebounceStoreInterface' => 'indexnowkit.debounce_store',
+              'IndexNowKit\\Submission\\SubmissionStoreInterface' => 'indexnowkit.submission_store',
+              'IndexNowKit\\Submitter' => 'indexnowkit.verify.submitter.inner',
+              'IndexNowKit\\SubmitterInterface' => 'indexnowkit.submitter',
+              'IndexNowKit\\Collector\\Collector' => 'indexnowkit.collector',
+              'IndexNowKit\\Collector\\CollectorInterface' => 'indexnowkit.collector',
+              'IndexNowKit\\Attribute\\AttributeReader' => 'indexnowkit.attribute_reader',
+              'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
+              'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
+              'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
+              'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
+              'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
+              'IndexNowKit\\Dispatch\\DispatcherInterface' => 'indexnowkit.dispatcher',
+              'IndexNowKit\\IndexNowKit' => 'indexnowkit',
+              'IndexNowKit\\Key\\KeyFileResponder' => 'indexnowkit.key_file_responder',
+              'IndexNowKit\\Check\\CheckerInterface' => 'indexnowkit.checker',
+              'IndexNowKit\\Console\\ResultFormatterInterface' => 'indexnowkit.result_formatter',
+              'IndexNowKit\\Adapter\\SubmitterFactoryInterface' => 'indexnowkit.command_submitter_factory',
+              'IndexNowKit\\Sitemap\\SitemapConfig' => 'indexnowkit.sitemap_config',
+              'IndexNowKit\\Sitemap\\SitemapReader' => 'indexnowkit.sitemap_reader',
+              'IndexNowKit\\Sitemap\\SitemapSourceInterface' => 'indexnowkit.sitemap_reader',
+              'IndexNowKit\\Verify\\VerifyConfig' => 'indexnowkit.verify_config',
+              'indexnowkit.command_submitter_factory.unverified' => 'indexnowkit.verify.command_submitter_factory.inner',
               'IndexNowKit\\Console\\SubjectLoaderInterface' => 'indexnowkit.entity_loader',
           ],
      ],

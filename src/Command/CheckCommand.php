@@ -6,6 +6,7 @@ namespace IndexNowKit\SymfonyBundle\Command;
 
 use IndexNowKit\Console\CheckRunner;
 use IndexNowKit\Console\Definitions;
+use IndexNowKit\SymfonyBundle\Check\SampleOptions;
 use IndexNowKit\SymfonyBundle\DependencyInjection\ConfigFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -19,7 +20,7 @@ final class CheckCommand extends Command
     /**
      * @param array<string, mixed> $rawConfig bundle config with env placeholders resolved
      */
-    public function __construct(private readonly CheckRunner $runner, private readonly array $rawConfig, private readonly string $environment)
+    public function __construct(private readonly CheckRunner $runner, private readonly array $rawConfig, private readonly string $environment, private readonly ?SampleOptions $samples = null)
     {
         parent::__construct();
     }
@@ -33,6 +34,10 @@ final class CheckCommand extends Command
     {
         $hosts = $input->getOption('host');
         $probeUrl = $input->getOption('probe-url');
+        if ($this->samples !== null) {
+            $this->samples->urls = self::strings($input->getOption('sample'));
+            $this->samples->classes = self::strings($input->getOption('sample-class'));
+        }
 
         return $this->runner->run(
             new SymfonyStyle($input, $output),
@@ -43,5 +48,13 @@ final class CheckCommand extends Command
             (bool) $input->getOption('json'),
             (bool) $input->getOption('strict'),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function strings(mixed $option): array
+    {
+        return \is_array($option) ? array_values(array_filter($option, static fn(mixed $v): bool => \is_string($v) && $v !== '')) : [];
     }
 }

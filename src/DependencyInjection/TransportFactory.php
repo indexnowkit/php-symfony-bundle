@@ -25,12 +25,15 @@ final class TransportFactory
     /**
      * @throws ConfigurationException when the service is neither, or when nothing can be discovered
      */
-    public static function create(?object $client, float $timeout, string $id = 'indexnowkit.http.client'): TransportInterface
+    /**
+     * @param array<string, string> $extraHeaders sent with every request (the User-Agent of the verify GETs)
+     */
+    public static function create(?object $client, float $timeout, string $id = 'indexnowkit.http.client', array $extraHeaders = []): TransportInterface
     {
         if ($client instanceof HttpClientInterface && !$client instanceof ClientInterface && class_exists(Psr18Client::class)) {
             $client = new Psr18Client($client);
         }
 
-        return Psr18Transport::discover($client === null ? null : CoreTransportFactory::psr18($client, $id), $timeout);
+        return Psr18Transport::discover($client === null ? null : CoreTransportFactory::psr18($client, $id), $timeout, $extraHeaders);
     }
 }

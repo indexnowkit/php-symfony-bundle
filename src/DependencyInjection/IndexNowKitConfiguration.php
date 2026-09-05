@@ -16,20 +16,24 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
  * Config tree of the `indexnowkit` extension. Mirrors the shared schema (docs/spec/02) plus Symfony-only
  * blocks (messenger, key_file, doctrine). Everything that is not an env placeholder is validated at compile time.
  * The `sitemap` node is the full node of {@see SitemapServices} when `indexnowkit/sitemap` is installed, else a
- * node that accepts any keys and validates none (an old yaml still compiles; the block is reported by `check`).
+ * node that accepts any keys and validates none (an old yaml still compiles; the block is reported by `check`);
+ * the `verify` node is the same with {@see VerifyServices}.
  */
 final class IndexNowKitConfiguration
 {
     public const DISPATCH_MODES = ['auto', 'sync', 'messenger', 'none'];
 
     private readonly bool $sitemapInstalled;
+    private readonly bool $verifyInstalled;
 
     /**
      * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
+     * @param bool|null $verifyInstalled  the same for `indexnowkit/verify`
      */
-    public function __construct(?bool $sitemapInstalled = null)
+    public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null)
     {
         $this->sitemapInstalled = SitemapServices::package($sitemapInstalled)->installed();
+        $this->verifyInstalled = VerifyServices::package($verifyInstalled)->installed();
     }
 
     public function build(DefinitionConfigurator $definition): void
@@ -120,6 +124,11 @@ final class IndexNowKitConfiguration
             SitemapServices::configure($children);
         } else {
             $children->arrayNode('sitemap')->ignoreExtraKeys(false)->info('Needs indexnowkit/sitemap (composer require indexnowkit/sitemap); ignored until it is installed.')->end();
+        }
+        if ($this->verifyInstalled) {
+            VerifyServices::configure($children);
+        } else {
+            $children->arrayNode('verify')->ignoreExtraKeys(false)->info('Needs indexnowkit/verify (composer require indexnowkit/verify); ignored until it is installed.')->end();
         }
         $children
                 ->booleanNode('dry_run')->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured. No default on purpose: outside production, indexnow:check fails when a key is configured and dry_run was left unset; an explicit `dry_run: false` says the environment submits on purpose.')->end()

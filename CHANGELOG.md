@@ -3,6 +3,33 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.10.0] — Unreleased
+
+### Added
+
+- **`indexnowkit/verify` wiring** (spec 17 §6.1). With the package installed the `verify` node is the full tree
+  (`enabled`, `redirect`, `non_canonical`, `origin_error`, `delay`, `timeout`, `max_redirects`, `max_batch`,
+  `robots_cache_ttl`, `user_agent`; `DependencyInjection\VerifyServices`); with `verify.enabled: true`
+  `indexnowkit.submitter` and `indexnowkit.command_submitter_factory` are decorated by `VerifyingSubmitter` /
+  `VerifyingSubmitterFactory`, so `dispatch: sync`, the Messenger handler, the profiler recorder and every command
+  verify; `Submitter::class` keeps pointing at the plain submitter; `indexnowkit.command_submitter_factory.unverified`
+  is the plain factory (for the `--no-verify` flag of `indexnow:sitemap`). New services: `indexnowkit.verify_config`,
+  `indexnowkit.verify.transport` (`verify.timeout`, `verify.user_agent`, your `http.client`), `indexnowkit.verify.robots`.
+  `check` lines: `verify.installed` (`verify: installed, disabled (verify.enabled: false)` / `verify: enabled (…)`),
+  `verify.dispatch` (warning with `dispatch: sync`), `verify.sample`. Without the package the `verify` block is
+  accepted and ignored (`check` says so) and `--sample` is an error naming the install line.
+- **`indexnow:check --sample=<url>` / `--sample-class=<FQCN>[:<id>]`** (repeatable; `Check\SampleOptions`,
+  `Check\VerifySampleCheck`, `Check\EntitySampler` over `indexnowkit.entity_loader` with Doctrine).
+- **`indexnow:config --json`** prints the `verify` section when the package is installed.
+- **`IndexNowKitBundle(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null)`** (appended), the same on
+  `IndexNowKitConfiguration` and `IndexNowKitLoader`; parameter `indexnowkit.debounce.key_prefix`;
+  `DependencyInjection\TransportFactory::create(..., array $extraHeaders = [])`.
+
+### Changed
+
+- Requires `indexnowkit/core ^0.9`, `indexnowkit/console ^0.3` and (dev/suggest) `indexnowkit/sitemap ^0.5`,
+  `indexnowkit/doctrine ^0.7`, `indexnowkit/verify ^0.1`.
+
 ## [0.9.0] — 2026-09-06
 
 ### Changed

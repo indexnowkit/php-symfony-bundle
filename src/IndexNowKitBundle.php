@@ -19,12 +19,13 @@ final class IndexNowKitBundle extends AbstractBundle
     /**
      * @param bool|null $sitemapInstalled whether `indexnowkit/sitemap` is installed; null = detect (the default). Tests
      *                                    pass false to boot the kernel as if the optional package were absent.
+     * @param bool|null $verifyInstalled  the same for `indexnowkit/verify`
      */
-    public function __construct(private readonly ?bool $sitemapInstalled = null) {}
+    public function __construct(private readonly ?bool $sitemapInstalled = null, private readonly ?bool $verifyInstalled = null) {}
 
     public function configure(DefinitionConfigurator $definition): void
     {
-        (new IndexNowKitConfiguration($this->sitemapInstalled))->build($definition);
+        (new IndexNowKitConfiguration($this->sitemapInstalled, $this->verifyInstalled))->build($definition);
     }
 
     /**
@@ -65,7 +66,7 @@ final class IndexNowKitBundle extends AbstractBundle
     // @phpstan-ignore-next-line method.childParameterType
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        (new IndexNowKitLoader($this->sitemapInstalled))->load($config, $container, $builder);
+        (new IndexNowKitLoader($this->sitemapInstalled, $this->verifyInstalled))->load($config, $container, $builder);
     }
 
     public function getPath(): string

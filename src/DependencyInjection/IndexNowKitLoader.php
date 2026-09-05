@@ -50,6 +50,9 @@ use IndexNowKit\Submission\SubmissionStoreInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\CacheProbe;
+use IndexNowKit\SymfonyBundle\Check\EntitySampler;
+use IndexNowKit\SymfonyBundle\Check\SampleOptions;
+use IndexNowKit\SymfonyBundle\Check\VerifySampleCheck;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\ConfigCommand;
@@ -103,7 +106,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
  * from {@see SitemapServices} when `indexnowkit/sitemap` is installed; without it `indexnow:sitemap` is
  * {@see SitemapNotInstalledCommand} and `check` prints one `StaticCheck` line (nothing is logged at boot).
  *
- * @phpstan-type Tree array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>}
+ * @phpstan-type Tree array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>, verify?: array<string, mixed>}
  */
 final class IndexNowKitLoader
 {
@@ -112,13 +115,17 @@ final class IndexNowKitLoader
 
     /** The optional `indexnowkit/sitemap` behind its predicate; what `check` and the stub command print come from it. */
     private readonly OptionalPackage $sitemap;
+    /** The optional `indexnowkit/verify` behind its predicate. */
+    private readonly OptionalPackage $verify;
 
     /**
      * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
+     * @param bool|null $verifyInstalled  the same for `indexnowkit/verify`
      */
-    public function __construct(?bool $sitemapInstalled = null)
+    public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null)
     {
         $this->sitemap = SitemapServices::package($sitemapInstalled);
+        $this->verify = VerifyServices::package($verifyInstalled);
     }
 
     /**
@@ -140,6 +147,7 @@ final class IndexNowKitLoader
         $builder->setParameter('indexnowkit.key_file.path', $config['key_file']['path']);
         $builder->setParameter('indexnowkit.key_file.host', $config['key_file']['host'] ?? '');
         $builder->setParameter('indexnowkit.key_file.route_name', $config['key_file']['route_name']);
+        $builder->setParameter('indexnowkit.debounce.key_prefix', $config['debounce']['key_prefix'] ?? Config::DEFAULT_DEBOUNCE_KEY_PREFIX);
 
         $this->loadConfig($services, $config, $logger);
         $this->loadHttp($services, $config);
@@ -450,13 +458,25 @@ final class IndexNowKitLoader
             $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([$this->sitemap->checkLevel($sitemap), $this->sitemap->checkLine($sitemap), $this->sitemap->checkCode()])->tag('indexnowkit.check');
             $services->set(SitemapNotInstalledCommand::class)->args([$this->sitemap->notInstalledMessage()])->tag('console.command');
         }
+        // The --sample options of check reach the (compile-time) checks through this holder; the sample check itself
+        // is the package's or the "not installed" line / error.
+        $services->set('indexnowkit.check.samples', SampleOptions::class);
+        $verify = $config['verify'] ?? [];
+        $packages = [];
+        if ($this->verify->installed()) {
+            VerifyServices::register($services, $verify, $logger, $channel, $config['dispatch'], \is_string($config['http']['client']) ? $config['http']['client'] : null, !\in_array($config['debounce']['store'], ['memory', 'none'], true));
+            $packages['verify'] = service('indexnowkit.verify_config');
+        } else {
+            $services->set('indexnowkit.check.verify_sample', VerifySampleCheck::class)->args([service('indexnowkit.check.samples'), null, $this->verify->checkLine($verify), $this->verify->checkLevel($verify)->value])->tag('indexnowkit.check');
+            $services->alias('indexnowkit.command_submitter_factory.unverified', 'indexnowkit.command_submitter_factory');
+        }
 
         $services->set('indexnowkit.console.key_generate', KeyGenerateRunner::class)->args([service('indexnowkit.console.vocabulary')]);
         $services->set(KeyGenerateCommand::class)->args([service('indexnowkit.console.key_generate'), '%kernel.project_dir%'])->tag('console.command');
         $services->set('indexnowkit.console.check', CheckRunner::class)->args([service('indexnowkit.checker'), service('indexnowkit.console.vocabulary')]);
-        $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), $config, '%kernel.environment%'])->tag('console.command');
+        $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), $config, '%kernel.environment%', service('indexnowkit.check.samples')])->tag('console.command');
         $services->set('indexnowkit.console.config', ConfigRunner::class)->args([service('indexnowkit.console.vocabulary')]);
-        $services->set(ConfigCommand::class)->args([service('indexnowkit.console.config'), $config, '%kernel.environment%'])->tag('console.command');
+        $services->set(ConfigCommand::class)->args([service('indexnowkit.console.config'), $config, '%kernel.environment%', $packages])->tag('console.command');
         $services->set('indexnowkit.console.submit', SubmitRunner::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')]);
         $services->set(SubmitCommand::class)->args([service('indexnowkit.console.submit')])->tag('console.command');
 
@@ -465,6 +485,8 @@ final class IndexNowKitLoader
         }
         $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
         $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
+        $services->set('indexnowkit.check.entity_sampler.callable', EntitySampler::class)->args([service('indexnowkit.entity_loader'), service('indexnowkit')]);
+        $services->set('indexnowkit.check.entity_sampler', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.entity_sampler.callable')]);
         $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
         $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command');
         $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);

@@ -17,9 +17,11 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class ConfigCommand extends Command
 {
     /**
-     * @param array<string, mixed> $rawConfig bundle config with env placeholders resolved
+     * @param array<string, mixed>  $rawConfig bundle config with env placeholders resolved
+     * @param array<string, object> $packages  the configuration object of every installed optional package by block
+     *                                         name (`verify` => `VerifyConfig`); each has `toArray()`
      */
-    public function __construct(private readonly ConfigRunner $runner, private readonly array $rawConfig, private readonly string $environment)
+    public function __construct(private readonly ConfigRunner $runner, private readonly array $rawConfig, private readonly string $environment, private readonly array $packages = [])
     {
         parent::__construct();
     }
@@ -31,6 +33,15 @@ final class ConfigCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return $this->runner->run(new SymfonyStyle($input, $output), fn(): \IndexNowKit\Config => ConfigFactory::build($this->rawConfig, $this->environment), $this->rawConfig, (bool) $input->getOption('json'));
+        $packages = [];
+        foreach ($this->packages as $name => $config) {
+            if (method_exists($config, 'toArray')) {
+                /** @var array<string, mixed> $block */
+                $block = $config->toArray();
+                $packages[$name] = $block;
+            }
+        }
+
+        return $this->runner->run(new SymfonyStyle($input, $output), fn(): \IndexNowKit\Config => ConfigFactory::build($this->rawConfig, $this->environment), $this->rawConfig, (bool) $input->getOption('json'), $packages);
     }
 }
