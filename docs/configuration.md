@@ -51,7 +51,7 @@ indexnowkit:
     # URLs longer than this many bytes are skipped as invalid_url. The protocol sets no limit.
     max_url_length:       2048
 
-    # api = api.indexnow.org, the shared endpoint reaching Yandex, Bing, Naver, Seznam and Yep.
+    # api = api.indexnow.org, the shared endpoint reaching Yandex, Bing, Naver, Seznam, Yep, Internet Archive and Amazon.
     # Name a single engine only to target it, or give a full https endpoint URL (or an alias below).
     engines:              [api]
 
