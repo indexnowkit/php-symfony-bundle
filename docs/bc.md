@@ -23,4 +23,4 @@ shape the bundle's own tests pin.
 
 ## Pinning
 
-`composer require indexnowkit/symfony-bundle:^0.7` gets every 0.7.x patch. Read the changelog before a minor.
+`composer require indexnowkit/symfony-bundle:^0.8` gets every 0.8.x patch. Read the changelog before a minor.

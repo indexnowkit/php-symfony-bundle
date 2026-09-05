@@ -49,8 +49,8 @@
         "doctrine/doctrine-bundle": "^2.13 || ^3.0",
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
-        "indexnowkit/doctrine": "^0.4",
-        "indexnowkit/sitemap": "^0.2",
+        "indexnowkit/doctrine": "^0.5",
+        "indexnowkit/sitemap": "^0.3",
         "indexnowkit/testing": "^0.1",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
@@ -66,8 +66,8 @@
         "symfony/yaml": "^6.4 || ^7.0"
     },
     "suggest": {
-        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.2)",
-        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.4, together with doctrine/doctrine-bundle)",
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.3)",
+        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.5, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
@@ -99,7 +99,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.7.x-dev"
+            "dev-main": "0.8.x-dev"
         }
     }
 }
