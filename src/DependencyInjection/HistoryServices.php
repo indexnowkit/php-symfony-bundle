@@ -55,15 +55,15 @@ final class HistoryServices
     /** The `history` node, on the root's children. */
     public static function configure(NodeBuilder $children): void
     {
-        $children->arrayNode('history')->addDefaultsIfNotSet()
-            ->validate()
-                ->ifTrue(static fn(array $v): bool => ($v['pdo']['dsn'] ?? null) !== null && ($v['pdo']['service'] ?? null) !== null)
-                ->thenInvalid('indexnowkit.history.pdo: set either "dsn" or "service", not both.')
-            ->end()
-            ->children()
+        $history = $children->arrayNode('history')->addDefaultsIfNotSet();
+        $history->validate()
+            ->ifTrue(static fn(array $v): bool => ($v['pdo']['dsn'] ?? null) !== null && ($v['pdo']['service'] ?? null) !== null)
+            ->thenInvalid('indexnowkit.history.pdo: set either "dsn" or "service", not both.');
+        $history->children()
             ->scalarNode('store')->defaultNull()->info('Where every submission Result is recorded: null (default) = nothing is kept; psr16 = a ring buffer of `limit` records in the debounce cache pool (one process, development, small sites); pdo = the `pdo.table` table of a database (production). Literal, not an env placeholder: the store is wired at compile time.')
                 ->validate()->ifTrue(IndexNowKitConfiguration::literal(static fn(string $v): bool => !\in_array(strtolower($v), HistoryConfig::STORES, true)))->thenInvalid('indexnowkit.history.store must be null, "psr16" or "pdo".')->end()
             ->end()
+            // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
             ->integerNode('limit')->defaultValue(HistoryConfig::DEFAULT_LIMIT)->min(1)->info('Records the psr16 store keeps; the oldest is overwritten.')->end()
             ->scalarNode('key_prefix')->defaultNull()->info('Cache key prefix of the psr16 store. Default: debounce.key_prefix. No {}()/\@: (PSR-6 reserved).')
                 ->validate()->ifTrue(IndexNowKitConfiguration::literal(static fn(string $v): bool => preg_match('/[{}()\/\\\\@:]/', $v) === 1))->thenInvalid('indexnowkit.history.key_prefix must not contain {}()/\@:.')->end()
@@ -76,7 +76,7 @@ final class HistoryServices
                 ->end()
             ->end()->end()
             ->integerNode('retention_days')->defaultValue(HistoryConfig::DEFAULT_RETENTION_DAYS)->min(1)->info('What `indexnow:history --purge` removes beyond (cron it on the pdo store).')->end()
-        ->end()->end();
+        ->end();
     }
 
     /**

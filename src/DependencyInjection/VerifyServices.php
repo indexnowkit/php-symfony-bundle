@@ -58,6 +58,7 @@ final class VerifyServices
     {
         $children->arrayNode('verify')->addDefaultsIfNotSet()->children()
             ->booleanNode('enabled')->defaultFalse()->info('One GET of every URL before it is submitted: noindex, robots.txt, canonical, redirects and origin errors are skipped; 404/410 pass as deletions. Off by default. With dispatch: sync the GETs run inside the web request — use a queue.')->end()
+            // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
             ->enumNode('redirect')->values(self::values(RedirectPolicy::cases()))->defaultValue(RedirectPolicy::Skip->value)->info('skip: a 3xx is skipped (Reason::Redirected). follow: the chain is followed (max_redirects hops, http(s), hosts with a key only); after a 301/308 both URLs are submitted, after a 302/303/307 the original.')->end()
             ->enumNode('non_canonical')->values(self::values(NonCanonicalPolicy::cases()))->defaultValue(NonCanonicalPolicy::Skip->value)->info('skip: a page whose canonical is another URL is skipped. replace: the canonical is submitted instead (when its host has a key).')->end()
             ->enumNode('origin_error')->values(self::values(OriginErrorPolicy::cases()))->defaultValue(OriginErrorPolicy::Skip->value)->info('skip: 401, 403, 5xx, any other 4xx and a transport failure are skipped (retryable). send: submitted anyway, with a warning.')->end()
