@@ -297,6 +297,6 @@ class Post { /* ORM columns, isPublished() */ }
 | JS/TS | @indexnowkit/core, next, prisma (скоро) |
 | Python | indexnowkit, indexnowkit-django (скоро) |
 
-Обоснование архитектуры: [docs/spec](https://github.com/indexnowkit/php/tree/main/docs/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
+Обоснование архитектуры: [docs/spec](https://github.com/indexnowkit/spec). Changelog: [CHANGELOG.md](CHANGELOG.md).
 
 MIT. IndexNow — товарный знак его владельца; проект независимый и не связан с Microsoft, Яндексом или indexnow.org.
