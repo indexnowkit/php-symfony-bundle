@@ -29,7 +29,7 @@ final class IndexNowKitConfiguration
      */
     public function __construct(?bool $sitemapInstalled = null)
     {
-        $this->sitemapInstalled = $sitemapInstalled ?? SitemapServices::installed();
+        $this->sitemapInstalled = SitemapServices::package($sitemapInstalled)->installed();
     }
 
     public function build(DefinitionConfigurator $definition): void

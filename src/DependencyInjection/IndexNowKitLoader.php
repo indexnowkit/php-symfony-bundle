@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use Closure;
+use IndexNowKit\Adapter\OptionalPackage;
 use IndexNowKit\Adapter\SubmitterFactory;
 use IndexNowKit\Adapter\SubmitterFactoryInterface;
 use IndexNowKit\Attribute\AttributeReader;
@@ -12,7 +13,6 @@ use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
-use IndexNowKit\Check\CheckLevel;
 use IndexNowKit\Check\DebounceStoreCheck;
 use IndexNowKit\Check\StaticCheck;
 use IndexNowKit\Client;
@@ -106,18 +106,15 @@ final class IndexNowKitLoader
     /** Default of `logging.channel`. */
     public const LOG_CHANNEL = 'indexnow';
 
-    /** What `indexnow:check` prints without `indexnowkit/sitemap`, with and without a `sitemap` block in the configuration. */
-    public const SITEMAP_MISSING = 'sitemap: not installed (composer require indexnowkit/sitemap)';
-    public const SITEMAP_MISSING_BLOCK_IGNORED = 'sitemap: not installed, the sitemap block in the configuration is ignored (composer require indexnowkit/sitemap)';
-
-    private readonly bool $sitemapInstalled;
+    /** The optional `indexnowkit/sitemap` behind its predicate; what `check` and the stub command print come from it. */
+    private readonly OptionalPackage $sitemap;
 
     /**
      * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
      */
     public function __construct(?bool $sitemapInstalled = null)
     {
-        $this->sitemapInstalled = $sitemapInstalled ?? SitemapServices::installed();
+        $this->sitemap = SitemapServices::package($sitemapInstalled);
     }
 
     /**
@@ -437,11 +434,11 @@ final class IndexNowKitLoader
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         $sitemap = $config['sitemap'] ?? [];
-        if ($this->sitemapInstalled) {
+        if ($this->sitemap->installed()) {
             SitemapServices::register($services, $sitemap, $logger, $channel);
         } else {
-            $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([CheckLevel::Ok, $sitemap === [] ? self::SITEMAP_MISSING : self::SITEMAP_MISSING_BLOCK_IGNORED])->tag('indexnowkit.check');
-            $services->set(SitemapNotInstalledCommand::class)->tag('console.command');
+            $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([$this->sitemap->checkLevel($sitemap), $this->sitemap->checkLine($sitemap)])->tag('indexnowkit.check');
+            $services->set(SitemapNotInstalledCommand::class)->args([$this->sitemap->notInstalledMessage()])->tag('console.command');
         }
 
         $services->set('indexnowkit.console.key_generate', KeyGenerateRunner::class)->args([service('indexnowkit.console.vocabulary')]);

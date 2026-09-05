@@ -14,6 +14,11 @@ contain breaking changes, listed under "Changed".
   moved there from the core (`Testing\Conformance\KeyFileAssertions`, `CheckOutputAssertions`, `ReadmeAssertions`).
 - Requires `indexnowkit/console ^0.1`: the runners and definitions the commands are built on moved there from the core
   with their FQCN unchanged (`IndexNowKit\Console\*`); Composer installs it with this package, nothing to do.
+- The sitemap predicate is an `IndexNowKit\Adapter\OptionalPackage` (`DependencyInjection\SitemapServices::package()`);
+  the bundle's `sitemapInstalled` constructor argument is unchanged. `IndexNowKitLoader::SITEMAP_MISSING`,
+  `SITEMAP_MISSING_BLOCK_IGNORED` and `Command\SitemapNotInstalledCommand::MESSAGE` are gone (the texts come from the
+  package object; `DependencyInjection\*` is wiring, not API). The `check` line for a configured but ignored `sitemap`
+  block is a warning now (it was ok).
 
 ### Documentation
 

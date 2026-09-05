@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
+use IndexNowKit\Adapter\OptionalPackage;
 use IndexNowKit\Sitemap\Check\SitemapSpoolCheck;
 use IndexNowKit\Sitemap\Console\SitemapRunner;
 use IndexNowKit\Sitemap\SitemapConfig;
@@ -25,10 +26,13 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurat
  */
 final class SitemapServices
 {
-    /** The predicate: whether `indexnowkit/sitemap` is installed (a class constant of an absent class is safe). */
-    public static function installed(): bool
+    /**
+     * The one predicate for `indexnowkit/sitemap` (a class constant of an absent class is safe); null = detect,
+     * false = build the container as if the package were absent (the bundle's `sitemapInstalled` argument).
+     */
+    public static function package(?bool $installed = null): OptionalPackage
     {
-        return class_exists(SitemapReader::class);
+        return new OptionalPackage('indexnowkit/sitemap', SitemapReader::class, 'sitemap', $installed);
     }
 
     /** The `sitemap` node, on the root's children. */

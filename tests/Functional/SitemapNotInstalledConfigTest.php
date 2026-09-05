@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Console\ExitCode;
-use IndexNowKit\SymfonyBundle\DependencyInjection\IndexNowKitLoader;
 
 /**
  * indexnowkit/sitemap not installed, but the yaml still carries a `sitemap` block (written for the package, with a
@@ -21,7 +20,7 @@ final class SitemapNotInstalledConfigTest extends BundleTestCase
         $tester = $this->tester('indexnow:check');
         $tester->execute([]);
 
-        self::assertStringContainsString(IndexNowKitLoader::SITEMAP_MISSING_BLOCK_IGNORED, $tester->getDisplay());
+        self::assertStringContainsString('sitemap: not installed, the sitemap block in the configuration is ignored (composer require indexnowkit/sitemap)', $tester->getDisplay());
         self::assertStringNotContainsString('spol', $tester->getDisplay(), 'no "unknown option" line: the whole block is ignored');
 
         $tester = $this->tester('indexnow:submit');

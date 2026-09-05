@@ -18,7 +18,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'indexnow:sitemap', description: 'Submit every URL of a sitemap (needs indexnowkit/sitemap, which is not installed)')]
 final class SitemapNotInstalledCommand extends Command
 {
-    public const MESSAGE = 'indexnowkit/sitemap is not installed: composer require indexnowkit/sitemap';
+    /**
+     * @param string $message what to print: `OptionalPackage::notInstalledMessage()` of the loader's sitemap package
+     */
+    public function __construct(private readonly string $message)
+    {
+        parent::__construct();
+    }
 
     protected function configure(): void
     {
@@ -27,7 +33,7 @@ final class SitemapNotInstalledCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln('<error>' . self::MESSAGE . '</error>'); // one line, not a wrapped block: a cron log greps it
+        $output->writeln('<error>' . $this->message . '</error>'); // one line, not a wrapped block: a cron log greps it
 
         return ExitCode::FAILURE;
     }

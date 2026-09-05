@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
 use IndexNowKit\Console\ExitCode;
-use IndexNowKit\SymfonyBundle\Command\SitemapNotInstalledCommand;
-use IndexNowKit\SymfonyBundle\DependencyInjection\IndexNowKitLoader;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 
 /**
@@ -23,8 +21,7 @@ final class SitemapNotInstalledTest extends BundleTestCase
         $tester = $this->tester('indexnow:sitemap');
 
         self::assertSame(ExitCode::FAILURE, $tester->execute(['sitemap' => 'https://www.example.com/sitemap.xml', '--dry-run' => true, '--changed-since' => '1 day']), 'arguments and options of the real command are accepted and ignored');
-        self::assertStringContainsString(SitemapNotInstalledCommand::MESSAGE, $tester->getDisplay());
-        self::assertStringContainsString('composer require indexnowkit/sitemap', $tester->getDisplay());
+        self::assertStringContainsString('indexnowkit/sitemap is not installed: composer require indexnowkit/sitemap', $tester->getDisplay());
     }
 
     public function testCheckPrintsTheMissingPackageLine(): void
@@ -32,7 +29,7 @@ final class SitemapNotInstalledTest extends BundleTestCase
         $tester = $this->tester('indexnow:check');
         $tester->execute([]);
 
-        self::assertStringContainsString(IndexNowKitLoader::SITEMAP_MISSING, $tester->getDisplay());
+        self::assertStringContainsString('sitemap: not installed (composer require indexnowkit/sitemap)', $tester->getDisplay());
         self::assertStringNotContainsString('block in the configuration is ignored', $tester->getDisplay(), 'no sitemap block was configured');
     }
 
