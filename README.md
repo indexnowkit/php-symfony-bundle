@@ -222,7 +222,7 @@ The full annotated tree, every default and every compile-time validation:
 
 Three tools, in the order you should reach for them.
 
-1. **`bin/console indexnow:explain App\Entity\Post 42`** walks the whole decision path for one entity — rules, event
+1. **`bin/console indexnow:explain 'App\Entity\Post' 42`** walks the whole decision path for one entity — rules, event
    subscription, `when` guard, `fields` filter, resolved URLs, normalization, host and key, key file, debounce — and
    sends nothing.
 2. **The Web Profiler panel** shows what the request collected, what was actually sent, and the HTTP outcome per
@@ -275,7 +275,7 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 class Post { /* ORM columns, isPublished() */ }
 ```
 
-- Verify: `bin/console indexnow:check` (exit 1 on any error), `bin/console indexnow:explain App\\Entity\\Post 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity App\\Entity\\Post 1 --dry-run`.
+- Verify: `bin/console indexnow:check` (exit 1 on any error), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
 - Pitfalls:
   - `dispatch: auto` exists in Symfony (`auto` | `messenger` | `sync` | `none`) and Yii2 (`auto` | `queue` | `sync` | `none`), **not** in Laravel (`queue` | `sync` | `none`).
   - Locales: `router.locales` in Laravel, `router.languages` in Yii2, `framework.enabled_locales` in Symfony; `locales: 'all'` on a rule uses that list.

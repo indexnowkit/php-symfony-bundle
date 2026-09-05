@@ -158,4 +158,4 @@ in `postFlush`.
 Changed to-many associations are handled too: `post.tags` is not part of the post's change set, so a scheduled
 collection update re-classifies the owner with the association's field name as the changed field.
 
-Use `bin/console indexnow:explain App\Entity\Post 42` to see which rule decided what.
+Use `bin/console indexnow:explain 'App\Entity\Post' 42` to see which rule decided what.

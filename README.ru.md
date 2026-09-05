@@ -223,7 +223,7 @@ require indexnowkit/sitemap` и завершается с кодом 1, `indexno
 
 Три инструмента, в том порядке, в котором за ними стоит тянуться.
 
-1. **`bin/console indexnow:explain App\Entity\Post 42`** проходит весь путь решения для одной сущности — правила,
+1. **`bin/console indexnow:explain 'App\Entity\Post' 42`** проходит весь путь решения для одной сущности — правила,
    подписка на событие, guard `when`, фильтр `fields`, вычисленные URL, нормализация, host и ключ, файл ключа,
    дебаунс — и ничего не отправляет.
 2. **Панель Web Profiler** показывает, что запрос собрал, что реально ушло и HTTP-результат по каждому движку,
@@ -277,7 +277,7 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 class Post { /* ORM columns, isPublished() */ }
 ```
 
-- Проверка: `bin/console indexnow:check` (exit 1 при любой ошибке), `bin/console indexnow:explain App\\Entity\\Post 1` (почему URL был или не был получен), `bin/console indexnow:submit-entity App\\Entity\\Post 1 --dry-run`.
+- Проверка: `bin/console indexnow:check` (exit 1 при любой ошибке), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (почему URL был или не был получен), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
 - Ловушки:
   - `dispatch: auto` есть в Symfony (`auto` | `messenger` | `sync` | `none`) и Yii2 (`auto` | `queue` | `sync` | `none`), в Laravel **нет** (`queue` | `sync` | `none`).
   - Локали: `router.locales` в Laravel, `router.languages` в Yii2, `framework.enabled_locales` в Symfony; `locales: 'all'` у правила берёт этот список.
