@@ -157,10 +157,14 @@ final class TestKernel extends Kernel
             'key' => self::KEY,
             'base_url' => 'https://www.example.com',
             'dispatch' => 'sync',
+            'dry_run' => false, // explicit: the kernel environment "test" is not production, an unset dry_run fails check
             'debounce' => ['per_url' => 0],
             'key_file' => ['enabled' => $this->dispatch !== 'nokey'],
         ];
         switch ($this->dispatch) {
+            case 'staging':
+                unset($config['dry_run']);
+                break;
             case 'messenger':
                 $config['dispatch'] = 'messenger';
                 break;

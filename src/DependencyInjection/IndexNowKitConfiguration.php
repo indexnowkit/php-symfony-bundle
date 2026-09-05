@@ -122,7 +122,7 @@ final class IndexNowKitConfiguration
             $children->arrayNode('sitemap')->ignoreExtraKeys(false)->info('Needs indexnowkit/sitemap (composer require indexnowkit/sitemap); ignored until it is installed.')->end();
         }
         $children
-                ->booleanNode('dry_run')->defaultFalse()->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured.')->end()
+                ->booleanNode('dry_run')->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured. No default on purpose: outside production, indexnow:check fails when a key is configured and dry_run was left unset; an explicit `dry_run: false` says the environment submits on purpose.')->end()
                 // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
                 ->arrayNode('logging')->addDefaultsIfNotSet()->children()
                     ->scalarNode('channel')->defaultValue('indexnow')->cannotBeEmpty()->info('Monolog channel every bundle service logs to.')->end()
