@@ -18,6 +18,9 @@ contain breaking changes, listed under "Changed".
 - Service `indexnowkit.submission_store` (alias `Submission\SubmissionStoreInterface`, `NullSubmissionStore` by default):
   the store the submitter and the command submitters record every `Result` in (core 0.8); replace it with your own or
   with the `indexnowkit/history` package.
+- Configuration block `normalizer` (`strip_tracking_params`, `tracking_params`, `trailing_slash`, `sort_query`): the
+  canonical form of every URL (core 0.8). `indexnowkit.url_normalizer` is now built by `Url\UrlNormalizerFactory`
+  from the configuration; tracking parameters are stripped by default.
 
 ## [0.8.0] — 2026-09-06
 

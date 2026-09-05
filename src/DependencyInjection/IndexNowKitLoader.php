@@ -76,7 +76,7 @@ use IndexNowKit\Url\GuardedUrlResolver;
 use IndexNowKit\Url\ObjectChangeHandler;
 use IndexNowKit\Url\ResolverLocatorInterface;
 use IndexNowKit\Url\RouteUrlResolverInterface;
-use IndexNowKit\Url\UrlNormalizer;
+use IndexNowKit\Url\UrlNormalizerFactory;
 use IndexNowKit\Url\UrlNormalizerInterface;
 use IndexNowKit\Url\UrlResolverInterface;
 use Symfony\Component\Cache\Psr16Cache;
@@ -221,7 +221,7 @@ final class IndexNowKitLoader
      */
     private function loadPipeline(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel): void
     {
-        $services->set('indexnowkit.url_normalizer', UrlNormalizer::class)->args([$config['base_url'], $config['max_url_length'] ?? Config::DEFAULT_MAX_URL_LENGTH]);
+        $services->set('indexnowkit.url_normalizer', UrlNormalizerInterface::class)->factory([UrlNormalizerFactory::class, 'fromConfig'])->args([service('indexnowkit.config')]);
         $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
 
         $services->set('indexnowkit.throttle', TokenBucket::class)
