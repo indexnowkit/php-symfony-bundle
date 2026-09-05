@@ -33,6 +33,7 @@
     "require": {
         "php": "^8.2",
         "ext-json": "*",
+        "indexnowkit/console": "^0.1",
         "indexnowkit/core": "^0.7",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",

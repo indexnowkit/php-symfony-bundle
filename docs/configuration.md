@@ -300,11 +300,11 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Throttle\ThrottleInterface` | `indexnowkit.throttle` |
 | `Dispatch\DispatcherInterface` | `indexnowkit.dispatcher` |
 | `Sitemap\SitemapSourceInterface` (and `Sitemap\SitemapReader`) | `indexnowkit.sitemap_reader` (only with `sitemap.enabled`) |
-| `Console\SubjectLoaderInterface` (core) | `indexnowkit.entity_loader` (only with Doctrine) |
+| `Console\SubjectLoaderInterface` (`indexnowkit/console`) | `indexnowkit.entity_loader` (only with Doctrine) |
 | `Check\CheckerInterface` | `indexnowkit.checker` (runs every `Check\CheckInterface` service, autoconfigured with the `indexnowkit.check` tag) |
 | `Adapter\SubmitterFactoryInterface` (core) | `indexnowkit.command_submitter_factory` |
-| `Console\ResultFormatterInterface` (core) | `indexnowkit.result_formatter` |
-| `Console\Vocabulary`, `Console\*Runner` (core) | `indexnowkit.console.vocabulary`, `indexnowkit.console.{check,submit,submit_entity,explain,sitemap,key_generate}` |
+| `Console\ResultFormatterInterface` (`indexnowkit/console`) | `indexnowkit.result_formatter` |
+| `Console\Vocabulary`, `Console\*Runner` (`indexnowkit/console`) | `indexnowkit.console.vocabulary`, `indexnowkit.console.{check,submit,submit_entity,explain,sitemap,key_generate}` |
 | `Check\WiringCheck`, core `Check\SitemapSpoolCheck` | `indexnowkit.check.wiring`, `indexnowkit.check.sitemap_spool` (tagged `indexnowkit.check`) |
 | `Routing\KeyFileRouteLoader` | `indexnowkit.key_file_routes` |
 
