@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Unit;
 
+use IndexNowKit\History\HistoryConfig;
 use IndexNowKit\Sitemap\SitemapConfig;
 use IndexNowKit\Testing\Conformance\ReadmeAssertions;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,6 @@ final class ReadmeAiNotesTest extends TestCase
 {
     public function testTheNotesForAiAssistantsAreConsistentWithTheCode(): void
     {
-        ReadmeAssertions::assertAiNotes(\dirname(__DIR__, 2), ['indexnow:check', 'indexnow:key:generate', 'indexnow:submit', 'indexnow:submit-entity', 'indexnow:explain', 'indexnow:sitemap'], [...SitemapConfig::OPTIONS, 'messenger.transport', 'messenger.delay', 'messenger.stamps', 'messenger.bus', 'doctrine.enabled', 'doctrine.listener_priority', 'doctrine.connections', 'key_file.path', 'key_file.host', 'key_file.route_name', 'logging.channel', 'profiler.enabled', 'flush.priority', 'flush.console_priority']);
+        ReadmeAssertions::assertAiNotes(\dirname(__DIR__, 2), ['indexnow:check', 'indexnow:key:generate', 'indexnow:submit', 'indexnow:submit-entity', 'indexnow:explain', 'indexnow:sitemap', 'indexnow:history', 'indexnow:status'], [...SitemapConfig::OPTIONS, ...HistoryConfig::OPTIONS, 'messenger.transport', 'messenger.delay', 'messenger.stamps', 'messenger.bus', 'doctrine.enabled', 'doctrine.listener_priority', 'doctrine.connections', 'key_file.path', 'key_file.host', 'key_file.route_name', 'logging.channel', 'profiler.enabled', 'flush.priority', 'flush.console_priority']);
     }
 }

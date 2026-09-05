@@ -46,6 +46,8 @@ final class TestKernel extends Kernel
     private const NO_SITEMAP_PACKAGE = ['nositemappkg', 'nositemappkgcfg'];
     /** @var list<string> variants that boot as if indexnowkit/verify were not installed */
     private const NO_VERIFY_PACKAGE = ['noverifypkg'];
+    /** @var list<string> variants that boot as if indexnowkit/history were not installed */
+    private const NO_HISTORY_PACKAGE = ['nohistorypkg'];
 
     public function __construct(string $environment = 'test', bool $debug = false, private readonly string $dispatch = 'sync')
     {
@@ -65,7 +67,7 @@ final class TestKernel extends Kernel
 
     private function isProfilerVariant(): bool
     {
-        return \in_array($this->dispatch, ['profiler', 'profilerdryrun', 'verify'], true);
+        return \in_array($this->dispatch, ['profiler', 'profilerdryrun', 'verify', 'history'], true);
     }
 
     public function registerBundles(): iterable
@@ -74,7 +76,7 @@ final class TestKernel extends Kernel
         if ($this->hasDoctrine()) {
             $bundles[] = new DoctrineBundle();
         }
-        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true), verifyInstalled: !\in_array($this->dispatch, self::NO_VERIFY_PACKAGE, true));
+        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true), verifyInstalled: !\in_array($this->dispatch, self::NO_VERIFY_PACKAGE, true), historyInstalled: !\in_array($this->dispatch, self::NO_HISTORY_PACKAGE, true));
         if ($this->isProfilerVariant()) {
             $bundles[] = new TwigBundle();
             $bundles[] = new WebProfilerBundle();
@@ -110,7 +112,7 @@ final class TestKernel extends Kernel
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
         }
-        if ($this->dispatch === 'messenger' || $this->dispatch === 'messengerdelay' || $this->dispatch === 'verifymessenger') {
+        if (\in_array($this->dispatch, ['messenger', 'messengerdelay', 'verifymessenger', 'historymessenger'], true)) {
             $framework['messenger'] = [
                 'transports' => ['async' => 'in-memory://'],
                 'routing' => [SubmitUrlsMessage::class => 'async'],
@@ -242,6 +244,17 @@ final class TestKernel extends Kernel
                 break;
             case 'noverifypkg':
                 $config['verify'] = ['enabled' => true, 'redirect' => 'follow'];
+                break;
+            case 'history':
+                // The pdo store over the Doctrine default connection (the in-memory sqlite of the tests).
+                $config['history'] = ['store' => 'pdo', 'pdo' => ['service' => 'default']];
+                break;
+            case 'historymessenger':
+                $config['dispatch'] = 'messenger';
+                $config['history'] = ['store' => 'psr16', 'limit' => 10, 'retention_days' => 30];
+                break;
+            case 'nohistorypkg':
+                $config['history'] = ['store' => 'pdo'];
                 break;
             case 'nositemappkgcfg':
                 // A block written for the package, with a key the package's tree would reject: nothing validates it without the package.

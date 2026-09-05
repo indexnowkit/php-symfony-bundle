@@ -174,7 +174,9 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 | `indexnow:submit <urls...>` | `-f, --force` игнорировать дебаунс · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` или `deleted` · `--limit` (по умолчанию 1000, если id не заданы) · `--explain` показать правило → URL и ничего не отправлять · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` или `deleted` |
-| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` обходить части на CDN · `-f, --force` · `--dry-run` только список · `--json` |
+| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` обходить части на CDN · `-f, --force` · `--dry-run` только список · `--json` · `--no-verify` |
+| `indexnow:history` | `--host` · `--status=ok|failed|skipped|pending` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (по умолчанию 50) · `--json` · `--purge[=days]` |
+| `indexnow:status` | `--json` |
 | `indexnow:key:generate` | `-l, --length` (8–128, по умолчанию 32) · `--alphanumeric` · `--write-env[=FILE]` (по умолчанию `.env.local`) · `--force` ротация существующего ключа |
 
 `<class>` принимает FQCN или короткое имя из `App\Entity`.
@@ -192,6 +194,31 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 require indexnowkit/sitemap` и завершается с кодом 1, `indexnow:check` печатает `sitemap: not installed (…)`, блок
 `sitemap`, оставшийся в yaml, компилируется и игнорируется. В логи ничего не пишется.
 `indexnow:submit-entity` и `indexnow:explain` требуют Doctrine.
+
+### История
+
+`composer require indexnowkit/history   # опционально: что, когда и с каким ответом отправлено`
+
+```yaml
+indexnowkit:
+    history:
+        store: pdo                  # null (по умолчанию, ничего не хранится) | psr16 (пул кэша дебаунса) | pdo
+        pdo: { service: default }   # имя Doctrine-соединения или id сервиса — либо dsn: 'sqlite:%kernel.project_dir%/var/indexnow.sqlite'
+```
+
+Каждый `Result` сабмиттера — синхронный flush, воркер Messenger, команды, URL, отсечённый `indexnowkit/verify` —
+записывается: нормализованные URL, хост, движок, статус, причина, HTTP-код, текст ошибки (никогда тело ответа или
+ключ). `bin/console indexnow:history` показывает записи, новые первыми (`--host`, `--status`, `--url`, `--since`,
+`--json`); `indexnow:history --purge` удаляет старше `history.retention_days` (строка для cron);
+`bin/console indexnow:status` печатает переключатели, режим доставки с транспортом Messenger, стор дебаунса, счётчик 403
+по хостам, последнюю успешную отправку и размер истории (`--json` для машин). В панели профилера появляется таблица
+«Recent submissions». Для `pdo` нужна таблица: миграция — в
+[docs/migrations.md](https://github.com/indexnowkit/php/blob/main/packages/history/docs/migrations.md) пакета
+(`Schema::sql()`); пока её нет, `indexnow:check` печатает ошибку `history.store`, а сабмиттер логирует сбой, не ломая
+запрос. `psr16` — кольцевой буфер из `history.limit` записей для одного процесса и небольших сайтов. Собственный
+`Submission\SubmissionStoreInterface`, зарегистрированный как `indexnowkit.submission_store`, имеет приоритет. Без
+пакета `indexnow:history` и `indexnow:status` отвечают `indexnowkit/history is not installed: composer require
+indexnowkit/history` и завершаются с кодом 1, `indexnow:check` печатает `history: not installed (…)`.
 
 ## Конфигурация
 
@@ -263,7 +290,7 @@ require indexnowkit/sitemap` и завершается с кодом 1, `indexno
 
 ## Заметки для AI-ассистентов
 
-- Composer-пакет `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, поверх `indexnowkit/core`); хуки сущностей требуют `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; команда `sitemap` — `indexnowkit/sitemap`. Конфигурация: `config/packages/indexnowkit.yaml`, корневой ключ `indexnowkit`.
+- Composer-пакет `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, поверх `indexnowkit/core`); хуки сущностей требуют `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; команда `sitemap` — `indexnowkit/sitemap`; предпроверка страниц — `indexnowkit/verify`; `indexnow:history` / `indexnow:status` — `indexnowkit/history` (`history.store: psr16|pdo`). Конфигурация: `config/packages/indexnowkit.yaml`, корневой ключ `indexnowkit`.
 - Минимальный полный сниппет (все `use` на месте):
 
 ```php

@@ -53,7 +53,7 @@ final class ContainerShapeTest extends TestCase
      */
     private static function shape(string $variant): array
     {
-        [$config, $facts, $bundles, $sitemapInstalled, $verifyInstalled] = self::configurations()[$variant];
+        [$config, $facts, $bundles, $sitemapInstalled, $verifyInstalled, $historyInstalled] = self::configurations()[$variant];
         $builder = new ContainerBuilder();
         foreach (['kernel.environment' => 'test', 'kernel.build_dir' => sys_get_temp_dir(), 'kernel.project_dir' => sys_get_temp_dir(), 'kernel.debug' => false] as $name => $value) {
             $builder->setParameter($name, $value);
@@ -62,7 +62,7 @@ final class ContainerShapeTest extends TestCase
         foreach ($facts as $fact => $value) {
             $builder->setParameter('indexnowkit.detected.' . $fact, $value);
         }
-        $extension = (new IndexNowKitBundle($sitemapInstalled, $verifyInstalled))->getContainerExtension();
+        $extension = (new IndexNowKitBundle($sitemapInstalled, $verifyInstalled, $historyInstalled))->getContainerExtension();
         self::assertNotNull($extension);
         $extension->load([$config], $builder);
 
@@ -83,24 +83,26 @@ final class ContainerShapeTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: array<string, mixed>, 1: array<string, bool>, 2: list<string>, 3: bool, 4: bool}> config, detected facts, bundles, sitemap installed, verify installed
+     * @return array<string, array{0: array<string, mixed>, 1: array<string, bool>, 2: list<string>, 3: bool, 4: bool, 5: bool}> config, detected facts, bundles, sitemap / verify / history installed
      */
     private static function configurations(): array
     {
         $base = ['key' => TestKernel::KEY, 'base_url' => 'https://www.example.com'];
 
         return [
-            'sync with doctrine, profiler and sitemap' => [
-                $base + ['dispatch' => 'sync', 'doctrine' => ['connections' => ['default', 'archive']], 'hosts' => ['example.de' => ['key' => TestKernel::DE_KEY]], 'sitemap' => ['spool' => 'memory']],
+            'sync with doctrine, profiler, sitemap and the pdo history store' => [
+                $base + ['dispatch' => 'sync', 'doctrine' => ['connections' => ['default', 'archive']], 'hosts' => ['example.de' => ['key' => TestKernel::DE_KEY]], 'sitemap' => ['spool' => 'memory'], 'history' => ['store' => 'pdo']],
                 ['framework' => true, 'doctrine' => true, 'messenger_transports' => false, 'messenger_routed' => false],
                 ['FrameworkBundle', 'DoctrineBundle', 'WebProfilerBundle', 'IndexNowKitBundle'],
                 true,
                 true,
+                true,
             ],
-            'messenger without doctrine, psr16 store, sitemap and verify not installed' => [
+            'messenger without doctrine, psr16 store, sitemap, verify and history not installed' => [
                 $base + ['dispatch' => 'messenger', 'messenger' => ['transport' => 'async', 'delay' => 5, 'stamps' => ['app.stamp']], 'debounce' => ['store' => 'cache.app'], 'profiler' => ['enabled' => false]],
                 ['framework' => true, 'doctrine' => false, 'messenger_transports' => true, 'messenger_routed' => true],
                 ['FrameworkBundle', 'IndexNowKitBundle'],
+                false,
                 false,
                 false,
             ],
@@ -110,11 +112,21 @@ final class ContainerShapeTest extends TestCase
                 ['FrameworkBundle', 'DoctrineBundle', 'IndexNowKitBundle'],
                 true,
                 true,
+                true,
             ],
-            'messenger with doctrine, psr16 store, verify enabled' => [
-                $base + ['dispatch' => 'messenger', 'messenger' => ['transport' => 'async'], 'debounce' => ['store' => 'cache.app'], 'profiler' => ['enabled' => false], 'verify' => ['enabled' => true, 'redirect' => 'follow']],
+            'messenger with doctrine, psr16 store, verify enabled, psr16 history store' => [
+                $base + ['dispatch' => 'messenger', 'messenger' => ['transport' => 'async'], 'debounce' => ['store' => 'cache.app'], 'profiler' => ['enabled' => false], 'verify' => ['enabled' => true, 'redirect' => 'follow'], 'history' => ['store' => 'psr16', 'key_prefix' => 'seo_']],
                 ['framework' => true, 'doctrine' => true, 'messenger_transports' => true, 'messenger_routed' => true],
                 ['FrameworkBundle', 'DoctrineBundle', 'IndexNowKitBundle'],
+                true,
+                true,
+                true,
+            ],
+            'memory debounce store, pdo history store from a DSN' => [
+                $base + ['dispatch' => 'sync', 'debounce' => ['store' => 'memory'], 'profiler' => ['enabled' => false], 'history' => ['store' => 'pdo', 'pdo' => ['dsn' => 'sqlite::memory:', 'table' => 'seo_submissions']]],
+                ['framework' => true, 'doctrine' => false, 'messenger_transports' => false, 'messenger_routed' => false],
+                ['FrameworkBundle', 'IndexNowKitBundle'],
+                true,
                 true,
                 true,
             ],

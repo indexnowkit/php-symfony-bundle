@@ -5,6 +5,10 @@ parameters:
     level: 9
     paths:
         - src
+    # The service()/service_closure()/tagged_iterator() helpers live in this class file; static reflection only sees
+    # them once the file is scanned, whichever worker analyses the loader first.
+    scanFiles:
+        - vendor/symfony/dependency-injection/Loader/Configurator/ContainerConfigurator.php
     treatPhpDocTypesAsCertain: false
     # The lowest flavour runs on Symfony 6.4, whose stubs lack the generics and signatures of 7.x; the inline ignores for it are unmatched on 7.x.
     reportUnmatchedIgnoredErrors: false

@@ -174,7 +174,9 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:submit <urls...>` | `-f, --force` ignore the debounce store · `--dry-run` · `--json` |
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` or `deleted` · `--limit` (default 1000, when no ids) · `--explain` show rule → URL and send nothing · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` or `deleted` |
-| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` |
+| `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` · `--no-verify` |
+| `indexnow:history` | `--host` · `--status=ok|failed|skipped|pending` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (default 50) · `--json` · `--purge[=days]` |
+| `indexnow:status` | `--json` |
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
 `<class>` accepts an FQCN or a short `App\Entity` name. `indexnow:submit-entity` and `indexnow:explain` need Doctrine.
@@ -191,6 +193,31 @@ decorating `indexnowkit.sitemap_reader` shapes what it submits ([docs/extending.
 package everything else works unchanged: `indexnow:sitemap` says `indexnowkit/sitemap is not installed: composer
 require indexnowkit/sitemap` and exits 1, `indexnow:check` prints `sitemap: not installed (…)`, a `sitemap` block
 left in the yaml still compiles and is ignored. Nothing is logged about it.
+
+### History
+
+`composer require indexnowkit/history   # optional: what was submitted, when, with what answer`
+
+```yaml
+indexnowkit:
+    history:
+        store: pdo                  # null (default, nothing kept) | psr16 (the debounce cache pool) | pdo
+        pdo: { service: default }   # a Doctrine connection name or service id — or dsn: 'sqlite:%kernel.project_dir%/var/indexnow.sqlite'
+```
+
+Every `Result` the submitter produces — the sync flush, the Messenger worker, the commands, a URL skipped by
+`indexnowkit/verify` — is recorded: normalized URLs, host, engine, status, reason, HTTP code, the error message
+(never the response body or the key). `bin/console indexnow:history` lists them newest first (`--host`, `--status`,
+`--url`, `--since`, `--json`); `indexnow:history --purge` removes what is older than `history.retention_days` (a cron
+line); `bin/console indexnow:status` prints the switches, the dispatch mode with the Messenger transport, the debounce
+store, the 403 counter of every host, the last successful submission and the history size (`--json` for machines).
+The profiler panel gets a "Recent submissions" table. `pdo` needs the table: the migration is in the package's
+[docs/migrations.md](https://github.com/indexnowkit/php/blob/main/packages/history/docs/migrations.md)
+(`Schema::sql()`); until it exists `indexnow:check` prints a `history.store` error and the submitter logs the failure
+without breaking the request. `psr16` is a ring buffer of `history.limit` records for one process and small sites.
+Your own `Submission\SubmissionStoreInterface` registered as `indexnowkit.submission_store` takes precedence over
+either. Without the package `indexnow:history` and `indexnow:status` say `indexnowkit/history is not installed:
+composer require indexnowkit/history` and exit 1, `indexnow:check` prints `history: not installed (…)`.
 
 ## Configuration
 
@@ -261,7 +288,7 @@ every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the m
 
 ## Notes for AI assistants
 
-- Composer package `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, on `indexnowkit/core`); entity hooks need `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; the `sitemap` command needs `indexnowkit/sitemap`. Configuration: `config/packages/indexnowkit.yaml`, root key `indexnowkit`.
+- Composer package `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, on `indexnowkit/core`); entity hooks need `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; the `sitemap` command needs `indexnowkit/sitemap`; pre-flight checks need `indexnowkit/verify`; `indexnow:history` / `indexnow:status` need `indexnowkit/history` (`history.store: psr16|pdo`). Configuration: `config/packages/indexnowkit.yaml`, root key `indexnowkit`.
 - Minimal complete snippet (every `use` included):
 
 ```php

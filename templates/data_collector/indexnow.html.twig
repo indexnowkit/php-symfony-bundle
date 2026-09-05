@@ -85,4 +85,34 @@
             </tbody>
         </table>
     {% endif %}
+
+    {% if collector.hasHistory %}
+        <h3>Recent submissions</h3>
+        {% if collector.recentError %}
+            <div class="empty"><p><strong>The submission store failed:</strong> {{ collector.recentError }} (<code>bin/console indexnow:check</code>; a missing table needs the migration of <code>indexnowkit/history</code>).</p></div>
+        {% elseif collector.recent is empty %}
+            <div class="empty"><p>Nothing recorded yet. <code>bin/console indexnow:history</code> lists the store from the console.</p></div>
+        {% else %}
+            <p class="help">The last {{ collector.recent|length }} submissions recorded by any request or worker (<code>bin/console indexnow:history</code> for more).</p>
+            <table>
+                <thead><tr><th>At (UTC)</th><th>Engine</th><th>Host</th><th>Status</th><th>HTTP</th><th>URLs</th></tr></thead>
+                <tbody>
+                {% for r in collector.recent %}
+                    <tr>
+                        <td class="nowrap">{{ r.at }}</td>
+                        <td>{{ r.engine }}</td>
+                        <td>{{ r.host }}</td>
+                        <td>
+                            <span class="label {{ r.status == 'failed' ? 'status-error' : (r.status == 'skipped' ? 'status-warning' : 'status-success') }}">{{ r.status }}</span>
+                            {% if r.reason %} <code>{{ r.reason }}</code>{% endif %}
+                            {% if r.error %} <small>{{ r.error }}</small>{% endif %}
+                        </td>
+                        <td>{{ r.http ?? '-' }}</td>
+                        <td><ul>{% for u in r.urls %}<li>{{ u }}</li>{% endfor %}</ul></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
 {% endblock %}

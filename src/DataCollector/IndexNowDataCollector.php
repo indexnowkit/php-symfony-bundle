@@ -10,6 +10,9 @@ use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\KeyValidator;
 use IndexNowKit\Result;
+use IndexNowKit\Submission\NullSubmissionStore;
+use IndexNowKit\Submission\SubmissionRecord;
+use IndexNowKit\Submission\SubmissionStoreInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
@@ -20,9 +23,17 @@ use Throwable;
  * Web Profiler panel: what was collected during the request, what was sent, with which outcome, plus the
  * configuration facts needed to read a failure (hosts, key files, dispatch, debounce).
  * Results come from ResultRecorder (a Submitter listener), so sync dispatch on kernel.terminate is visible too.
+ * With a submission store (indexnowkit/history, or the application's own) the panel also lists the last
+ * {@see RECENT} recorded submissions, whichever request or worker made them.
  */
 final class IndexNowDataCollector extends DataCollector implements LateDataCollectorInterface
 {
+    /** Recorded submissions shown under the request's own results. */
+    public const RECENT = 20;
+
+    /**
+     * @param SubmissionStoreInterface|null $history the submission store; null (or the null store) = no "recent" table
+     */
     public function __construct(
         private readonly CollectorInterface $collector,
         private readonly Config $config,
@@ -30,6 +41,7 @@ final class IndexNowDataCollector extends DataCollector implements LateDataColle
         private readonly ResultRecorder $recorder,
         private readonly string $dispatchMode,
         private readonly bool $messengerRouted,
+        private readonly ?SubmissionStoreInterface $history = null,
     ) {}
 
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
@@ -57,6 +69,9 @@ final class IndexNowDataCollector extends DataCollector implements LateDataColle
             'sent' => 0,
             'failed' => 0,
             'skipped' => 0,
+            'history' => $this->history !== null && !$this->history instanceof NullSubmissionStore,
+            'recent' => [],
+            'recent_error' => null,
         ];
     }
 
@@ -82,6 +97,29 @@ final class IndexNowDataCollector extends DataCollector implements LateDataColle
         $this->data['sent'] = $sent;
         $this->data['failed'] = $failed;
         $this->data['skipped'] = $skipped;
+        if ($this->history === null || $this->history instanceof NullSubmissionStore) {
+            return;
+        }
+        try {
+            $recent = [];
+            foreach ($this->history->recent(self::RECENT) as $record) {
+                $recent[] = self::recentRow($record);
+            }
+            $this->data['recent'] = $recent;
+        } catch (Throwable $e) {
+            // A missing table or an unreachable cache is one line in the panel, never a broken profiler.
+            $this->data['recent_error'] = $e->getMessage();
+        }
+    }
+
+    /**
+     * @return array{at: string, engine: string, host: string, urls: list<string>, status: string, http: ?int, reason: ?string, error: ?string}
+     */
+    private static function recentRow(SubmissionRecord $record): array
+    {
+        $r = $record->result;
+
+        return ['at' => $record->at->format('Y-m-d H:i:s'), 'engine' => $r->engine, 'host' => $r->host, 'urls' => $record->urls, 'status' => $r->status->value, 'http' => $r->httpCode, 'reason' => $r->reason?->value, 'error' => $r->error];
     }
 
     public function reset(): void
@@ -191,6 +229,28 @@ final class IndexNowDataCollector extends DataCollector implements LateDataColle
         $results = $this->data['results'] ?? [];
 
         return $results;
+    }
+
+    /** Whether a submission store is wired (the "Recent submissions" table has a source). */
+    public function hasHistory(): bool
+    {
+        return (bool) ($this->data['history'] ?? false);
+    }
+
+    /**
+     * @return list<array{at: string, engine: string, host: string, urls: list<string>, status: string, http: ?int, reason: ?string, error: ?string}>
+     */
+    public function getRecent(): array
+    {
+        /** @var list<array{at: string, engine: string, host: string, urls: list<string>, status: string, http: ?int, reason: ?string, error: ?string}> $recent */
+        $recent = $this->data['recent'] ?? [];
+
+        return $recent;
+    }
+
+    public function getRecentError(): ?string
+    {
+        return \is_string($this->data['recent_error'] ?? null) ? $this->data['recent_error'] : null;
     }
 
     private function int(string $key): int

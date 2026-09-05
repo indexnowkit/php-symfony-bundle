@@ -193,6 +193,29 @@ indexnowkit:
         # 5xx. 4xx and broken documents are never retried.
         fetch_retries:    2
 
+    # Needs indexnowkit/history (composer require indexnowkit/history). Without the package the block is
+    # accepted as is and ignored; indexnow:check says so.
+    history:
+        # Where every submission Result is recorded: null = nothing is kept; psr16 = a ring buffer of `limit`
+        # records in the debounce cache pool (one process, development, small sites); pdo = a database table
+        # (production). Literal, not an env placeholder: the store is wired at compile time.
+        store:            null
+        # Records the psr16 store keeps; the oldest is overwritten.
+        limit:            500
+        # Cache key prefix of the psr16 store. Default: debounce.key_prefix.
+        key_prefix:       null
+        pdo:
+            # PDO DSN of the pdo store, when the connection is not a Doctrine one. Not both dsn and service.
+            dsn:          null
+            # The Doctrine DBAL connection the pdo store uses: a connection name ("default" =
+            # doctrine.dbal.default_connection) or a service id (a DBAL Connection or a PDO).
+            # Default when dsn is null: the default connection.
+            service:      null
+            # Table of the pdo store; the package's docs/migrations.md creates it. [A-Za-z_][A-Za-z0-9_]* only.
+            table:        indexnow_submissions
+        # What `indexnow:history --purge` removes beyond.
+        retention_days:   90
+
     doctrine:
         # Hook Doctrine ORM. Needs indexnowkit/doctrine + doctrine/doctrine-bundle.
         enabled:          true
@@ -222,6 +245,7 @@ The container fails to build when:
 | a literal `http.user_agent` containing a line break | |
 | `logging.levels` with an unknown event | the message lists the known events |
 | literal `sitemap.url` that is not an absolute http(s) URL | |
+| `history.pdo.dsn` and `history.pdo.service` together, a literal `history.store` other than `psr16`/`pdo`, a `history.pdo.table` that is not an identifier, a `history.key_prefix` with `{}()/\@:` | |
 | `dispatch: messenger` without `symfony/messenger` installed | install it, or use `dispatch: sync` |
 | a number outside its range: `max_url_length` ≥ 64, `http.timeout` ≥ 0.1, `batch.max_urls` 1–10000, `sitemap.max_bytes` ≥ 1024, `sitemap.max_sitemaps` ≥ 1, `key_file.cache_max_age` ≥ 0, `resolver.max_via_fanout` ≥ 1, `logging.forbidden_escalation` ≥ 1 | the node's own message |
 
@@ -304,8 +328,10 @@ Every replaceable piece is a service with an interface alias, so an application 
 | `Check\CheckerInterface` | `indexnowkit.checker` (runs every `Check\CheckInterface` service, autoconfigured with the `indexnowkit.check` tag) |
 | `Adapter\SubmitterFactoryInterface` (core) | `indexnowkit.command_submitter_factory` |
 | `Console\ResultFormatterInterface` (`indexnowkit/console`) | `indexnowkit.result_formatter` |
-| `Console\Vocabulary`, `Console\*Runner` (`indexnowkit/console`) | `indexnowkit.console.vocabulary`, `indexnowkit.console.{check,submit,submit_entity,explain,sitemap,key_generate}` |
-| `Check\WiringCheck`, core `Check\SitemapSpoolCheck` | `indexnowkit.check.wiring`, `indexnowkit.check.sitemap_spool` (tagged `indexnowkit.check`) |
+| `Submission\SubmissionStoreInterface` | `indexnowkit.submission_store` (the null store; with `indexnowkit/history` and `history.store` the package's store, alias `indexnowkit.history.store`; your own service under this id replaces either) |
+| `Console\Vocabulary`, `Console\*Runner` (`indexnowkit/console`) | `indexnowkit.console.vocabulary`, `indexnowkit.console.{check,submit,submit_entity,explain,sitemap,key_generate}`, with `indexnowkit/history` `indexnowkit.console.{history,status}` |
+| `Check\WiringCheck`, core `Check\SitemapSpoolCheck`, history `Check\HistoryCheck` | `indexnowkit.check.wiring`, `indexnowkit.check.sitemap_spool`, `indexnowkit.check.history` (tagged `indexnowkit.check`) |
+| `History\HistoryConfig`, `Retry\ForbiddenCounter` (with `indexnowkit/history`) | `indexnowkit.history_config`, `indexnowkit.forbidden_counter`; the PDO / PSR-16 of the store: `indexnowkit.history.pdo` / `indexnowkit.history.cache` |
 | `Routing\KeyFileRouteLoader` | `indexnowkit.key_file_routes` |
 
 Only `indexnowkit`, `IndexNowKit\IndexNowKit` and the key file controller are public; inject the rest by type where you need them. How to

@@ -21,14 +21,30 @@ contain breaking changes, listed under "Changed".
 - **`indexnow:check --sample=<url>` / `--sample-class=<FQCN>[:<id>]`** (repeatable; `Check\SampleOptions`,
   `Check\VerifySampleCheck`, `Check\EntitySampler` over `indexnowkit.entity_loader` with Doctrine).
 - **`indexnow:config --json`** prints the `verify` section when the package is installed.
-- **`IndexNowKitBundle(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null)`** (appended), the same on
-  `IndexNowKitConfiguration` and `IndexNowKitLoader`; parameter `indexnowkit.debounce.key_prefix`;
+- **`indexnowkit/history` wiring** (spec 17 §6.2). With the package installed the `history` node is the full tree
+  (`store`, `limit`, `key_prefix`, `pdo.dsn`, `pdo.service`, `pdo.table`, `retention_days`;
+  `DependencyInjection\HistoryServices`); with `history.store: psr16` or `pdo` the package's store **is**
+  `indexnowkit.submission_store` (alias `indexnowkit.history.store`), so the submitter, the Messenger handler, the
+  commands and the verify decorator record into it — an application service under that id still replaces it.
+  `psr16` uses the debounce pool's PSR-16 view (or `cache.app` with `debounce.store: memory|none`); `pdo` takes the
+  Doctrine connection of `pdo.service` (a connection name or a service id, `getNativeConnection()`) or a PDO built
+  from `pdo.dsn` — never both — and does not create the table (see the package's `docs/migrations.md`). New services:
+  `indexnowkit.history_config`, `indexnowkit.history.pdo` / `indexnowkit.history.cache`, `indexnowkit.forbidden_counter`
+  (`Retry\ForbiddenCounter`), `indexnowkit.console.history`, `indexnowkit.console.status`. Commands
+  **`indexnow:history`** (`--host`, `--status`, `--url`, `--since`, `--limit`, `--json`, `--purge[=days]`) and
+  **`indexnow:status`** (`--json` per the package's `status.schema.json`; the Messenger transport and bus as the
+  adapter facts); without the package `Command\HistoryNotInstalledCommand` / `StatusNotInstalledCommand` print the
+  install line and exit 1. `check` lines: `history.installed` (without the package), `history.store`,
+  `history.records`. `config --json` gets the `history` section. The profiler panel lists the last 20 recorded
+  submissions ("Recent submissions"; `IndexNowDataCollector` takes an appended `?SubmissionStoreInterface $history`).
+- **`IndexNowKitBundle(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null, ?bool $historyInstalled = null)`**
+  (appended), the same on `IndexNowKitConfiguration` and `IndexNowKitLoader`; parameter `indexnowkit.debounce.key_prefix`;
   `DependencyInjection\TransportFactory::create(..., array $extraHeaders = [])`.
 
 ### Changed
 
 - Requires `indexnowkit/core ^0.9`, `indexnowkit/console ^0.3` and (dev/suggest) `indexnowkit/sitemap ^0.5`,
-  `indexnowkit/doctrine ^0.7`, `indexnowkit/verify ^0.1`.
+  `indexnowkit/doctrine ^0.7`, `indexnowkit/verify ^0.1`, `indexnowkit/history ^0.1`.
 
 ## [0.9.0] — 2026-09-06
 

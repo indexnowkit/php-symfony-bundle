@@ -17,7 +17,7 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
  * blocks (messenger, key_file, doctrine). Everything that is not an env placeholder is validated at compile time.
  * The `sitemap` node is the full node of {@see SitemapServices} when `indexnowkit/sitemap` is installed, else a
  * node that accepts any keys and validates none (an old yaml still compiles; the block is reported by `check`);
- * the `verify` node is the same with {@see VerifyServices}.
+ * the `verify` node is the same with {@see VerifyServices}, the `history` node with {@see HistoryServices}.
  */
 final class IndexNowKitConfiguration
 {
@@ -25,15 +25,18 @@ final class IndexNowKitConfiguration
 
     private readonly bool $sitemapInstalled;
     private readonly bool $verifyInstalled;
+    private readonly bool $historyInstalled;
 
     /**
      * @param bool|null $sitemapInstalled null = whether `indexnowkit/sitemap` is installed; tests pass false
      * @param bool|null $verifyInstalled  the same for `indexnowkit/verify`
+     * @param bool|null $historyInstalled the same for `indexnowkit/history`
      */
-    public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null)
+    public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null, ?bool $historyInstalled = null)
     {
         $this->sitemapInstalled = SitemapServices::package($sitemapInstalled)->installed();
         $this->verifyInstalled = VerifyServices::package($verifyInstalled)->installed();
+        $this->historyInstalled = HistoryServices::package($historyInstalled)->installed();
     }
 
     public function build(DefinitionConfigurator $definition): void
@@ -130,6 +133,11 @@ final class IndexNowKitConfiguration
         } else {
             $children->arrayNode('verify')->ignoreExtraKeys(false)->info('Needs indexnowkit/verify (composer require indexnowkit/verify); ignored until it is installed.')->end();
         }
+        if ($this->historyInstalled) {
+            HistoryServices::configure($children);
+        } else {
+            $children->arrayNode('history')->ignoreExtraKeys(false)->info('Needs indexnowkit/history (composer require indexnowkit/history); ignored until it is installed.')->end();
+        }
         $children
                 ->booleanNode('dry_run')->info('Log the request instead of sending it. Switched on automatically outside prod when no key is configured. No default on purpose: outside production, indexnow:check fails when a key is configured and dry_run was left unset; an explicit `dry_run: false` says the environment submits on purpose.')->end()
                 // @phpstan-ignore method.nonObject (Symfony 6.4 types end() as NodeParentInterface|null)
@@ -191,7 +199,7 @@ final class IndexNowKitConfiguration
     /**
      * Validates literal values only: env placeholders are resolved at runtime and checked by Config then.
      *
-     * @internal shared with {@see SitemapServices}
+     * @internal shared with {@see SitemapServices}, {@see VerifyServices}, {@see HistoryServices}
      *
      * @param callable(string): bool $invalid
      */
