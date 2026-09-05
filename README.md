@@ -275,7 +275,7 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 class Post { /* ORM columns, isPublished() */ }
 ```
 
-- Verify: `bin/console indexnow:check` (exit 1 on any error), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
+- Verify: `bin/console indexnow:check` (exit 1 on any error; `--strict` fails on warnings too, `--json` for machines), `bin/console indexnow:config --json` (the effective configuration, keys masked: paste it into a bug report), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
 - Pitfalls:
   - `dispatch: auto` exists in Symfony (`auto` | `messenger` | `sync` | `none`) and Yii2 (`auto` | `queue` | `sync` | `none`), **not** in Laravel (`queue` | `sync` | `none`).
   - Locales: `router.locales` in Laravel, `router.languages` in Yii2, `framework.enabled_locales` in Symfony; `locales: 'all'` on a rule uses that list.

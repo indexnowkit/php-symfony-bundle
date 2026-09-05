@@ -54,6 +54,24 @@ final class CommandsTest extends BundleTestCase
         CheckOutputAssertions::assertReady($tester->getDisplay(), 'www.example.com');
     }
 
+    public function testConfigPrintsTheEffectiveConfigurationWithMaskedKeys(): void
+    {
+        $tester = $this->tester('indexnow:config');
+        self::assertSame(0, $tester->execute(['--json' => true]));
+        $output = $tester->getDisplay();
+        $decoded = json_decode($output, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertStringNotContainsString(TestKernel::KEY, $output);
+        self::assertSame(\IndexNowKit\Key\KeyValidator::mask(TestKernel::KEY), $decoded['config']['key']);
+        self::assertArrayHasKey('messenger', $decoded['adapter'], 'the bundle blocks are reported as given');
+        self::assertArrayHasKey('doctrine', $decoded['adapter']);
+        self::assertArrayNotHasKey('key', $decoded['adapter']);
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertStringContainsString('debounce.per_url', $tester->getDisplay());
+        self::assertStringNotContainsString(TestKernel::KEY, $tester->getDisplay());
+    }
+
     public function testEveryCheckLineHasACode(): void
     {
         $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));

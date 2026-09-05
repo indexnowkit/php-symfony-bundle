@@ -277,7 +277,7 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 class Post { /* ORM columns, isPublished() */ }
 ```
 
-- Проверка: `bin/console indexnow:check` (exit 1 при любой ошибке), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (почему URL был или не был получен), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
+- Проверка: `bin/console indexnow:check` (exit 1 при любой ошибке; `--strict` падает и на предупреждениях, `--json` для машин), `bin/console indexnow:config --json` (эффективная конфигурация с маскированными ключами: вставьте её в баг-репорт), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (почему URL был или не был получен), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
 - Ловушки:
   - `dispatch: auto` есть в Symfony (`auto` | `messenger` | `sync` | `none`) и Yii2 (`auto` | `queue` | `sync` | `none`), в Laravel **нет** (`queue` | `sync` | `none`).
   - Локали: `router.locales` в Laravel, `router.languages` в Yii2, `framework.enabled_locales` в Symfony; `locales: 'all'` у правила берёт этот список.

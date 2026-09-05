@@ -21,6 +21,7 @@ use IndexNowKit\Collector\Collector;
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
 use IndexNowKit\Console\CheckRunner;
+use IndexNowKit\Console\ConfigRunner;
 use IndexNowKit\Console\ExplainRunner;
 use IndexNowKit\Console\KeyGenerateRunner;
 use IndexNowKit\Console\ResultFormatterInterface;
@@ -51,6 +52,7 @@ use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\CacheProbe;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
+use IndexNowKit\SymfonyBundle\Command\ConfigCommand;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
 use IndexNowKit\SymfonyBundle\Command\ExplainCommand;
 use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
@@ -453,6 +455,8 @@ final class IndexNowKitLoader
         $services->set(KeyGenerateCommand::class)->args([service('indexnowkit.console.key_generate'), '%kernel.project_dir%'])->tag('console.command');
         $services->set('indexnowkit.console.check', CheckRunner::class)->args([service('indexnowkit.checker'), service('indexnowkit.console.vocabulary')]);
         $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), $config, '%kernel.environment%'])->tag('console.command');
+        $services->set('indexnowkit.console.config', ConfigRunner::class)->args([service('indexnowkit.console.vocabulary')]);
+        $services->set(ConfigCommand::class)->args([service('indexnowkit.console.config'), $config, '%kernel.environment%'])->tag('console.command');
         $services->set('indexnowkit.console.submit', SubmitRunner::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')]);
         $services->set(SubmitCommand::class)->args([service('indexnowkit.console.submit')])->tag('console.command');
 

@@ -479,6 +479,26 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ConfigRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.console.submit' =>
                [
                    'class' => 'IndexNowKit\\Console\\SubmitRunner',
@@ -1096,6 +1116,26 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ConfigRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.console.submit' =>
                [
                    'class' => 'IndexNowKit\\Console\\SubmitRunner',
@@ -1550,6 +1590,26 @@ return  [
                     ],
                ],
               'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+               [
+                   'class' => null,
+                   'tags' =>
+                    [
+                        'console.command' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.console.config' =>
+               [
+                   'class' => 'IndexNowKit\\Console\\ConfigRunner',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>

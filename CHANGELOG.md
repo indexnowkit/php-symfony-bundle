@@ -22,6 +22,7 @@ contain breaking changes, listed under "Changed".
   canonical form of every URL (core 0.8). `indexnowkit.url_normalizer` is now built by `Url\UrlNormalizerFactory`
   from the configuration; tracking parameters are stripped by default.
 - `indexnow:explain --json` and the `when` values in the text output (console 0.2).
+- `indexnow:config` (`--json`): the effective configuration with masked keys plus this adapter's own keys (console 0.2).
 
 ## [0.8.0] — 2026-09-06
 
