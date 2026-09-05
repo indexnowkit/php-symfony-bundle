@@ -14,6 +14,6 @@ final class CdnCheck implements CheckInterface
 {
     public function check(CheckReport $report): void
     {
-        $report->ok('cdn: key file purged from the edge');
+        $report->ok('cdn: key file purged from the edge', 'cdn.purged');
     }
 }

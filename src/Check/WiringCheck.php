@@ -22,12 +22,12 @@ final class WiringCheck implements CheckInterface
     public function check(CheckReport $report): void
     {
         if ($this->dispatchMode === 'messenger' && !$this->messengerRouted) {
-            $report->warning('dispatch is "messenger" but SubmitUrlsMessage is not routed to a transport: it is handled synchronously, 429/5xx are not retried. Set indexnowkit.messenger.transport or add framework.messenger.routing.');
+            $report->warning('dispatch is "messenger" but SubmitUrlsMessage is not routed to a transport: it is handled synchronously, 429/5xx are not retried. Set indexnowkit.messenger.transport or add framework.messenger.routing.', 'wiring.messenger');
         }
         if ($this->doctrineHooked) {
-            $report->ok('doctrine: entity changes are submitted automatically (onFlush/postFlush + commit-safe middleware)');
+            $report->ok('doctrine: entity changes are submitted automatically (onFlush/postFlush + commit-safe middleware)', 'wiring.doctrine');
         } else {
-            $report->warning('doctrine: entity hooks are NOT active (needs indexnowkit/doctrine + doctrine/doctrine-bundle, doctrine.enabled: true and enabled: true); use indexnow:submit or $indexNow->submit()');
+            $report->warning('doctrine: entity hooks are NOT active (needs indexnowkit/doctrine + doctrine/doctrine-bundle, doctrine.enabled: true and enabled: true); use indexnow:submit or $indexNow->submit()', 'wiring.doctrine');
         }
     }
 }

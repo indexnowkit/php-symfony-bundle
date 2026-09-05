@@ -437,7 +437,7 @@ final class IndexNowKitLoader
         if ($this->sitemap->installed()) {
             SitemapServices::register($services, $sitemap, $logger, $channel);
         } else {
-            $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([$this->sitemap->checkLevel($sitemap), $this->sitemap->checkLine($sitemap)])->tag('indexnowkit.check');
+            $services->set('indexnowkit.check.sitemap_missing', StaticCheck::class)->args([$this->sitemap->checkLevel($sitemap), $this->sitemap->checkLine($sitemap), $this->sitemap->checkCode()])->tag('indexnowkit.check');
             $services->set(SitemapNotInstalledCommand::class)->args([$this->sitemap->notInstalledMessage()])->tag('console.command');
         }
 

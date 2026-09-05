@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
+use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
@@ -51,6 +52,15 @@ final class CommandsTest extends BundleTestCase
         $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
         CheckOutputAssertions::assertExitCode(0, $tester->execute([]), $tester->getDisplay());
         CheckOutputAssertions::assertReady($tester->getDisplay(), 'www.example.com');
+    }
+
+    public function testEveryCheckLineHasACode(): void
+    {
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
+        $checker = static::getContainer()->get(CheckerInterface::class);
+        \assert($checker instanceof CheckerInterface);
+
+        CheckOutputAssertions::assertEveryItemHasCode($checker->run(), 'wiring.doctrine', 'debounce.store', 'sitemap.spool', 'key_file.status');
     }
 
     public function testCheckPrintsDispatchAndDoctrineWiring(): void
