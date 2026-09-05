@@ -144,7 +144,9 @@ to attach to a bug report.
 The debounce store fails open. If Redis or your cache pool is unavailable, deduplication is skipped and a warning is
 logged (`debounce store unavailable, submitting without de-duplication`). The visible symptom is a burst of repeated
 submissions, not lost ones, which is the right trade: a duplicate costs one request, a miss leaves stale content
-indexed.
+indexed. `indexnow:check` reads a test key through the configured pool and prints `debounce: 600s per URL, shared
+through cache pool "cache.app" (RedisAdapter)`, or an error naming the pool when it is not usable; `debounce.store:
+memory` is flagged as per-process.
 
 ## `indexnow:sitemap` in a read-only container
 

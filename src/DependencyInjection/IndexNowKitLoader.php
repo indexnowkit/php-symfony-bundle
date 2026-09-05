@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
+use Closure;
 use IndexNowKit\Attribute\AttributeReader;
 use IndexNowKit\Attribute\AttributeReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
 use IndexNowKit\Check\CheckLevel;
+use IndexNowKit\Check\DebounceStoreCheck;
 use IndexNowKit\Check\StaticCheck;
 use IndexNowKit\Client;
 use IndexNowKit\ClientInterface;
@@ -44,6 +46,7 @@ use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\StaticKeyProvider;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
+use IndexNowKit\SymfonyBundle\Check\CacheProbe;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
@@ -148,7 +151,7 @@ final class IndexNowKitLoader
 
         $doctrine = $config['doctrine']['enabled'] && $this->doctrineBundleEnabled($builder) && class_exists(IndexNowListener::class);
         $builder->setParameter('indexnowkit.doctrine_hooked', $doctrine && $config['enabled']);
-        $this->loadChecks($services, $builder);
+        $this->loadChecks($services, $builder, $config['debounce']['store']);
         $this->loadConsole($services, $config, $logger, $channel, $doctrine);
         if ($doctrine && $config['enabled']) {
             $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);
@@ -393,10 +396,18 @@ final class IndexNowKitLoader
     /**
      * The `indexnowkit.check` tag, the wiring check and the checker over every tagged check.
      */
-    private function loadChecks(ServicesConfigurator $services, ContainerBuilder $builder): void
+    private function loadChecks(ServicesConfigurator $services, ContainerBuilder $builder, string $store): void
     {
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
+        // The debounce line: memory/none need no probe; a pool is read through the Psr16Cache the store itself uses.
+        $probe = null;
+        if ($store !== 'memory' && $store !== 'none') {
+            $services->set('indexnowkit.check.debounce_store.probe', CacheProbe::class)->args([service('indexnowkit.debounce_store.psr16'), service($store)]);
+            $services->set('indexnowkit.check.debounce_store.probe_closure', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.debounce_store.probe')]);
+            $probe = service('indexnowkit.check.debounce_store.probe_closure');
+        }
+        $services->set('indexnowkit.check.debounce_store', DebounceStoreCheck::class)->args([service('indexnowkit.config'), $probe, 'cache.app'])->tag('indexnowkit.check');
         $services->set('indexnowkit.checker', Checker::class)
             ->args([service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.transport'), tagged_iterator('indexnowkit.check')]);
         $services->alias(CheckerInterface::class, 'indexnowkit.checker');

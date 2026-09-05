@@ -62,7 +62,9 @@ final class CommandsTest extends BundleTestCase
 
         $display = $tester->getDisplay();
         self::assertStringContainsString('dispatch: sync', $display);
+        self::assertStringContainsString('debounce: off (debounce.per_url = 0)', $display);
         self::assertStringContainsString('entity changes are submitted automatically', $display);
+        self::assertStringContainsString('Next: annotate a class with #[IndexNow(...)], or send one URL now: bin/console indexnow:submit https://', $display);
     }
 
     public function testSubmitCommandUsesBaseUrl(): void

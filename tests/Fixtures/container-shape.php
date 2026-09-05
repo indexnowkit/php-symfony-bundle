@@ -316,6 +316,33 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.debounce_store.probe' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.checker' =>
                [
                    'class' => 'IndexNowKit\\Check\\Checker',
@@ -926,6 +953,33 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.debounce_store.probe' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store.probe_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.checker' =>
                [
                    'class' => 'IndexNowKit\\Check\\Checker',
@@ -1333,6 +1387,19 @@ return  [
               'indexnowkit.check.wiring' =>
                [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Check\\WiringCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.debounce_store' =>
+               [
+                   'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>

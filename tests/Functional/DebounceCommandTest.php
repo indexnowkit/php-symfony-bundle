@@ -4,9 +4,21 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
+use IndexNowKit\Http\Response;
+use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
+
 final class DebounceCommandTest extends BundleTestCase
 {
     protected static string $dispatch = 'debounced';
+
+    public function testCheckNamesTheSharedCachePool(): void
+    {
+        $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));
+        $tester = $this->tester('indexnow:check');
+
+        self::assertSame(0, $tester->execute([]), $tester->getDisplay());
+        self::assertStringContainsString('✔ debounce: 600s per URL, shared through cache pool "cache.app" (', $tester->getDisplay(), 'the core DebounceStoreCheck with the bundle cache probe');
+    }
 
     public function testForceResendsAUrlThatWasJustSubmitted(): void
     {
