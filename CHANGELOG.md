@@ -3,6 +3,34 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.7.0] — 2026-09-05
+
+Wave 0a of docs/spec/17 with core 0.6.0. **`indexnow:check` fails in a non-production kernel environment when a key
+is configured and `dry_run` is not set** (a staging copy with the production key submits real URLs). A staging or
+preview environment that submits on purpose says `dry_run: false` in its configuration and gets a warning instead.
+The Flex recipe's `dry_run: true` in `dev` and `test` is unaffected.
+
+### Changed
+
+- Requires `indexnowkit/core ^0.6`; `indexnowkit/doctrine ^0.4` and `indexnowkit/sitemap ^0.2` when installed.
+- The `dry_run` node of the configuration has no default any more: an unset `dry_run` stays unset so the core can tell
+  it from an explicit `false`. Reading `dry_run` from the processed configuration array (not from `Config`) now needs
+  `?? false`.
+
+### Added
+
+- **`debounce` line in `indexnow:check`** through the core `DebounceStoreCheck` and the bundle's `Check\CacheProbe`:
+  the configured pool is read through the same `Psr16Cache` the store uses and named (`debounce: 600s per URL,
+  shared through cache pool "cache.app" (RedisAdapter)`); an unusable pool is an error, `memory` a per-process
+  warning, `none` and `per_url: 0` ok lines. Parity with the Laravel and Yii2 adapters.
+- `internetarchive` and `amazon` accepted in `engines` (core 0.6).
+
+### Documentation
+
+- [docs/bc.md](docs/bc.md): configuration keys, command names and options, the service ids of `extending.md`, the
+  container parameters, public classes and the route. README: "Why this over X", "Notification, not indexing",
+  the issues link, the badges in the family order.
+
 ## [0.6.1] — 2026-09-05
 
 ### Changed
