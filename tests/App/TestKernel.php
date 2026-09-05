@@ -123,7 +123,10 @@ final class TestKernel extends Kernel
             $container->extension('doctrine', [
                 'dbal' => ['driver' => 'pdo_sqlite', 'memory' => true],
                 'orm' => [
-                    'mappings' => ['Test' => ['type' => 'attribute', 'dir' => __DIR__ . '/Entity', 'prefix' => 'IndexNowKit\SymfonyBundle\Tests\App\Entity', 'is_bundle' => false]],
+                    'mappings' => [
+                        'Test' => ['type' => 'attribute', 'dir' => __DIR__ . '/Entity', 'prefix' => 'IndexNowKit\SymfonyBundle\Tests\App\Entity', 'is_bundle' => false],
+                        'Readme' => ['type' => 'attribute', 'dir' => \dirname(__DIR__) . '/Readme', 'prefix' => 'IndexNowKit\SymfonyBundle\Tests\Readme', 'is_bundle' => false],
+                    ],
                     'controller_resolver' => ['auto_mapping' => false],
                 ],
             ]);
@@ -280,6 +283,10 @@ final class TestKernel extends Kernel
         $routes->add('article_create', '/articles')->controller([ArticleController::class, 'create'])->methods(['POST']);
         $routes->add('article_delete', '/articles/{slug}/delete')->controller([ArticleController::class, 'delete'])->methods(['POST']);
         $routes->add('article_fail', '/articles/fail')->controller([ArticleController::class, 'createAndFail'])->methods(['POST']);
+        // The routes of the README model (tests/Readme/Post.php); only generated, never dispatched.
+        $routes->add('post_show', '/posts/{slug}')->controller([ArticleController::class, 'show']);
+        $routes->add('post_amp', '/amp/{slug}')->controller([ArticleController::class, 'show']);
+        $routes->add('category_show', '/categories/{slug}')->controller([ArticleController::class, 'show']);
         if ($this->dispatch === 'multihost') {
             $routes->add('de_article_show', '/articles/{slug}')->controller([ArticleController::class, 'show'])->host('example.de');
         }

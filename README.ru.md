@@ -69,7 +69,9 @@ indexnowkit:
 
 `#[IndexNow]` повторяем: один атрибут на семейство публичных URL сущности.
 
+<!-- test: quickstart-model -->
 ```php
+use Doctrine\ORM\Mapping as ORM;
 use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 
 #[ORM\Entity]
@@ -78,9 +80,34 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 #[IndexNow(route: 'post_amp', params: ['slug' => 'slug'], when: 'hasAmp')]
 #[IndexNow(via: 'category')]      // изменившийся пост обновляет и страницу категории
 #[IndexNow(urls: ['/'])]          // и главную
-class Post { /* ... */ }
-```
+class Post
+{
+    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
+    public ?int $id = null;
 
+    #[ORM\ManyToOne]
+    public ?Category $category = null;
+
+    public function __construct(
+        #[ORM\Column(unique: true)] public string $slug,
+        #[ORM\Column] public string $title = '',
+        #[ORM\Column(type: 'text')] public string $body = '',
+        #[ORM\Column] public bool $published = true,
+        #[ORM\Column] public bool $amp = false,
+    ) {}
+
+    public function isPublished(): bool
+    {
+        return $this->published;
+    }
+
+    public function hasAmp(): bool
+    {
+        return $this->amp;
+    }
+}
+```
+<!-- /test -->
 | Опция | Смысл |
 |---|---|
 | `route` / `params` | имя маршрута и `параметр => свойство, геттер, "self", точечный.путь` или типизированное значение `Param\*` |

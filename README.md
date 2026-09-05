@@ -70,7 +70,9 @@ manual submission, and `indexnow:check` says so instead of failing silently.
 
 `#[IndexNow]` is repeatable: one attribute per family of public URLs the entity has.
 
+<!-- test: quickstart-model -->
 ```php
+use Doctrine\ORM\Mapping as ORM;
 use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 
 #[ORM\Entity]
@@ -79,9 +81,34 @@ use IndexNowKit\Attribute\{IndexNow, IndexNowDefaults};
 #[IndexNow(route: 'post_amp', params: ['slug' => 'slug'], when: 'hasAmp')]
 #[IndexNow(via: 'category')]      // a changed post also refreshes its category page
 #[IndexNow(urls: ['/'])]          // and the homepage
-class Post { /* ... */ }
-```
+class Post
+{
+    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
+    public ?int $id = null;
 
+    #[ORM\ManyToOne]
+    public ?Category $category = null;
+
+    public function __construct(
+        #[ORM\Column(unique: true)] public string $slug,
+        #[ORM\Column] public string $title = '',
+        #[ORM\Column(type: 'text')] public string $body = '',
+        #[ORM\Column] public bool $published = true,
+        #[ORM\Column] public bool $amp = false,
+    ) {}
+
+    public function isPublished(): bool
+    {
+        return $this->published;
+    }
+
+    public function hasAmp(): bool
+    {
+        return $this->amp;
+    }
+}
+```
+<!-- /test -->
 | Option | Meaning |
 |---|---|
 | `route` / `params` | route name and `param => property, getter, "self", dotted.path` or a typed `Param\*` value |
