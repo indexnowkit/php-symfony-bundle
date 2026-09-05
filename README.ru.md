@@ -9,7 +9,7 @@
 [![Conformance](https://img.shields.io/badge/conformance-core%2022%2F22%20%C2%B7%20orm%2014%2F14%20%C2%B7%20http%206%2F6-brightgreen)](https://github.com/indexnowkit/spec)
 ![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4) ![Symfony](https://img.shields.io/badge/symfony-6.4%20%7C%207.x-000)
 
-[English version](README.md)
+[English version](README.md) · Issues и pull requests: [github.com/indexnowkit/php](https://github.com/indexnowkit/php/issues) (репозитории `php-*` — read-only сплиты)
 
 ## Кто получит уведомление
 
@@ -19,6 +19,25 @@
 
 **Google: нет.** Google не поддерживает IndexNow, его ping-endpoint для sitemap закрыт (404), а Indexing API
 ограничен `JobPosting` / `BroadcastEvent`. Бандл не будет делать вид, что это не так.
+
+**Уведомление, не индексация.** IndexNow сообщает поисковику, что URL изменился; обойти и проиндексировать страницу — его
+решение и его сроки. Результат виден в Bing Webmaster Tools (IndexNow Insights) и в Яндекс.Вебмастере (Индексирование →
+Переобход страниц); полезная метрика — доля отправленных URL в индексе через несколько дней. Удалённые страницы: отдавайте
+410 (навсегда) или 404 (временно); при переезде — 301 и отправка обоих URL; soft-404 и редирект на главную вредят.
+Bing URL Submission API и Google Indexing API — другие протоколы, здесь не покрываются.
+
+## Почему это, а не X
+
+Большинство пакетов IndexNow — тонкий HTTP-клиент: URL собираете вы, вызываете вы, ответ читаете вы. Это семейство делает
+то, что на практике ломается:
+
+- **Объявлено на модели** (`#[IndexNow]`) и отправляется из хуков ORM — нет кода в контроллере, который можно забыть.
+- **После commit**, не на flush: откатившаяся транзакция ничего не объявляет.
+- **Дебаунс** (10 минут на URL, через ваш кэш), **батчи** до 10 000 URL, ключ на host из env.
+- **Ответы обработаны**: 202 (ключ проверяется), 422, 429 с `Retry-After` и повтором через вашу очередь, эскалация 403.
+- **`check` до первой отправки** говорит, что не так (файл ключа, движки, очередь, кэш, окружение); `explain` — почему URL ушёл или не ушёл.
+- **Одно ядро** под адаптерами Symfony, Laravel, Yii2 и Doctrine с общим conformance-набором: поведение одинаковое везде и описано один раз.
+
 
 ## Установка
 
@@ -194,7 +213,7 @@ require indexnowkit/sitemap` и завершается с кодом 1, `indexno
 [docs/extending.md](docs/extending.md), интерфейсы `Console\*Interface` ядра, на которые они указывают, сообщение и обработчик Messenger и
 параметры контейнера из [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` — проводка, не API.
 Действуют правила core, включая интерфейсы «may grow»:
-[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). До 1.0 минорная версия может ломать
+[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md); что стабильно в самом пакете: [docs/bc.md](docs/bc.md). До 1.0 минорная версия может ломать
 совместимость; каждый такой случай перечислен в разделе «Changed» файла [CHANGELOG.md](CHANGELOG.md) вместе с
 миграцией.
 

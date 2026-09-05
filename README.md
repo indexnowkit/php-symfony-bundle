@@ -9,7 +9,7 @@ One attribute on the entity, one env variable, done.
 [![Conformance](https://img.shields.io/badge/conformance-core%2022%2F22%20%C2%B7%20orm%2014%2F14%20%C2%B7%20http%206%2F6-brightgreen)](https://github.com/indexnowkit/spec)
 ![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4) ![Symfony](https://img.shields.io/badge/symfony-6.4%20%7C%207.x-000)
 
-[Русская версия](README.ru.md)
+[Русская версия](README.ru.md) · Issues and pull requests: [github.com/indexnowkit/php](https://github.com/indexnowkit/php/issues) (the `php-*` repositories are read-only splits)
 
 ## Who gets notified
 
@@ -19,6 +19,26 @@ endpoint reaches all of them; name engines explicitly only to reach a single one
 
 **Google: no.** Google does not support IndexNow, its sitemap ping endpoint is gone (404) and the
 Indexing API is restricted to `JobPosting` / `BroadcastEvent`. This bundle will not pretend otherwise.
+
+**Notification, not indexing.** IndexNow tells an engine that a URL changed; whether and when the page is crawled and
+indexed is the engine's decision. See the result in Bing Webmaster Tools (IndexNow Insights) and Yandex.Webmaster
+(Indexing → Reindex pages); a useful metric is the share of submitted URLs in the index after a few days. Deleted
+pages: answer 410 (gone for good) or 404 (temporarily); for a move answer 301 and submit both URLs; a soft-404 or a
+redirect to the home page does harm. Bing's URL Submission API and Google's Indexing API are different protocols and
+not covered here.
+
+## Why this over X
+
+Most IndexNow packages are a thin HTTP client: you collect the URLs, you call it, you read the answer. This family
+does the part that goes wrong in practice:
+
+- **Declared on the model** (`#[IndexNow]`) and submitted from the ORM hooks — no controller code to forget.
+- **After the commit**, not on flush: a rolled-back transaction announces nothing.
+- **Debounce** (10 minutes per URL, shared through your cache), **batches** of up to 10 000 URLs, one key per host from env.
+- **Answers handled**: 202 (key pending), 422, 429 with `Retry-After` back-off and a retry through your queue, 403 escalation.
+- **`check` before the first submission** says what is wrong (key file, engines, queue, cache, environment); `explain` says why a URL was or was not sent.
+- **One core** under the Symfony, Laravel, Yii2 and Doctrine adapters with a shared conformance suite: the same behaviour everywhere, documented once.
+
 
 ## Install
 
@@ -192,7 +212,7 @@ Public API of the bundle: configuration nodes, command names and options, servic
 [docs/extending.md](docs/extending.md), the core's `Console\*Interface`s they are aliased to, the Messenger message and handler, and the
 container parameters listed in [docs/configuration.md](docs/configuration.md). `DependencyInjection\*` is wiring,
 not API. The core's rules apply, including the "may grow" interfaces:
-[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md). Before 1.0 a minor version may break;
+[bc.md](https://github.com/indexnowkit/php-core/blob/main/docs/bc.md); what this package itself keeps stable: [docs/bc.md](docs/bc.md). Before 1.0 a minor version may break;
 every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the migration.
 
 ## Other frameworks
