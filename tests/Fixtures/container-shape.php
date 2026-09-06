@@ -163,6 +163,13 @@ return  [
                     [
                     ],
                ],
+              'indexnowkit.param_extractor' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\ParamExtractor',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.url_resolver' =>
                [
                    'class' => 'IndexNowKit\\Url\\AttributeUrlResolver',
@@ -837,6 +844,7 @@ return  [
               'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
               'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
               'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Attribute\\ParamExtractor' => 'indexnowkit.param_extractor',
               'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
               'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
               'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
@@ -995,6 +1003,13 @@ return  [
               'indexnowkit.resolver_locator' =>
                [
                    'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.param_extractor' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\ParamExtractor',
                    'tags' =>
                     [
                     ],
@@ -1409,6 +1424,7 @@ return  [
               'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
               'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
               'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Attribute\\ParamExtractor' => 'indexnowkit.param_extractor',
               'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
               'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
               'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
@@ -1561,6 +1577,13 @@ return  [
               'indexnowkit.resolver_locator' =>
                [
                    'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.param_extractor' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\ParamExtractor',
                    'tags' =>
                     [
                     ],
@@ -2107,6 +2130,7 @@ return  [
               'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
               'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
               'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Attribute\\ParamExtractor' => 'indexnowkit.param_extractor',
               'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
               'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
               'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
@@ -2272,6 +2296,13 @@ return  [
               'indexnowkit.resolver_locator' =>
                [
                    'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.param_extractor' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\ParamExtractor',
                    'tags' =>
                     [
                     ],
@@ -2949,6 +2980,7 @@ return  [
               'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
               'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
               'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Attribute\\ParamExtractor' => 'indexnowkit.param_extractor',
               'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
               'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
               'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',
@@ -3114,6 +3146,13 @@ return  [
               'indexnowkit.resolver_locator' =>
                [
                    'class' => 'IndexNowKit\\Url\\ArrayResolverLocator',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.param_extractor' =>
+               [
+                   'class' => 'IndexNowKit\\Attribute\\ParamExtractor',
                    'tags' =>
                     [
                     ],
@@ -3607,6 +3646,7 @@ return  [
               'IndexNowKit\\Attribute\\AttributeReaderInterface' => 'indexnowkit.attribute_reader',
               'IndexNowKit\\Url\\RouteUrlResolverInterface' => 'indexnowkit.route_url_resolver',
               'IndexNowKit\\Url\\ResolverLocatorInterface' => 'indexnowkit.resolver_locator',
+              'IndexNowKit\\Attribute\\ParamExtractor' => 'indexnowkit.param_extractor',
               'IndexNowKit\\Url\\UrlResolverInterface' => 'indexnowkit.url_resolver',
               'IndexNowKit\\Url\\GuardedUrlResolver' => 'indexnowkit.guarded_url_resolver',
               'IndexNowKit\\Url\\ObjectChangeHandler' => 'indexnowkit.change_handler',

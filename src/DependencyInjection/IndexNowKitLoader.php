@@ -10,6 +10,8 @@ use IndexNowKit\Adapter\SubmitterFactory;
 use IndexNowKit\Adapter\SubmitterFactoryInterface;
 use IndexNowKit\Attribute\AttributeReader;
 use IndexNowKit\Attribute\AttributeReaderInterface;
+use IndexNowKit\Attribute\ParamExtractor;
+use IndexNowKit\Attribute\SubjectReaderInterface;
 use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
@@ -308,9 +310,16 @@ final class IndexNowKitLoader
             ->args([tagged_locator('indexnowkit.url_resolver')]);
         $services->alias(ResolverLocatorInterface::class, 'indexnowkit.resolver_locator');
 
+        // How `params` and `when` are read off entities: the core DSL, plus every tagged `Attribute\SubjectReaderInterface` of the application.
+        $builder->registerForAutoconfiguration(SubjectReaderInterface::class)->addTag('indexnowkit.subject_reader');
+        $services->set('indexnowkit.param_extractor', ParamExtractor::class)
+            ->factory([ParamExtractor::class, 'fromReaders'])
+            ->args([tagged_iterator('indexnowkit.subject_reader')]);
+        $services->alias(ParamExtractor::class, 'indexnowkit.param_extractor');
+
         $services->set('indexnowkit.url_resolver', AttributeUrlResolver::class)
             ->factory([AttributeUrlResolver::class, 'fromConfig'])
-            ->args([service('indexnowkit.config'), service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger])
+            ->args([service('indexnowkit.config'), service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger, service('indexnowkit.param_extractor')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(UrlResolverInterface::class, 'indexnowkit.url_resolver');
 
@@ -320,7 +329,7 @@ final class IndexNowKitLoader
         $services->alias(GuardedUrlResolver::class, 'indexnowkit.guarded_url_resolver');
 
         $services->set('indexnowkit.change_handler', ObjectChangeHandler::class)
-            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), $logger])
+            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), $logger, service('indexnowkit.param_extractor')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ObjectChangeHandler::class, 'indexnowkit.change_handler');
     }
@@ -370,6 +379,7 @@ final class IndexNowKitLoader
                 '$resolver' => service('indexnowkit.guarded_url_resolver'),
                 '$logger' => $logger,
                 '$transport' => service('indexnowkit.transport'),
+                '$extractor' => service('indexnowkit.param_extractor'),
             ])
             ->tag('monolog.logger', ['channel' => $channel])
             ->public();

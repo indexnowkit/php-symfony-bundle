@@ -3,6 +3,19 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.11.0] — Unreleased
+
+### Added
+
+- **`indexnowkit.param_extractor`** (alias `IndexNowKit\Attribute\ParamExtractor`): how `params` and `when` are read off
+  entities — the core DSL plus every service implementing `Attribute\SubjectReaderInterface`, which is autoconfigured with
+  the tag **`indexnowkit.subject_reader`** (a reader for objects the DSL cannot see into: a CMS record behind `get_field()`).
+  The resolver, the change handler, the facade and `indexnow:explain` share it.
+
+### Changed
+
+- Requires `indexnowkit/core ^0.10`.
+
 ## [0.10.0] — 2026-09-06
 
 ### Added
