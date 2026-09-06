@@ -11,6 +11,8 @@ use Psr\Log\NullLogger;
 use ReflectionClass;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
  * Retryable outcomes (429, 5xx, network) throw RecoverableMessageHandlingException so the transport's
@@ -20,7 +22,11 @@ use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 #[AsMessageHandler]
 final class SubmitUrlsHandler
 {
-    public function __construct(private readonly SubmitterInterface $submitter, private readonly LoggerInterface $logger = new NullLogger()) {}
+    /**
+     * @param MessageBusInterface|null $bus the bus the message came from: what was rejected temporarily is re-queued as a new,
+     *                                      smaller message, so a retry never resends the URLs an engine already accepted
+     */
+    public function __construct(private readonly SubmitterInterface $submitter, private readonly LoggerInterface $logger = new NullLogger(), private readonly ?MessageBusInterface $bus = null) {}
 
     private static ?bool $retryDelaySupported = null;
 
@@ -40,6 +46,13 @@ final class SubmitUrlsHandler
             return;
         }
         $this->logger->info(...$outcome->retryLog($message->id));
+        if ($this->bus !== null && \count($outcome->retryUrls) < \count($message->urls)) {
+            // Part of the batch went through: only the rest comes back, as its own message (the transport would replay the whole one).
+            $stamps = $outcome->retryAfter !== null && $outcome->retryAfter > 0 ? [new DelayStamp($outcome->retryAfter * 1000)] : [];
+            $this->bus->dispatch(new SubmitUrlsMessage($outcome->retryUrls, $message->id), $stamps);
+
+            return;
+        }
         $text = \sprintf('IndexNow: %d URL(s) temporarily rejected (job %s)', \count($outcome->retryUrls), $message->id);
         if ($outcome->retryAfter !== null && $outcome->retryAfter > 0 && self::supportsRetryDelay()) {
             // @phpstan-ignore arguments.count (Symfony < 7.2 has no $retryDelay; supportsRetryDelay() guards the call)

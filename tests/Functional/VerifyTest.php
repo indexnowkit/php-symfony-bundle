@@ -123,7 +123,7 @@ final class VerifyTest extends BundleTestCase
         $decoded = json_decode($tester->getDisplay(), true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($decoded);
         $decoded['verify']['timeout'] = (float) $decoded['verify']['timeout'];
-        self::assertSame(['enabled' => true, 'redirect' => 'follow', 'non_canonical' => 'skip', 'origin_error' => 'skip', 'delay' => 0, 'timeout' => 5.0, 'max_redirects' => 3, 'max_batch' => 100, 'robots_cache_ttl' => 3600, 'user_agent' => 'test-verify/1'], $decoded['verify']);
+        self::assertSame(['enabled' => true, 'redirect' => 'follow', 'non_canonical' => 'skip', 'origin_error' => 'skip', 'delay' => 0, 'timeout' => 5.0, 'max_redirects' => 3, 'max_batch' => 100, 'time_budget' => 60, 'robots_cache_ttl' => 3600, 'user_agent' => 'test-verify/1'], $decoded['verify']);
         self::assertArrayNotHasKey('verify', $decoded['adapter']);
     }
 }

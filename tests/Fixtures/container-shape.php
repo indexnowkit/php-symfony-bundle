@@ -487,6 +487,32 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.verify_dispatch' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\DispatchCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_transport' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\TransportCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.verify.transport.real' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
@@ -1854,6 +1880,32 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.verify_dispatch' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\DispatchCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_transport' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\TransportCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.verify.transport.real' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
@@ -2604,6 +2656,32 @@ return  [
               'indexnowkit.check.verify' =>
                [
                    'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_dispatch' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\DispatchCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_transport' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\TransportCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -3420,6 +3498,32 @@ return  [
               'indexnowkit.check.verify' =>
                [
                    'class' => 'IndexNowKit\\Check\\StaticCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_dispatch' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\DispatchCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
+              'indexnowkit.check.verify_transport' =>
+               [
+                   'class' => 'IndexNowKit\\Verify\\Check\\TransportCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>

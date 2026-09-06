@@ -175,7 +175,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // which rule pro
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` or `deleted` · `--limit` (default 1000, when no ids) · `--explain` show rule → URL and send nothing · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` or `deleted` |
 | `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` follow CDN-hosted parts · `-f, --force` · `--dry-run` list only · `--json` · `--no-verify` |
-| `indexnow:history` | `--host` · `--status=ok|failed|skipped|pending` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (default 50) · `--json` · `--purge[=days]` |
+| `indexnow:history` | `--host` · `--status=ok|pending|failed|skipped` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (default 50) · `--json` · `--purge[=days]` |
 | `indexnow:status` | `--json` |
 | `indexnow:key:generate` | `-l, --length` (8-128, default 32) · `--alphanumeric` · `--write-env[=FILE]` (default `.env.local`) · `--force` rotate an existing key |
 
@@ -288,7 +288,7 @@ every break is listed under "Changed" in [CHANGELOG.md](CHANGELOG.md) with the m
 
 ## Notes for AI assistants
 
-- Composer package `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, on `indexnowkit/core`); entity hooks need `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; the `sitemap` command needs `indexnowkit/sitemap`; pre-flight checks need `indexnowkit/verify`; `indexnow:history` / `indexnow:status` need `indexnowkit/history` (`history.store: psr16|pdo`). Configuration: `config/packages/indexnowkit.yaml`, root key `indexnowkit`.
+- Composer package `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, on `indexnowkit/core`); entity hooks need `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; the `indexnow:sitemap` command needs `indexnowkit/sitemap`; pre-flight checks need `indexnowkit/verify`; `indexnow:history` / `indexnow:status` need `indexnowkit/history` (`history.store: psr16|pdo`). Configuration: `config/packages/indexnowkit.yaml`, root key `indexnowkit`. `bin/console indexnow:key:generate --env-file=.env.local` writes a fresh `INDEXNOW_KEY`; `bin/console indexnow:submit <url>…` submits URLs by hand, `bin/console indexnow:explain <Entity> <id>` shows why a URL is or is not produced.
 - Minimal complete snippet (every `use` included):
 
 ```php

@@ -111,7 +111,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
  * {@see SitemapNotInstalledCommand} and `check` prints one `StaticCheck` line (nothing is logged at boot); the same
  * with {@see VerifyServices} and {@see HistoryServices} (`indexnow:history` / `indexnow:status` and their stand-ins).
  *
- * @phpstan-type Tree array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>, verify?: array<string, mixed>, history?: array<string, mixed>}
+ * @phpstan-type Tree array{enabled: bool, base_url: ?string, dispatch: string, engines: list<string>, http: array{client: ?string, timeout: float}, throttle: array{max_requests_per_minute: int}, debounce: array{store: string}, batch: array{max_urls: int}, messenger: array{bus: string, transport: ?string, delay: int, stamps: list<string>}, key_file: array{enabled: bool, path: string, host: ?string, cache_max_age: int, route_name: string}, doctrine: array{enabled: bool, listener_priority: int, connections: list<string>}, logging: array{channel: string, max_urls: int, forbidden_escalation: int, levels: array<string, string>}, resolver: array{max_via_depth: int, max_via_fanout: int}, flush: array{priority: int, console_priority: int}, locale_hosts: array<string, string>, collector: array{max_urls: int, detect_leaks: bool}, profiler: array{enabled: bool}, hosts: array<string, mixed>, sitemap?: array<string, mixed>, verify?: array<string, mixed>, history?: array<string, mixed>}
  */
 final class IndexNowKitLoader
 {
@@ -345,7 +345,7 @@ final class IndexNowKitLoader
         match ($dispatch) {
             'none' => $services->set('indexnowkit.dispatcher', NullDispatcher::class),
             'messenger' => $services->set('indexnowkit.dispatcher', MessengerDispatcher::class)
-                ->args([service($config['messenger']['bus']), $logger, $config['messenger']['delay'], array_map(static fn(string $id) => service($id), $config['messenger']['stamps']), $config['logging']['max_urls']])
+                ->args([service($config['messenger']['bus']), $logger, $config['messenger']['delay'], array_map(static fn(string $id) => service($id), $config['messenger']['stamps']), $config['logging']['max_urls'], $config['batch']['max_urls']])
                 ->tag('monolog.logger', ['channel' => $channel]),
             default => $services->set('indexnowkit.dispatcher', SyncDispatcher::class)
                 ->args([service('indexnowkit.submitter'), $logger, $config['logging']['max_urls']])
@@ -355,7 +355,7 @@ final class IndexNowKitLoader
 
         if ($dispatch === 'messenger') {
             $services->set('indexnowkit.messenger.handler', SubmitUrlsHandler::class)
-                ->args([service('indexnowkit.submitter'), $logger])
+                ->args([service('indexnowkit.submitter'), $logger, service($config['messenger']['bus'])])
                 ->tag('messenger.message_handler')
                 ->tag('monolog.logger', ['channel' => $channel]);
         }

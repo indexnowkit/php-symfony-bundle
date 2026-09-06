@@ -112,7 +112,7 @@ final class TestKernel extends Kernel
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
         }
-        if (\in_array($this->dispatch, ['messenger', 'messengerdelay', 'verifymessenger', 'historymessenger'], true)) {
+        if (\in_array($this->dispatch, ['messenger', 'messengerdelay', 'verifymessenger', 'historymessenger', 'messengerbatch'], true)) {
             $framework['messenger'] = [
                 'transports' => ['async' => 'in-memory://'],
                 'routing' => [SubmitUrlsMessage::class => 'async'],
@@ -174,6 +174,10 @@ final class TestKernel extends Kernel
                 break;
             case 'messenger':
                 $config['dispatch'] = 'messenger';
+                break;
+            case 'messengerbatch':
+                $config['dispatch'] = 'messenger';
+                $config['batch'] = ['max_urls' => 1];
                 break;
             case 'messengerauto':
                 $config['dispatch'] = 'auto';

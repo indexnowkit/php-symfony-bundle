@@ -175,7 +175,7 @@ $this->indexNow->explain($post, IndexNowKit\Event::Updated);   // какое п�
 | `indexnow:submit-entity <class> [ids...]` | `--event=updated`, `created` или `deleted` · `--limit` (по умолчанию 1000, если id не заданы) · `--explain` показать правило → URL и ничего не отправлять · `-f, --force` · `--dry-run` · `--json` |
 | `indexnow:explain <class> <id>` | `--event=updated`, `created` или `deleted` |
 | `indexnow:sitemap [sitemap]` | `--changed-since="1 day"` · `--allow-foreign-hosts` обходить части на CDN · `-f, --force` · `--dry-run` только список · `--json` · `--no-verify` |
-| `indexnow:history` | `--host` · `--status=ok|failed|skipped|pending` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (по умолчанию 50) · `--json` · `--purge[=days]` |
+| `indexnow:history` | `--host` · `--status=ok|pending|failed|skipped` · `--url` · `--since=2h|3d|2026-09-01` · `--limit` (по умолчанию 50) · `--json` · `--purge[=days]` |
 | `indexnow:status` | `--json` |
 | `indexnow:key:generate` | `-l, --length` (8–128, по умолчанию 32) · `--alphanumeric` · `--write-env[=FILE]` (по умолчанию `.env.local`) · `--force` ротация существующего ключа |
 
@@ -290,7 +290,7 @@ indexnowkit/history` и завершаются с кодом 1, `indexnow:check`
 
 ## Заметки для AI-ассистентов
 
-- Composer-пакет `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, поверх `indexnowkit/core`); хуки сущностей требуют `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; команда `sitemap` — `indexnowkit/sitemap`; предпроверка страниц — `indexnowkit/verify`; `indexnow:history` / `indexnow:status` — `indexnowkit/history` (`history.store: psr16|pdo`). Конфигурация: `config/packages/indexnowkit.yaml`, корневой ключ `indexnowkit`.
+- Composer-пакет `indexnowkit/symfony-bundle` (Symfony 6.4 | 7 | 8, поверх `indexnowkit/core`); хуки сущностей требуют `indexnowkit/doctrine` + `doctrine/doctrine-bundle`; команда `indexnow:sitemap` — `indexnowkit/sitemap`; предпроверка страниц — `indexnowkit/verify`; `indexnow:history` / `indexnow:status` — `indexnowkit/history` (`history.store: psr16|pdo`). Конфигурация: `config/packages/indexnowkit.yaml`, корневой ключ `indexnowkit`. `bin/console indexnow:key:generate --env-file=.env.local` записывает новый `INDEXNOW_KEY`; `bin/console indexnow:submit <url>…` отправляет URL вручную, `bin/console indexnow:explain <Entity> <id>` объясняет, почему URL есть или нет.
 - Минимальный полный сниппет (все `use` на месте):
 
 ```php

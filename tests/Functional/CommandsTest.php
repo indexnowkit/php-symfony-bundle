@@ -9,6 +9,7 @@ use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 use IndexNowKit\Testing\Conformance\CheckOutputAssertions;
+use PHPUnit\Framework\Attributes\TestDox;
 
 final class CommandsTest extends BundleTestCase
 {
@@ -43,6 +44,7 @@ final class CommandsTest extends BundleTestCase
         return $match[1] ?? self::fail('INDEXNOW_KEY line not found.');
     }
 
+    #[TestDox('H05 indexnow:check when the key file is missing -> exit 1 with the hint')]
     public function testCheckReportsMissingKeyFile(): void
     {
         $tester = $this->tester('indexnow:check');
@@ -81,6 +83,7 @@ final class CommandsTest extends BundleTestCase
         CheckOutputAssertions::assertEveryItemHasCode($checker->run(), 'wiring.doctrine', 'debounce.store', 'sitemap.spool', 'key_file.status');
     }
 
+    #[TestDox('H04 indexnow:check with a reachable key file -> exit 0, the wiring lines')]
     public function testCheckPrintsDispatchAndDoctrineWiring(): void
     {
         $this->transport()->onGet('https://www.example.com/' . TestKernel::KEY . '.txt', new Response(200, TestKernel::KEY));

@@ -15,7 +15,9 @@ use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SymfonyBundle\Check\VerifySampleCheck;
 use IndexNowKit\Url\UrlNormalizerInterface;
+use IndexNowKit\Verify\Check\DispatchCheck;
 use IndexNowKit\Verify\Check\SampleCheck;
+use IndexNowKit\Verify\Check\TransportCheck;
 use IndexNowKit\Verify\NonCanonicalPolicy;
 use IndexNowKit\Verify\OriginErrorPolicy;
 use IndexNowKit\Verify\PageSignals;
@@ -66,6 +68,7 @@ final class VerifyServices
             ->floatNode('timeout')->defaultValue(VerifyConfig::DEFAULT_TIMEOUT)->min(0.1)->info('Seconds one pre-flight GET may take.')->end()
             ->integerNode('max_redirects')->defaultValue(VerifyConfig::DEFAULT_MAX_REDIRECTS)->min(0)->info('Hops followed under redirect: follow; more is a skip.')->end()
             ->integerNode('max_batch')->defaultValue(VerifyConfig::DEFAULT_MAX_BATCH)->min(1)->info('Largest batch verified; a larger one (the sitemap command) is sent unverified with one warning.')->end()
+            ->integerNode('time_budget')->defaultValue(VerifyConfig::DEFAULT_TIME_BUDGET)->min(0)->info('Seconds the pre-flight of one batch may take in total (a Messenger worker has a redelivery timeout); the URLs left when it runs out are sent unverified with one warning. 0 = no budget.')->end()
             ->integerNode('robots_cache_ttl')->defaultValue(VerifyConfig::DEFAULT_ROBOTS_CACHE_TTL)->min(0)->info('Seconds a fetched robots.txt is kept in the debounce.store cache pool (0 = per process only).')->end()
             ->scalarNode('user_agent')->defaultNull()->info('User-Agent of the pre-flight GETs. Default: indexnowkit-verify/<version> (+https://github.com/indexnowkit/php). Allow it in your WAF.')
                 ->validate()->ifTrue(IndexNowKitConfiguration::literal(static fn(string $v): bool => preg_match('/[\r\n]/', $v) === 1))->thenInvalid('indexnowkit.verify.user_agent must not contain line breaks.')->end()
@@ -93,13 +96,12 @@ final class VerifyServices
             ? \sprintf('verify: enabled (redirect: %s, non_canonical: %s, origin_error: %s)', self::str($verify['redirect'] ?? 'skip'), self::str($verify['non_canonical'] ?? 'skip'), self::str($verify['origin_error'] ?? 'skip'))
             : 'verify: installed, disabled (verify.enabled: false)';
         $services->set('indexnowkit.check.verify', StaticCheck::class)->args([CheckLevel::Ok, $line, self::package(true)->checkCode()])->tag('indexnowkit.check');
-        if ($enabled && $dispatch === 'sync') {
-            $services->set('indexnowkit.check.verify_dispatch', StaticCheck::class)->args([CheckLevel::Warning, 'verify: verify.enabled with dispatch: sync fetches your own pages inside the web request; use dispatch: messenger', 'verify.dispatch'])->tag('indexnowkit.check');
-        }
+        $services->set('indexnowkit.check.verify_dispatch', DispatchCheck::class)->args([$enabled && $dispatch === 'sync', 'messenger'])->tag('indexnowkit.check');
+        $services->set('indexnowkit.check.verify_transport', TransportCheck::class)->args([$enabled, $client])->tag('indexnowkit.check');
 
         $services->set(self::TRANSPORT . '.real', LazyTransport::class)
             ->factory([TransportFactory::class, 'create'])
-            ->args([$client !== null ? service($client) : null, is_numeric($verify['timeout'] ?? null) ? (float) $verify['timeout'] : VerifyConfig::DEFAULT_TIMEOUT, $client ?? 'indexnowkit.http.client', ['User-Agent' => \is_string($verify['user_agent'] ?? null) ? $verify['user_agent'] : VerifyConfig::defaultUserAgent()]]);
+            ->args([$client !== null ? service($client) : null, is_numeric($verify['timeout'] ?? null) ? (float) $verify['timeout'] : VerifyConfig::DEFAULT_TIMEOUT, $client ?? 'indexnowkit.http.client', ['User-Agent' => \is_string($verify['user_agent'] ?? null) ? $verify['user_agent'] : VerifyConfig::defaultUserAgent()], VerifyConfig::BODY_LIMIT]);
         $services->set(self::TRANSPORT, LazyTransport::class)->args([service_closure(self::TRANSPORT . '.real')]);
         $services->set('indexnowkit.verify.robots', RobotsCache::class)
             ->args([service(self::TRANSPORT), $psr16 ? service('indexnowkit.debounce_store.psr16') : null, '%indexnowkit.debounce.key_prefix%', is_numeric($verify['robots_cache_ttl'] ?? null) ? (int) $verify['robots_cache_ttl'] : VerifyConfig::DEFAULT_ROBOTS_CACHE_TTL, $logger])

@@ -3,6 +3,21 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.12.0] — Unreleased
+
+### Changed
+
+- **`Messenger\SubmitUrlsHandler` re-queues only the rejected URLs** of a partially accepted batch, as a new
+  `SubmitUrlsMessage` with the same id and the engine's `Retry-After` as a `DelayStamp`; the whole message is thrown back
+  to the transport only when every URL was rejected. Before, a `Retry-After` longer than `debounce.per_url` re-sent the
+  accepted URLs too.
+- **`Messenger\MessengerDispatcher` sends one message per `batch.max_urls` URLs**: a bulk import of 500 000 rows was one
+  message a transport with a size limit (SQS) rejected, and every URL was lost with one log line.
+- `check` gets `verify.transport` (an application `http.client` with verify) and the `verify.dispatch` line comes from
+  `Verify\Check\DispatchCheck`.
+- `indexnowkit.verify` configuration: `time_budget`.
+- Requires `indexnowkit/core ^0.11`, `indexnowkit/console ^0.4`; tests against `verify ^0.2`, `history ^0.2`, `sitemap ^0.6`, `doctrine ^0.8`.
+
 ## [0.11.0] — 2026-09-06
 
 ### Added
