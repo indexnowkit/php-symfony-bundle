@@ -319,7 +319,7 @@ final class IndexNowKitLoader
 
         $services->set('indexnowkit.url_resolver', AttributeUrlResolver::class)
             ->factory([AttributeUrlResolver::class, 'fromConfig'])
-            ->args([service('indexnowkit.config'), service('indexnowkit.attribute_reader'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger, service('indexnowkit.param_extractor')])
+            ->args([service('indexnowkit.config'), service('indexnowkit.attribute_reader'), service('indexnowkit.param_extractor'), service('indexnowkit.route_url_resolver'), service('indexnowkit.resolver_locator'), $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(UrlResolverInterface::class, 'indexnowkit.url_resolver');
 
@@ -329,7 +329,7 @@ final class IndexNowKitLoader
         $services->alias(GuardedUrlResolver::class, 'indexnowkit.guarded_url_resolver');
 
         $services->set('indexnowkit.change_handler', ObjectChangeHandler::class)
-            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), $logger, service('indexnowkit.param_extractor')])
+            ->args([service('indexnowkit.attribute_reader'), service('indexnowkit.guarded_url_resolver'), service('indexnowkit.param_extractor'), $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ObjectChangeHandler::class, 'indexnowkit.change_handler');
     }

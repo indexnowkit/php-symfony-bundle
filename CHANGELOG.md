@@ -3,6 +3,19 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.13.0] — Unreleased
+
+### Added
+
+- **Symfony 8** (`^6.4 || ^7.0 || ^8.0` on every symfony/* requirement; the README said "6.4 | 7 | 8" since 0.11 while
+  composer.json capped at 7 — the two agree now). CI runs the bundle on Symfony 8 with PHP 8.4 (`ci:install:symfony8`).
+
+### Changed
+
+- Wiring follows core 0.12.0: `AttributeUrlResolver::fromConfig()` and `ObjectChangeHandler` take the `ParamExtractor`
+  as their third argument (the service `indexnowkit.param_extractor`, unchanged).
+- Requires `indexnowkit/core ^0.12`.
+
 ## [0.12.0] — 2026-09-07
 
 ### Changed

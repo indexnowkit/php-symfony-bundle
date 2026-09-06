@@ -34,15 +34,15 @@
         "php": "^8.2",
         "ext-json": "*",
         "indexnowkit/console": "^0.4",
-        "indexnowkit/core": "^0.11",
-        "symfony/config": "^6.4 || ^7.0",
-        "symfony/console": "^6.4 || ^7.0",
-        "symfony/dependency-injection": "^6.4 || ^7.0",
-        "symfony/event-dispatcher": "^6.4 || ^7.0",
-        "symfony/framework-bundle": "^6.4 || ^7.0",
-        "symfony/http-foundation": "^6.4 || ^7.0",
-        "symfony/http-kernel": "^6.4.13 || ^7.0",
-        "symfony/routing": "^6.4 || ^7.0"
+        "indexnowkit/core": "^0.12",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
+        "symfony/console": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4.13 || ^7.0 || ^8.0",
+        "symfony/routing": "^6.4 || ^7.0 || ^8.0"
     },
     "require-dev": {
         "doctrine/dbal": "^3.8 || ^4.0",
@@ -59,13 +59,13 @@
         "phpstan/phpstan-strict-rules": "^2.0.12",
         "phpunit/phpunit": "^11.5",
         "roave/security-advisories": "dev-latest",
-        "symfony/browser-kit": "^6.4 || ^7.0",
-        "symfony/error-handler": "^6.4.44 || ^7.0",
-        "symfony/http-client": "^6.4 || ^7.0",
-        "symfony/messenger": "^6.4 || ^7.0",
-        "symfony/twig-bundle": "^6.4 || ^7.0",
-        "symfony/web-profiler-bundle": "^6.4 || ^7.0",
-        "symfony/yaml": "^6.4 || ^7.0"
+        "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
+        "symfony/error-handler": "^6.4.44 || ^7.0 || ^8.0",
+        "symfony/http-client": "^6.4 || ^7.0 || ^8.0",
+        "symfony/messenger": "^6.4 || ^7.0 || ^8.0",
+        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
     },
     "suggest": {
         "indexnowkit/sitemap": "The indexnow:sitemap command (^0.6)",
@@ -73,7 +73,7 @@
         "indexnowkit/history": "Submission history in a cache pool or a database table, the indexnow:history and indexnow:status commands, recent submissions in the profiler (^0.2; history.store: psr16|pdo)",
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.8, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
-        "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0)",
+        "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0 || ^8.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
         "nyholm/psr7": "PSR-17 factories for symfony/http-client",
         "symfony/web-profiler-bundle": "IndexNow panel in the Web Profiler"
@@ -93,6 +93,7 @@
         "stan": "phpstan analyse --memory-limit=1G",
         "ci:install:highest": "@composer update --no-interaction --prefer-dist",
         "ci:install:lowest": "@composer update --no-interaction --prefer-dist --prefer-lowest --prefer-stable",
+        "ci:install:symfony8": "@composer update --no-interaction --prefer-dist --with symfony/framework-bundle:^8.0",
         "ci:install:symfony64": "@composer update --no-interaction --prefer-dist --with symfony/framework-bundle:^6.4 --with doctrine/dbal:^3.8 --with doctrine/orm:^2.19"
     },
     "config": {
@@ -103,7 +104,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.12.x-dev"
+            "dev-main": "0.13.x-dev"
         }
     }
 }

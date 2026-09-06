@@ -24,6 +24,7 @@ jobs:
         include:
           - { php: '8.2', deps: lowest }
           - { php: '8.3', deps: symfony64 }
+          - { php: '8.4', deps: symfony8 }
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
