@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Unit;
 
+use IndexNowKit\History\Adapter\HistoryServices as Package;
 use IndexNowKit\SymfonyBundle\DependencyInjection\HistoryServices;
 use IndexNowKit\SymfonyBundle\DependencyInjection\IndexNowKitConfiguration;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
@@ -28,7 +29,7 @@ final class HistoryServicesTest extends TestCase
 {
     public function testPdoFromDsnThrowsOnErrors(): void
     {
-        $pdo = HistoryServices::pdoFromDsn('sqlite::memory:');
+        $pdo = Package::pdoFromDsn('sqlite::memory:');
 
         self::assertSame(PDO::ERRMODE_EXCEPTION, $pdo->getAttribute(PDO::ATTR_ERRMODE));
     }

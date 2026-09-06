@@ -6,8 +6,8 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use Closure;
 use IndexNowKit\Adapter\OptionalPackage;
-use IndexNowKit\Client;
 use IndexNowKit\Config;
+use IndexNowKit\History\Adapter\HistoryServices as Package;
 use IndexNowKit\History\Check\HistoryCheck;
 use IndexNowKit\History\Console\HistoryRunner;
 use IndexNowKit\History\Console\StatusRunner;
@@ -34,8 +34,9 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 
 /**
- * The `history` node of the configuration tree and the history services: the only wiring of the bundle that reads
- * `IndexNowKit\History\*`, called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
+ * The `history` node of the configuration tree and the history services: the service ids and the Symfony side
+ * (definitions, the Doctrine connection, the cache pool, the Messenger facts) over the package's own wiring
+ * (`History\Adapter\HistoryServices`), called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
  * `indexnowkit/history` is installed. With `history.store` set, `indexnowkit.submission_store` is the package's store
  * (PSR-16 over a cache pool, or PDO from a Doctrine connection or a DSN), so the submitter, the Messenger handler,
  * the commands and the verify decorator record into it; an application service under the same id still wins.
@@ -49,7 +50,7 @@ final class HistoryServices
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return new OptionalPackage('indexnowkit/history', HistoryConfig::class, 'history', $installed); // a class, not the interface: OptionalPackage asks class_exists()
+        return Package::package($installed);
     }
 
     /** The `history` node, on the root's children. */
@@ -105,7 +106,7 @@ final class HistoryServices
                 throw new DiInvalidArgumentException('indexnowkit.history.pdo: set either "dsn" or "service", not both.');
             }
             if ($dsn !== null) {
-                $services->set('indexnowkit.history.pdo', PDO::class)->factory([self::class, 'pdoFromDsn'])->args([$dsn]);
+                $services->set('indexnowkit.history.pdo', PDO::class)->factory([Package::class, 'pdoFromDsn'])->args([$dsn]);
             } else {
                 $services->set('indexnowkit.history.pdo', PDO::class)->factory([self::class, 'pdoFromConnection'])->args([service(self::connectionId($connection ?? 'default'))]);
             }
@@ -158,12 +159,6 @@ final class HistoryServices
         return str_contains($service, '.') ? $service : \sprintf('doctrine.dbal.%s_connection', $service);
     }
 
-    /** A PDO of `history.pdo.dsn`, throwing on every error (the store expects exceptions, not false). */
-    public static function pdoFromDsn(string $dsn): PDO
-    {
-        return new PDO($dsn, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    }
-
     /**
      * The PDO of `history.pdo.service`: the service itself when it is a PDO, else its `getNativeConnection()` (a
      * Doctrine DBAL `Connection`), which must be a PDO.
@@ -187,7 +182,7 @@ final class HistoryServices
     /** The reader of the 403 counters the client keeps (the same cache, prefix, threshold and TTL as `Client`). */
     public static function forbiddenCounter(Config $config, ?CacheInterface $cache, ?LoggerInterface $logger): ForbiddenCounter
     {
-        return new ForbiddenCounter($cache, $config->debounceKeyPrefix, $config->forbiddenEscalation, Client::FAILURE_CACHE_TTL, $logger ?? new NullLogger());
+        return Package::forbiddenCounter($config, $cache, $logger ?? new NullLogger());
     }
 
     /**
@@ -202,7 +197,7 @@ final class HistoryServices
         $description = \in_array($debounceStore, ['memory', 'none'], true) || $pool === null ? $debounceStore : \sprintf('%s (%s)', $debounceStore, (new ReflectionClass($pool))->getShortName());
         $transport ??= $routed ? 'routed by framework.messenger.routing' : 'none: handled synchronously (set messenger.transport)';
 
-        return new StatusRunner($config, $keys, $forbidden, $description, $store, $dispatch === 'messenger' ? self::facts($transport, $bus) : null);
+        return Package::statusRunner($config, $keys, $forbidden, $description, $store, $dispatch === 'messenger' ? self::facts($transport, $bus) : null);
     }
 
     /**

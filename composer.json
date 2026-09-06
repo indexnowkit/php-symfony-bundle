@@ -50,10 +50,10 @@
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
         "indexnowkit/doctrine": "^0.8",
-        "indexnowkit/history": "^0.2",
-        "indexnowkit/sitemap": "^0.6",
+        "indexnowkit/history": "^0.3",
+        "indexnowkit/sitemap": "^0.7",
         "indexnowkit/testing": "^0.3",
-        "indexnowkit/verify": "^0.2",
+        "indexnowkit/verify": "^0.3",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
         "phpstan/phpstan-strict-rules": "^2.0.12",
@@ -67,10 +67,15 @@
         "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
     },
+    "conflict": {
+        "indexnowkit/history": "<0.3",
+        "indexnowkit/sitemap": "<0.7",
+        "indexnowkit/verify": "<0.3"
+    },
     "suggest": {
-        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.6)",
-        "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.2; verify.enabled: true)",
-        "indexnowkit/history": "Submission history in a cache pool or a database table, the indexnow:history and indexnow:status commands, recent submissions in the profiler (^0.2; history.store: psr16|pdo)",
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.7)",
+        "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.3; verify.enabled: true)",
+        "indexnowkit/history": "Submission history in a cache pool or a database table, the indexnow:history and indexnow:status commands, recent submissions in the profiler (^0.3; history.store: psr16|pdo)",
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.8, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0 || ^8.0)",
@@ -104,7 +109,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.13.x-dev"
+            "dev-main": "0.14.x-dev"
         }
     }
 }

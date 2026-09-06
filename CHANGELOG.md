@@ -3,6 +3,17 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.14.0] — Unreleased
+
+### Changed
+
+- **The optional packages wire themselves**: `DependencyInjection\{Verify,History,Sitemap}Services` keep the service ids,
+  the configuration nodes and the definitions but take the predicate, the check line, the sample check factory, the PDO
+  of a DSN, the 403 counter and the status runner from `Verify\Adapter\VerifyServices`, `History\Adapter\HistoryServices`
+  and `Sitemap\Adapter\SitemapServices` of the packages (verify 0.3, history 0.3, sitemap 0.7 — `conflict` with older
+  ones). `indexnowkit.check.verify` is built by the package from `indexnowkit.verify_config` (same text).
+- Requires `indexnowkit/verify ^0.3`, `indexnowkit/history ^0.3`, `indexnowkit/sitemap ^0.7` when installed.
+
 ## [0.13.0] — 2026-09-07
 
 ### Added

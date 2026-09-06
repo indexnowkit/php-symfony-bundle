@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use IndexNowKit\Adapter\OptionalPackage;
+use IndexNowKit\Sitemap\Adapter\SitemapServices as Package;
 use IndexNowKit\Sitemap\Check\SitemapSpoolCheck;
 use IndexNowKit\Sitemap\Console\SitemapRunner;
 use IndexNowKit\Sitemap\SitemapConfig;
@@ -19,8 +20,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 
 /**
- * The `sitemap` node of the configuration tree and the sitemap services: the only wiring of the bundle that
- * reads `IndexNowKit\Sitemap\*`, called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
+ * The `sitemap` node of the configuration tree and the sitemap services: the service ids and definitions over the
+ * package's own wiring (`Sitemap\Adapter\SitemapServices`), called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
  * `indexnowkit/sitemap` is installed (a class constant of an absent class is safe; `SitemapReader::MAX_*` and
  * `SpoolMode::cases()` are not).
  */
@@ -32,7 +33,7 @@ final class SitemapServices
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return new OptionalPackage('indexnowkit/sitemap', SitemapReader::class, 'sitemap', $installed);
+        return Package::package($installed);
     }
 
     /** The `sitemap` node, on the root's children. */

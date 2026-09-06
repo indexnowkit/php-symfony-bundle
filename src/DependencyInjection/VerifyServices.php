@@ -7,20 +7,15 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 use BackedEnum;
 use Closure;
 use IndexNowKit\Adapter\OptionalPackage;
-use IndexNowKit\Check\CheckLevel;
 use IndexNowKit\Check\StaticCheck;
 use IndexNowKit\Http\LazyTransport;
-use IndexNowKit\Http\TransportInterface;
-use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SymfonyBundle\Check\VerifySampleCheck;
-use IndexNowKit\Url\UrlNormalizerInterface;
+use IndexNowKit\Verify\Adapter\VerifyServices as Package;
 use IndexNowKit\Verify\Check\DispatchCheck;
-use IndexNowKit\Verify\Check\SampleCheck;
 use IndexNowKit\Verify\Check\TransportCheck;
 use IndexNowKit\Verify\NonCanonicalPolicy;
 use IndexNowKit\Verify\OriginErrorPolicy;
-use IndexNowKit\Verify\PageSignals;
 use IndexNowKit\Verify\RedirectPolicy;
 use IndexNowKit\Verify\RobotsCache;
 use IndexNowKit\Verify\VerifyConfig;
@@ -34,8 +29,9 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service_c
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 
 /**
- * The `verify` node of the configuration tree and the pre-flight services: the only wiring of the bundle that
- * reads `IndexNowKit\Verify\*`, called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
+ * The `verify` node of the configuration tree and the pre-flight services: the service ids and the Symfony side
+ * (definitions, decoration, the profiler's needs) over the package's own wiring (`Verify\Adapter\VerifyServices`:
+ * check lines, the sample check), called by {@see IndexNowKitConfiguration} and {@see IndexNowKitLoader} only when
  * `indexnowkit/verify` is installed. With `verify.enabled: true` the submitter and the command submitter factory
  * are decorated in place, so `dispatch: sync`, the Messenger handler, the profiler recorder and every command see
  * the verifying submitter; `indexnowkit.command_submitter_factory.unverified` keeps the plain factory for
@@ -52,7 +48,7 @@ final class VerifyServices
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return new OptionalPackage('indexnowkit/verify', PageSignals::class, 'verify', $installed);
+        return Package::package($installed);
     }
 
     /** The `verify` node, on the root's children. */
@@ -92,10 +88,7 @@ final class VerifyServices
         $services->set('indexnowkit.verify_config', VerifyConfig::class)->factory([VerifyConfig::class, 'fromArray'])->args([$verify]);
         $services->alias(VerifyConfig::class, 'indexnowkit.verify_config');
         $enabled = ($verify['enabled'] ?? false) === true;
-        $line = $enabled
-            ? \sprintf('verify: enabled (redirect: %s, non_canonical: %s, origin_error: %s)', self::str($verify['redirect'] ?? 'skip'), self::str($verify['non_canonical'] ?? 'skip'), self::str($verify['origin_error'] ?? 'skip'))
-            : 'verify: installed, disabled (verify.enabled: false)';
-        $services->set('indexnowkit.check.verify', StaticCheck::class)->args([CheckLevel::Ok, $line, self::package(true)->checkCode()])->tag('indexnowkit.check');
+        $services->set('indexnowkit.check.verify', StaticCheck::class)->factory([Package::class, 'installedCheck'])->args([service('indexnowkit.verify_config')])->tag('indexnowkit.check');
         $services->set('indexnowkit.check.verify_dispatch', DispatchCheck::class)->args([$enabled && $dispatch === 'sync', 'messenger'])->tag('indexnowkit.check');
         $services->set('indexnowkit.check.verify_transport', TransportCheck::class)->args([$enabled, $client])->tag('indexnowkit.check');
 
@@ -107,7 +100,7 @@ final class VerifyServices
             ->args([service(self::TRANSPORT), $psr16 ? service('indexnowkit.debounce_store.psr16') : null, '%indexnowkit.debounce.key_prefix%', is_numeric($verify['robots_cache_ttl'] ?? null) ? (int) $verify['robots_cache_ttl'] : VerifyConfig::DEFAULT_ROBOTS_CACHE_TTL, $logger])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->set('indexnowkit.check.verify_sample.factory', Closure::class)
-            ->factory([self::class, 'sampleCheck'])
+            ->factory([Package::class, 'sampleCheck'])
             ->args([service(self::TRANSPORT), service('indexnowkit.verify_config'), service('indexnowkit.url_normalizer'), service('indexnowkit.key_provider'), service('indexnowkit.check.entity_sampler')->nullOnInvalid(), service('indexnowkit.verify.robots')]);
         $services->set('indexnowkit.check.verify_sample', VerifySampleCheck::class)
             ->args([service('indexnowkit.check.samples'), service('indexnowkit.check.verify_sample.factory')])
@@ -132,23 +125,6 @@ final class VerifyServices
     }
 
     /**
-     * The builder of the package's sample check over the options of the running `check` command
-     * ({@see VerifySampleCheck}).
-     *
-     * @param (Closure(string, string|null): list<string>)|null $classSampler
-     *
-     * @return Closure(list<string>, list<string>): SampleCheck
-     */
-    public static function sampleCheck(TransportInterface $transport, VerifyConfig $config, UrlNormalizerInterface $normalizer, KeyProviderInterface $keys, ?Closure $classSampler, RobotsCache $robots): Closure
-    {
-        return static function (array $urls, array $classes) use ($transport, $config, $normalizer, $keys, $classSampler, $robots): SampleCheck {
-            /** @var list<string> $urls */
-            /** @var list<string> $classes */
-            return new SampleCheck($urls, $classes, $transport, $config, $normalizer, $keys, $classSampler, $robots);
-        };
-    }
-
-    /**
      * @param list<BackedEnum> $cases
      *
      * @return list<string>
@@ -156,10 +132,5 @@ final class VerifyServices
     private static function values(array $cases): array
     {
         return array_map(static fn(BackedEnum $c): string => (string) $c->value, $cases);
-    }
-
-    private static function str(mixed $value): string
-    {
-        return \is_string($value) ? $value : 'skip';
     }
 }
