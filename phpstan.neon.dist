@@ -5,6 +5,7 @@ parameters:
     level: 9
     paths:
         - src
+        - config
     # The service()/service_closure()/tagged_iterator() helpers live in this class file; static reflection only sees
     # them once the file is scanned, whichever worker analyses the loader first.
     scanFiles:
