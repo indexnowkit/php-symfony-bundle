@@ -48,6 +48,8 @@ final class TestKernel extends Kernel
     private const NO_VERIFY_PACKAGE = ['noverifypkg'];
     /** @var list<string> variants that boot as if indexnowkit/history were not installed */
     private const NO_HISTORY_PACKAGE = ['nohistorypkg'];
+    /** The variant that leaves the three predicates to detection (`new IndexNowKitBundle()` without arguments). */
+    public const DETECT_PACKAGES = 'detect';
 
     public function __construct(string $environment = 'test', bool $debug = false, private readonly string $dispatch = 'sync')
     {
@@ -76,7 +78,9 @@ final class TestKernel extends Kernel
         if ($this->hasDoctrine()) {
             $bundles[] = new DoctrineBundle();
         }
-        $bundles[] = new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true), verifyInstalled: !\in_array($this->dispatch, self::NO_VERIFY_PACKAGE, true), historyInstalled: !\in_array($this->dispatch, self::NO_HISTORY_PACKAGE, true));
+        $bundles[] = $this->dispatch === self::DETECT_PACKAGES
+            ? new IndexNowKitBundle() // detection, as an application registers it: OptionalPackagesDetectionTest
+            : new IndexNowKitBundle(sitemapInstalled: !\in_array($this->dispatch, self::NO_SITEMAP_PACKAGE, true), verifyInstalled: !\in_array($this->dispatch, self::NO_VERIFY_PACKAGE, true), historyInstalled: !\in_array($this->dispatch, self::NO_HISTORY_PACKAGE, true));
         if ($this->isProfilerVariant()) {
             $bundles[] = new TwigBundle();
             $bundles[] = new WebProfilerBundle();
