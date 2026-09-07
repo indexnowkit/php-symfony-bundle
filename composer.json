@@ -49,15 +49,15 @@
         "doctrine/doctrine-bundle": "^2.13 || ^3.0",
         "doctrine/orm": "^2.19 || ^3.0",
         "doctrine/persistence": "^3.0 || ^4.0",
-        "indexnowkit/doctrine": "^0.8",
+        "indexnowkit/doctrine": "^0.9",
         "indexnowkit/history": "^0.3",
-        "indexnowkit/sitemap": "^0.7",
+        "indexnowkit/sitemap": "^0.8",
         "indexnowkit/testing": "^0.3",
-        "indexnowkit/verify": "^0.3",
+        "indexnowkit/verify": "^0.4",
         "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.2.13",
         "phpstan/phpstan-strict-rules": "^2.0.12",
-        "phpunit/phpunit": "^11.5",
+        "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0",
         "roave/security-advisories": "dev-latest",
         "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
         "symfony/error-handler": "^6.4.44 || ^7.0 || ^8.0",
@@ -69,14 +69,14 @@
     },
     "conflict": {
         "indexnowkit/history": "<0.3",
-        "indexnowkit/sitemap": "<0.7",
-        "indexnowkit/verify": "<0.3"
+        "indexnowkit/sitemap": "<0.8",
+        "indexnowkit/verify": "<0.4"
     },
     "suggest": {
-        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.7)",
-        "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.3; verify.enabled: true)",
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.8)",
+        "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.4; verify.enabled: true)",
         "indexnowkit/history": "Submission history in a cache pool or a database table, the indexnow:history and indexnow:status commands, recent submissions in the profiler (^0.3; history.store: psr16|pdo)",
-        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.8, together with doctrine/doctrine-bundle)",
+        "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.9, together with doctrine/doctrine-bundle)",
         "doctrine/doctrine-bundle": "Required with indexnowkit/doctrine (^2.13 || ^3.0)",
         "symfony/messenger": "Async dispatch with retries (dispatch: messenger, ^6.4 || ^7.0 || ^8.0)",
         "symfony/http-client": "HTTP client for outgoing requests (wrapped as PSR-18 automatically)",
@@ -109,7 +109,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.14.x-dev"
+            "dev-main": "0.15.x-dev"
         }
     }
 }

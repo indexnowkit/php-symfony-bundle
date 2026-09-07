@@ -3,10 +3,38 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
-## [0.14.1] — Unreleased
+## [0.15.0] — Unreleased
+
+### Added
+
+- **`indexnowkit.clock`** (`Clock\SystemClock`, aliased to `Psr\Clock\ClockInterface`): the one service every piece
+  that reads the time takes it from — `indexnowkit.throttle`, the `memory` `indexnowkit.debounce_store`,
+  `indexnowkit.submitter`, `indexnowkit.command_submitter_factory` and, with `verify.enabled`, the pre-flight
+  decorators. Replace it with `IndexNowKit\Testing\FrozenClock` in a compiler pass and the debounce window, the
+  throttle window and the time a submission record gets all move together (audit 0.13 A5; docs/extending.md,
+  docs/testing.md).
+- **`indexnowkit.check.locales`** (`Check\LocalesCheck`, code `router.locales`): one `indexnow:check` warning when a
+  `#[IndexNow(locales: 'all')]` rule meets an empty `framework.enabled_locales`, which until now silently produced
+  one URL without a locale instead of one per locale (audit 0.13 W14).
+
+### Changed
+
+- **The `--sample` gate of `indexnow:check` is the core's**: `indexnowkit.check.samples` is
+  `IndexNowKit\Check\SampleOptions` and `indexnowkit.check.verify_sample` is `IndexNowKit\Check\SampleGateCheck`
+  (core 0.13.0) instead of the bundle's own byte-identical copies, which are removed —
+  `IndexNowKit\SymfonyBundle\Check\SampleOptions` and `IndexNowKit\SymfonyBundle\Check\VerifySampleCheck` are gone.
+  Same service ids, same lines, same `verify.installed` code; only a direct reference to those two classes breaks
+  (audit 0.13 A2).
+- `indexnowkit.verify.submitter` and `indexnowkit.verify.command_submitter_factory` pass their arguments **by name**
+  (`$inner`, `$transport`, …) rather than by position, so a parameter added to `Verify\VerifyingSubmitter` fails the
+  compilation instead of shifting values into the wrong slots (audit 0.13 A16).
+- `DispatcherFactory::SYNC` instead of the `'sync'` literal in `DependencyInjection\VerifyServices` (audit 0.13 A19).
 
 ### Fixed
 
+- **The profiler panel no longer prints the submission store's raw exception message**: a failing store shows the
+  exception class plus a message whose DSN credentials are masked the way `indexnow:config` masks them, so a panel
+  screenshot in a bug report carries no database user or password (audit 0.13 S12).
 - **Fixed: the bundle was a fatal without `indexnowkit/sitemap`, `indexnowkit/verify` or `indexnowkit/history`**
   (`Class "IndexNowKit\Sitemap\Adapter\SitemapServices" not found` while compiling the container): the configuration
   tree and the loader asked the packages' `*Services::package()` whether the package is installed, and those classes
@@ -15,6 +43,17 @@ contain breaking changes, listed under "Changed".
   service ids. A new CI job removes the three packages and boots the bundle with detection
   (`OptionalPackagesDetectionTest`).
 - Requires `indexnowkit/core ^0.13`.
+
+### Tests
+
+- The kernels of the functional suite put a fingerprint of the bundle's sources in the container cache path: with
+  `debug: false` Symfony never checks the compiled container for freshness, so a local edit of the DI extension was
+  tested against the previous container (audit 0.13 T10).
+- The in-memory Messenger transport of the `messenger*` variants runs with `?serialize=true`, so the message and its
+  stamps are really encoded and decoded instead of being handed back as the same object (audit 0.13 T17).
+- A `#[IndexNow(resolver: ...)]` id the container knows but cannot build, and one it does not know at all, are
+  asserted to carry the family's `ConfigurationException` texts, which now come from the core's
+  `Url\ArrayResolverLocator` (audit 0.13 A10).
 
 ## [0.14.0] — 2026-09-07
 
