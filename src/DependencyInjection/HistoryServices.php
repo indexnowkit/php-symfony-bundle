@@ -45,12 +45,13 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurat
 final class HistoryServices
 {
     /**
-     * The one predicate for `indexnowkit/history` (a class constant of an absent class is safe); null = detect,
-     * false = build the container as if the package were absent (the bundle's `historyInstalled` argument).
+     * The one predicate for `indexnowkit/history`: the core's `OptionalPackage::history()`, so it answers without the
+     * package (the package's own `HistoryServices` cannot be loaded then); null = detect, false = build the container as
+     * if the package were absent (the bundle's `historyInstalled` argument).
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return Package::package($installed);
+        return OptionalPackage::history($installed);
     }
 
     /** The `history` node, on the root's children. */

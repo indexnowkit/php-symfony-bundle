@@ -43,12 +43,13 @@ final class VerifyServices
     public const TRANSPORT = 'indexnowkit.verify.transport';
 
     /**
-     * The one predicate for `indexnowkit/verify` (a class constant of an absent class is safe); null = detect,
-     * false = build the container as if the package were absent (the bundle's `verifyInstalled` argument).
+     * The one predicate for `indexnowkit/verify`: the core's `OptionalPackage::verify()`, so it answers without the
+     * package (the package's own `VerifyServices` cannot be loaded then); null = detect, false = build the container as
+     * if the package were absent (the bundle's `verifyInstalled` argument).
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return Package::package($installed);
+        return OptionalPackage::verify($installed);
     }
 
     /** The `verify` node, on the root's children. */

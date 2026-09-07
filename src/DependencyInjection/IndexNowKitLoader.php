@@ -132,9 +132,10 @@ final class IndexNowKitLoader
      */
     public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null, ?bool $historyInstalled = null)
     {
-        $this->sitemap = SitemapServices::package($sitemapInstalled);
-        $this->verify = VerifyServices::package($verifyInstalled);
-        $this->history = HistoryServices::package($historyInstalled);
+        // the core's predicates: they answer without the package, the package's own classes are loaded only behind them
+        $this->sitemap = OptionalPackage::sitemap($sitemapInstalled);
+        $this->verify = OptionalPackage::verify($verifyInstalled);
+        $this->history = OptionalPackage::history($historyInstalled);
     }
 
     /**

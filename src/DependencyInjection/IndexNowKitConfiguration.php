@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 
 use Closure;
+use IndexNowKit\Adapter\OptionalPackage;
 use IndexNowKit\Config;
 use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyValidator;
@@ -34,9 +35,10 @@ final class IndexNowKitConfiguration
      */
     public function __construct(?bool $sitemapInstalled = null, ?bool $verifyInstalled = null, ?bool $historyInstalled = null)
     {
-        $this->sitemapInstalled = SitemapServices::package($sitemapInstalled)->installed();
-        $this->verifyInstalled = VerifyServices::package($verifyInstalled)->installed();
-        $this->historyInstalled = HistoryServices::package($historyInstalled)->installed();
+        // the core's predicates: they answer without the package, the package's own classes are loaded only behind them
+        $this->sitemapInstalled = OptionalPackage::sitemap($sitemapInstalled)->installed();
+        $this->verifyInstalled = OptionalPackage::verify($verifyInstalled)->installed();
+        $this->historyInstalled = OptionalPackage::history($historyInstalled)->installed();
     }
 
     public function build(DefinitionConfigurator $definition): void

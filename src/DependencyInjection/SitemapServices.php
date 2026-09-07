@@ -28,12 +28,13 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurat
 final class SitemapServices
 {
     /**
-     * The one predicate for `indexnowkit/sitemap` (a class constant of an absent class is safe); null = detect,
-     * false = build the container as if the package were absent (the bundle's `sitemapInstalled` argument).
+     * The one predicate for `indexnowkit/sitemap`: the core's `OptionalPackage::sitemap()`, so it answers without the
+     * package (the package's own `SitemapServices` cannot be loaded then); null = detect, false = build the container as
+     * if the package were absent (the bundle's `sitemapInstalled` argument).
      */
     public static function package(?bool $installed = null): OptionalPackage
     {
-        return Package::package($installed);
+        return OptionalPackage::sitemap($installed);
     }
 
     /** The `sitemap` node, on the root's children. */
