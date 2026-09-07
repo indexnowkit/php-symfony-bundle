@@ -39,7 +39,7 @@ does the part that goes wrong in practice:
 - **Debounce** (10 minutes per URL, shared through your cache), **batches** of up to 10 000 URLs, one key per host from env.
 - **Answers handled**: 202 (key pending), 422, 429 with `Retry-After` back-off and a retry through your queue, 403 escalation.
 - **`check` before the first submission** says what is wrong (key file, engines, queue, cache, environment); `explain` says why a URL was or was not sent.
-- **One core** under the Symfony, Laravel, Yii2 and Doctrine adapters with a shared conformance suite: the same behaviour everywhere, documented once.
+- **One core** under the Symfony, Laravel, Yii2, Yii3 and Doctrine adapters with a shared conformance suite: the same behaviour everywhere, documented once.
 
 
 ## Install
@@ -304,12 +304,12 @@ class Post { /* ORM columns, isPublished() */ }
 
 - Verify: `bin/console indexnow:check` (exit 1 on any error; `--strict` fails on warnings too, `--json` for machines), `bin/console indexnow:config --json` (the effective configuration, keys masked: paste it into a bug report), `bin/console indexnow:explain 'App\\Entity\\Post' 1` (why a URL was or was not produced), `bin/console indexnow:submit-entity 'App\\Entity\\Post' 1 --dry-run`.
 - Pitfalls:
-  - `dispatch: auto` exists in Symfony (`auto` | `messenger` | `sync` | `none`) and Yii2 (`auto` | `queue` | `sync` | `none`), **not** in Laravel (`queue` | `sync` | `none`).
-  - Locales: `router.locales` in Laravel and Yii2, `framework.enabled_locales` in Symfony; `locales: 'all'` on a rule uses that list.
+  - `dispatch: auto` exists in Symfony (`auto` | `messenger` | `sync` | `none`) and Yii2 (`auto` | `queue` | `sync` | `none`), **not** in Laravel (`queue` | `sync` | `none`); Yii3 has `sync` | `none` only.
+  - Locales: `router.locales` in Laravel, Yii2 and Yii3, `framework.enabled_locales` in Symfony; `locales: 'all'` on a rule uses that list.
   - `url:` names an accessor (method or property) that returns the URL; `urls:` is a list of literal URLs. Never put a literal in `url:`.
   - A string in `when:` is an accessor read as truthy (`published`, `isPublished`). A status string needs `Equals`: `when: new Equals('status', 'published')` (`IndexNowKit\Attribute\Param\Equals`).
-  - Manual submission is `submitEntity()` in Symfony, `submitModel()` in Laravel, `submitRecord()` in Yii2; the commands are `indexnow:submit-entity`, `indexnow:submit-model`, `indexnow/submit-record`. Bulk queries (`update()`, `DB::table()`, `updateAll()`) fire no hooks: submit afterwards with those.
-  - Laravel has two classes called `IndexNowKit`: the facade `IndexNowKit\Laravel\Facades\IndexNowKit` and the core service `IndexNowKit\IndexNowKit` (inject by type). Yii2 exposes the core through `Yii::$app->indexnow->kit()`.
+  - Manual submission is `submitEntity()` in Symfony, `submitModel()` in Laravel, `submitRecord()` in Yii2 and Yii3; the commands are `indexnow:submit-entity`, `indexnow:submit-model`, `indexnow/submit-record` (Yii2), `indexnow:submit-record` (Yii3). Bulk queries (`update()`, `DB::table()`, `updateAll()`) fire no hooks: submit afterwards with those.
+  - Laravel has two classes called `IndexNowKit`: the facade `IndexNowKit\Laravel\Facades\IndexNowKit` and the core service `IndexNowKit\IndexNowKit` (inject by type). Yii2 exposes the core through `Yii::$app->indexnow->kit()`; Yii3 defines `IndexNowKit\IndexNowKit` in the container.
   - Outside production a configured key with `dry_run` unset makes `check` fail (a staging copy would submit real URLs): set `dry_run: true` there, or `dry_run: false` explicitly when it submits on purpose.
   - Unknown configuration keys are warned about at boot (typos such as debounce.per_urls); the key list is `Config::OPTIONS` plus the adapter's own keys.
 
@@ -318,7 +318,7 @@ class Post { /* ORM columns, isPublished() */ }
 
 | | |
 |---|---|
-| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), [laravel](https://github.com/indexnowkit/php/tree/main/packages/laravel), [yii2](https://github.com/indexnowkit/php/tree/main/packages/yii2) |
+| PHP | [core](https://github.com/indexnowkit/php/tree/main/packages/core), [doctrine](https://github.com/indexnowkit/php/tree/main/packages/doctrine), [laravel](https://github.com/indexnowkit/php/tree/main/packages/laravel), [yii2](https://github.com/indexnowkit/php/tree/main/packages/yii2), [yii3](https://github.com/indexnowkit/php/tree/main/packages/yii3) |
 | JS/TS | @indexnowkit/core, next, prisma (soon) |
 | Python | indexnowkit, indexnowkit-django (soon) |
 
