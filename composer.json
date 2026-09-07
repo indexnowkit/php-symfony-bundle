@@ -51,7 +51,7 @@
         "doctrine/persistence": "^3.0 || ^4.0",
         "indexnowkit/doctrine": "^0.9",
         "indexnowkit/history": "^0.4",
-        "indexnowkit/sitemap": "^0.8",
+        "indexnowkit/sitemap": "^0.8 || ^0.9",
         "indexnowkit/testing": "^0.3",
         "indexnowkit/verify": "^0.4",
         "nyholm/psr7": "^1.8",
@@ -73,7 +73,7 @@
         "indexnowkit/verify": "<0.4"
     },
     "suggest": {
-        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.8)",
+        "indexnowkit/sitemap": "The indexnow:sitemap command (^0.8 || ^0.9)",
         "indexnowkit/verify": "Pre-flight GET of every URL before submission — noindex, robots.txt, canonical, redirects (^0.4; verify.enabled: true)",
         "indexnowkit/history": "Submission history in a cache pool or a database table, the indexnow:history and indexnow:status commands, recent submissions in the profiler (^0.4; history.store: psr16|pdo)",
         "indexnowkit/doctrine": "Automatic submission when Doctrine entities change (^0.9, together with doctrine/doctrine-bundle)",
