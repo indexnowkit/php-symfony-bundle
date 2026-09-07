@@ -19,6 +19,21 @@ contain breaking changes, listed under "Changed".
 
 ### Changed
 
+- **The command classes are the packages', `Command\*` of the bundle is gone** (wave L, spec 18). `indexnow:check`,
+  `indexnow:config`, `indexnow:submit`, `indexnow:submit-entity`, `indexnow:explain`, `indexnow:key:generate` and the
+  three "not installed" stubs are `IndexNowKit\Console\Command\*` of `indexnowkit/console` 0.5 (`submit-entity` is
+  `SubmitSubjectsCommand`, named by the vocabulary), `indexnow:sitemap` is `IndexNowKit\Sitemap\Console\SitemapCommand`
+  (sitemap 0.8), `indexnow:history` and `indexnow:status` are `IndexNowKit\History\Console\HistoryCommand` /
+  `StatusCommand` (history 0.4). The bundle registers them under their class names with the same runners
+  (`indexnowkit.console.*`), the same names, arguments, options, exit codes and `--json`; the Yii3 package registers
+  the very same classes. What `check` and `config` read is `DependencyInjection\ConsoleConfigSource`
+  (`indexnowkit.console.config_source`, a `Console\ConfigSourceInterface`) instead of three constructor arguments.
+  Every `console.command` stays lazy (`#[AsCommand]`, or the `command` + `description` attributes of the tag for
+  `SubmitSubjectsCommand`), which the bundle's own test now asserts. `Command\EntityLoader` stays where it is.
+  *Migration*: only a direct reference to `IndexNowKit\SymfonyBundle\Command\*Command` breaks — a `decorates:` on one of
+  those ids, an `instanceof`, a `#[AsCommand]` subclass (they were `final`). Decorate the runner instead
+  (`indexnowkit.console.submit_entity`, …), or register a command of your own under the same name
+  (docs/extending.md "Replacing a command").
 - **The `--sample` gate of `indexnow:check` is the core's**: `indexnowkit.check.samples` is
   `IndexNowKit\Check\SampleOptions` and `indexnowkit.check.verify_sample` is `IndexNowKit\Check\SampleGateCheck`
   (core 0.13.0) instead of the bundle's own byte-identical copies, which are removed —
@@ -42,7 +57,8 @@ contain breaking changes, listed under "Changed".
   (core 0.13.0); `DependencyInjection\{Sitemap,Verify,History}Services::package()` delegate there too. Same texts, same
   service ids. A new CI job removes the three packages and boots the bundle with detection
   (`OptionalPackagesDetectionTest`).
-- Requires `indexnowkit/core ^0.13`.
+- Requires `indexnowkit/core ^0.13`, `indexnowkit/console ^0.5`, and `indexnowkit/history ^0.4` when installed
+  (`conflict` with older).
 
 ### Tests
 

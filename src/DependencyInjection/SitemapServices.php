@@ -7,12 +7,12 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 use IndexNowKit\Adapter\OptionalPackage;
 use IndexNowKit\Sitemap\Adapter\SitemapServices as Package;
 use IndexNowKit\Sitemap\Check\SitemapSpoolCheck;
+use IndexNowKit\Sitemap\Console\SitemapCommand;
 use IndexNowKit\Sitemap\Console\SitemapRunner;
 use IndexNowKit\Sitemap\SitemapConfig;
 use IndexNowKit\Sitemap\SitemapReader;
 use IndexNowKit\Sitemap\SitemapSourceInterface;
 use IndexNowKit\Sitemap\SpoolMode;
-use IndexNowKit\SymfonyBundle\Command\SitemapCommand;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -80,7 +80,7 @@ final class SitemapServices
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SitemapReader::class, 'indexnowkit.sitemap_reader');
         $services->alias(SitemapSourceInterface::class, 'indexnowkit.sitemap_reader');
-        $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), \is_string($url) ? $url : null, service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url', service('indexnowkit.command_submitter_factory.unverified')]);
-        $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap')])->tag('console.command');
+        $services->set('indexnowkit.console.sitemap', SitemapRunner::class)->args([service('indexnowkit'), service('indexnowkit.sitemap_reader'), service('indexnowkit.command_submitter_factory'), \is_string($url) ? $url : null, service('indexnowkit.result_formatter'), 'indexnowkit.sitemap.url', service('indexnowkit.command_submitter_factory.unverified'), true]);
+        $services->set(SitemapCommand::class)->args([service('indexnowkit.console.sitemap'), 'indexnowkit.sitemap.url'])->tag('console.command');
     }
 }

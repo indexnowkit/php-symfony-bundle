@@ -467,7 +467,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SitemapCommand' =>
+              'IndexNowKit\\Sitemap\\Console\\SitemapCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -615,7 +615,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\HistoryCommand' =>
+              'IndexNowKit\\History\\Console\\HistoryCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -635,7 +635,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\StatusCommand' =>
+              'IndexNowKit\\History\\Console\\StatusCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -648,6 +648,13 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config_source' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\DependencyInjection\\ConsoleConfigSource',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -655,7 +662,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+              'IndexNowKit\\Console\\Command\\KeyGenerateCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -664,6 +671,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Generate a new IndexNow key (optionally write INDEXNOW_KEY to .env.local)',
                               ],
                          ],
                     ],
@@ -675,7 +683,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+              'IndexNowKit\\Console\\Command\\CheckCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -695,7 +703,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+              'IndexNowKit\\Console\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -715,7 +723,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -756,7 +764,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitEntityCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitSubjectsCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -765,6 +773,8 @@ return  [
                          [
                              0 =>
                               [
+                                  'command' => 'indexnow:submit-entity',
+                                  'description' => 'Resolve the URLs of entities through their #[IndexNow] rules and submit them (the manual path after bulk updates)',
                               ],
                          ],
                     ],
@@ -776,7 +786,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ExplainCommand' =>
+              'IndexNowKit\\Console\\Command\\ExplainCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -785,6 +795,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Explain what IndexNow would do for one entity: rules, guards, URLs, key, debounce (sends nothing)',
                               ],
                          ],
                     ],
@@ -1320,7 +1331,7 @@ return  [
                          ],
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SitemapNotInstalledCommand' =>
+              'IndexNowKit\\Console\\Command\\SitemapNotInstalledCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1366,7 +1377,7 @@ return  [
                          ],
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\HistoryNotInstalledCommand' =>
+              'IndexNowKit\\Console\\Command\\HistoryNotInstalledCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1379,7 +1390,7 @@ return  [
                          ],
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\StatusNotInstalledCommand' =>
+              'IndexNowKit\\Console\\Command\\StatusNotInstalledCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1390,6 +1401,13 @@ return  [
                               [
                               ],
                          ],
+                    ],
+               ],
+              'indexnowkit.console.config_source' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\DependencyInjection\\ConsoleConfigSource',
+                   'tags' =>
+                    [
                     ],
                ],
               'indexnowkit.console.key_generate' =>
@@ -1399,7 +1417,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+              'IndexNowKit\\Console\\Command\\KeyGenerateCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1408,6 +1426,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Generate a new IndexNow key (optionally write INDEXNOW_KEY to .env.local)',
                               ],
                          ],
                     ],
@@ -1419,7 +1438,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+              'IndexNowKit\\Console\\Command\\CheckCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1439,7 +1458,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+              'IndexNowKit\\Console\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1459,7 +1478,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -1902,7 +1921,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SitemapCommand' =>
+              'IndexNowKit\\Sitemap\\Console\\SitemapCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2050,7 +2069,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\HistoryCommand' =>
+              'IndexNowKit\\History\\Console\\HistoryCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2070,7 +2089,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\StatusCommand' =>
+              'IndexNowKit\\History\\Console\\StatusCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2083,6 +2102,13 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config_source' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\DependencyInjection\\ConsoleConfigSource',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -2090,7 +2116,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+              'IndexNowKit\\Console\\Command\\KeyGenerateCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2099,6 +2125,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Generate a new IndexNow key (optionally write INDEXNOW_KEY to .env.local)',
                               ],
                          ],
                     ],
@@ -2110,7 +2137,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+              'IndexNowKit\\Console\\Command\\CheckCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2130,7 +2157,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+              'IndexNowKit\\Console\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2150,7 +2177,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2191,7 +2218,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitEntityCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitSubjectsCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2200,6 +2227,8 @@ return  [
                          [
                              0 =>
                               [
+                                  'command' => 'indexnow:submit-entity',
+                                  'description' => 'Resolve the URLs of entities through their #[IndexNow] rules and submit them (the manual path after bulk updates)',
                               ],
                          ],
                     ],
@@ -2211,7 +2240,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ExplainCommand' =>
+              'IndexNowKit\\Console\\Command\\ExplainCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2220,6 +2249,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Explain what IndexNow would do for one entity: rules, guards, URLs, key, debounce (sends nothing)',
                               ],
                          ],
                     ],
@@ -2709,7 +2739,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SitemapCommand' =>
+              'IndexNowKit\\Sitemap\\Console\\SitemapCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2885,7 +2915,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\HistoryCommand' =>
+              'IndexNowKit\\History\\Console\\HistoryCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2905,7 +2935,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\StatusCommand' =>
+              'IndexNowKit\\History\\Console\\StatusCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2918,6 +2948,13 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config_source' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\DependencyInjection\\ConsoleConfigSource',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -2925,7 +2962,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+              'IndexNowKit\\Console\\Command\\KeyGenerateCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2934,6 +2971,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Generate a new IndexNow key (optionally write INDEXNOW_KEY to .env.local)',
                               ],
                          ],
                     ],
@@ -2945,7 +2983,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+              'IndexNowKit\\Console\\Command\\CheckCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2965,7 +3003,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+              'IndexNowKit\\Console\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -2985,7 +3023,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3026,7 +3064,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitEntityCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitSubjectsCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3035,6 +3073,8 @@ return  [
                          [
                              0 =>
                               [
+                                  'command' => 'indexnow:submit-entity',
+                                  'description' => 'Resolve the URLs of entities through their #[IndexNow] rules and submit them (the manual path after bulk updates)',
                               ],
                          ],
                     ],
@@ -3046,7 +3086,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ExplainCommand' =>
+              'IndexNowKit\\Console\\Command\\ExplainCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3055,6 +3095,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Explain what IndexNow would do for one entity: rules, guards, URLs, key, debounce (sends nothing)',
                               ],
                          ],
                     ],
@@ -3572,7 +3613,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SitemapCommand' =>
+              'IndexNowKit\\Sitemap\\Console\\SitemapCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3720,7 +3761,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\HistoryCommand' =>
+              'IndexNowKit\\History\\Console\\HistoryCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3740,7 +3781,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\StatusCommand' =>
+              'IndexNowKit\\History\\Console\\StatusCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3753,6 +3794,13 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.console.config_source' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\DependencyInjection\\ConsoleConfigSource',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.console.key_generate' =>
                [
                    'class' => 'IndexNowKit\\Console\\KeyGenerateRunner',
@@ -3760,7 +3808,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\KeyGenerateCommand' =>
+              'IndexNowKit\\Console\\Command\\KeyGenerateCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3769,6 +3817,7 @@ return  [
                          [
                              0 =>
                               [
+                                  'description' => 'Generate a new IndexNow key (optionally write INDEXNOW_KEY to .env.local)',
                               ],
                          ],
                     ],
@@ -3780,7 +3829,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\CheckCommand' =>
+              'IndexNowKit\\Console\\Command\\CheckCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3800,7 +3849,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\ConfigCommand' =>
+              'IndexNowKit\\Console\\Command\\ConfigCommand' =>
                [
                    'class' => null,
                    'tags' =>
@@ -3820,7 +3869,7 @@ return  [
                     [
                     ],
                ],
-              'IndexNowKit\\SymfonyBundle\\Command\\SubmitCommand' =>
+              'IndexNowKit\\Console\\Command\\SubmitCommand' =>
                [
                    'class' => null,
                    'tags' =>

@@ -26,7 +26,17 @@ use IndexNowKit\Collector\Collector;
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
 use IndexNowKit\Console\CheckRunner;
+use IndexNowKit\Console\Command\CheckCommand;
+use IndexNowKit\Console\Command\ConfigCommand;
+use IndexNowKit\Console\Command\ExplainCommand;
+use IndexNowKit\Console\Command\HistoryNotInstalledCommand;
+use IndexNowKit\Console\Command\KeyGenerateCommand;
+use IndexNowKit\Console\Command\SitemapNotInstalledCommand;
+use IndexNowKit\Console\Command\StatusNotInstalledCommand;
+use IndexNowKit\Console\Command\SubmitCommand;
+use IndexNowKit\Console\Command\SubmitSubjectsCommand;
 use IndexNowKit\Console\ConfigRunner;
+use IndexNowKit\Console\Definitions;
 use IndexNowKit\Console\ExplainRunner;
 use IndexNowKit\Console\KeyGenerateRunner;
 use IndexNowKit\Console\ResultFormatterInterface;
@@ -58,16 +68,7 @@ use IndexNowKit\SymfonyBundle\Check\CacheProbe;
 use IndexNowKit\SymfonyBundle\Check\EntitySampler;
 use IndexNowKit\SymfonyBundle\Check\LocalesCheck;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
-use IndexNowKit\SymfonyBundle\Command\CheckCommand;
-use IndexNowKit\SymfonyBundle\Command\ConfigCommand;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
-use IndexNowKit\SymfonyBundle\Command\ExplainCommand;
-use IndexNowKit\SymfonyBundle\Command\HistoryNotInstalledCommand;
-use IndexNowKit\SymfonyBundle\Command\KeyGenerateCommand;
-use IndexNowKit\SymfonyBundle\Command\SitemapNotInstalledCommand;
-use IndexNowKit\SymfonyBundle\Command\StatusNotInstalledCommand;
-use IndexNowKit\SymfonyBundle\Command\SubmitCommand;
-use IndexNowKit\SymfonyBundle\Command\SubmitEntityCommand;
 use IndexNowKit\SymfonyBundle\Controller\KeyFileController;
 use IndexNowKit\SymfonyBundle\DataCollector\IndexNowDataCollector;
 use IndexNowKit\SymfonyBundle\DataCollector\ResultRecorder;
@@ -473,13 +474,17 @@ final class IndexNowKitLoader
      */
     private function loadConsole(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel, bool $doctrine): void
     {
+        // The vocabulary is built here as well as registered: `SubmitSubjectsCommand` takes its name from it and is
+        // registered lazily (AddConsoleCommandPass reads the `command` and `description` attributes of the tag and
+        // never instantiates the command at boot), so the tag needs the words at compile time.
+        $words = new Vocabulary(subject: 'entity', subjects: 'entities', cli: 'bin/console', submitSubjects: 'indexnow:submit-entity', configLocation: 'config/packages/indexnowkit.yaml and INDEXNOW_* env vars', keyFileServedBy: 'once the bundle routes are imported');
         $services->set('indexnowkit.console.vocabulary', Vocabulary::class)->args([
-            '$subject' => 'entity',
-            '$subjects' => 'entities',
-            '$cli' => 'bin/console',
-            '$submitSubjects' => 'indexnow:submit-entity',
-            '$configLocation' => 'config/packages/indexnowkit.yaml and INDEXNOW_* env vars',
-            '$keyFileServedBy' => 'once the bundle routes are imported',
+            '$subject' => $words->subject,
+            '$subjects' => $words->subjects,
+            '$cli' => $words->cli,
+            '$submitSubjects' => $words->submitSubjects,
+            '$configLocation' => $words->configLocation,
+            '$keyFileServedBy' => $words->keyFileServedBy,
         ]);
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
@@ -516,12 +521,15 @@ final class IndexNowKitLoader
             $services->set(StatusNotInstalledCommand::class)->args([$this->history->notInstalledMessage()])->tag('console.command');
         }
 
+        // The commands are the classes of indexnowkit/console (wave L, spec 18); the bundle registers them and hands
+        // them what varies: the runners, the vocabulary, the configuration source, the env file, the sample holder.
+        $services->set('indexnowkit.console.config_source', ConsoleConfigSource::class)->args([$config, '%kernel.environment%', $packages]);
         $services->set('indexnowkit.console.key_generate', KeyGenerateRunner::class)->args([service('indexnowkit.console.vocabulary')]);
-        $services->set(KeyGenerateCommand::class)->args([service('indexnowkit.console.key_generate'), '%kernel.project_dir%'])->tag('console.command');
+        $services->set(KeyGenerateCommand::class)->args([service('indexnowkit.console.key_generate'), '.env.local', '%kernel.project_dir%/.env.local'])->tag('console.command', ['description' => Definitions::keyGenerate('.env.local')->description]);
         $services->set('indexnowkit.console.check', CheckRunner::class)->args([service('indexnowkit.checker'), service('indexnowkit.console.vocabulary')]);
-        $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), $config, '%kernel.environment%', service('indexnowkit.check.samples')])->tag('console.command');
+        $services->set(CheckCommand::class)->args([service('indexnowkit.console.check'), service('indexnowkit.console.config_source'), service('indexnowkit.check.samples')])->tag('console.command');
         $services->set('indexnowkit.console.config', ConfigRunner::class)->args([service('indexnowkit.console.vocabulary')]);
-        $services->set(ConfigCommand::class)->args([service('indexnowkit.console.config'), $config, '%kernel.environment%', $packages])->tag('console.command');
+        $services->set(ConfigCommand::class)->args([service('indexnowkit.console.config'), service('indexnowkit.console.config_source')])->tag('console.command');
         $services->set('indexnowkit.console.submit', SubmitRunner::class)->args([service('indexnowkit'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter')]);
         $services->set(SubmitCommand::class)->args([service('indexnowkit.console.submit')])->tag('console.command');
 
@@ -533,9 +541,10 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.check.entity_sampler.callable', EntitySampler::class)->args([service('indexnowkit.entity_loader'), service('indexnowkit')]);
         $services->set('indexnowkit.check.entity_sampler', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.entity_sampler.callable')]);
         $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
-        $services->set(SubmitEntityCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command');
+        // no #[AsCommand] on this one (its name is the vocabulary's): the tag carries the name and the description
+        $services->set(SubmitSubjectsCommand::class)->args([service('indexnowkit.console.submit_entity'), service('indexnowkit.console.vocabulary')])->tag('console.command', ['command' => $words->submitSubjects, 'description' => Definitions::submitSubjects($words)->description]);
         $services->set('indexnowkit.console.explain', ExplainRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.config'), service('indexnowkit.key_provider'), service('indexnowkit.debounce_store'), service('indexnowkit.url_normalizer'), service('indexnowkit.console.vocabulary')]);
-        $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain'), service('indexnowkit.console.vocabulary')])->tag('console.command');
+        $services->set(ExplainCommand::class)->args([service('indexnowkit.console.explain'), service('indexnowkit.console.vocabulary')])->tag('console.command', ['description' => Definitions::explain($words)->description]);
     }
 
     /**

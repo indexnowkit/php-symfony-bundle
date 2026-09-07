@@ -33,7 +33,8 @@ the order you should try them:
 | Entity loader (commands) | `indexnowkit.entity_loader` | `indexnowkit/console` `Console\SubjectLoaderInterface` | | decorate for soft deletes, tenant scoping, another id format (`byIds()` / `all()` receive the `Event`). Registered only when the Doctrine integration is active ([doctrine.md](doctrine.md)) |
 | Command submitter (`--force`, `--dry-run`) | `indexnowkit.command_submitter_factory` | core `Adapter\SubmitterFactoryInterface` | | decorate to wrap what the manual commands submit through |
 | Command output | `indexnowkit.result_formatter` | `indexnowkit/console` `Console\ResultFormatterInterface` | | replace to match your CLI's JSON envelope or table style |
-| Command bodies | `indexnowkit.console.*` | `indexnowkit/console` `Console\*Runner` | | the commands are input parsing over these; reuse a runner from your own command (a tenant loop over `SubmitSubjectsRunner`) |
+| Command bodies | `indexnowkit.console.*` | `indexnowkit/console` `Console\*Runner` | | the commands (the classes of `indexnowkit/console`, `sitemap` and `history`, see "Replacing a command") are input parsing over these; reuse a runner from your own command (a tenant loop over `SubmitSubjectsRunner`) |
+| Configuration source of `check` / `config` | `indexnowkit.console.config_source` | `indexnowkit/console` `Console\ConfigSourceInterface` (`DependencyInjection\ConsoleConfigSource`) | | what the two commands read: the processed tree, its strict build, the package blocks |
 | `indexnow:check` | `indexnowkit.checker` | `Check\CheckerInterface`; add lines with `Check\CheckInterface` services (autoconfigured) | | add checks rather than replacing the checker |
 | Key file route | `indexnowkit.key_file_routes` | `Routing\KeyFileRouteLoader` | `key_file.path`, `key_file.host`, `key_file.route_name` | do not import `config/routes.php` and register your own route to `KeyFileController` |
 | Doctrine listener | `indexnowkit.doctrine.listener` | `IndexNowListener` (final) | `doctrine.*` | disable and write your own on top of `ObjectChangeHandler` (`created()`, `updated()`, `deleted()`, `renamed()`); skip a namespace by decorating the attribute reader to return an empty `RuleSet` |
@@ -160,6 +161,42 @@ final class TenantKeysCheck implements CheckInterface
     }
 }
 ```
+
+## Replacing a command
+
+The `indexnow:*` commands are classes of the packages, not of the bundle (since 0.15.0): `IndexNowKit\Console\Command\*`
+of `indexnowkit/console` (`check`, `config`, `submit`, `submit-entity` as `SubmitSubjectsCommand`, `explain`,
+`key:generate`, the three "not installed" stubs), `IndexNowKit\Sitemap\Console\SitemapCommand`,
+`IndexNowKit\History\Console\HistoryCommand` and `StatusCommand`. The bundle registers each under its class name as
+the service id, with the runner (`indexnowkit.console.*`), the vocabulary, `DependencyInjection\ConsoleConfigSource`
+(what `check` and `config` read), `%kernel.project_dir%/.env.local` for `key:generate` and `indexnowkit.check.samples`
+as arguments. To change what a command does, decorate the runner, not the command — that is the body:
+
+```yaml
+services:
+    App\IndexNow\TenantAwareSubmitEntity:
+        decorates: indexnowkit.console.submit_entity      # a SubmitSubjectsRunner that loops over the tenants
+        arguments: ['@.inner']
+```
+
+To replace a command outright, register your own under the same name; the last `console.command` registered for a
+name wins, and `IndexNowKit\Console\Definitions` gives it the same arguments and options:
+
+```php
+#[AsCommand(name: 'indexnow:submit')]
+final class SubmitThroughGatewayCommand extends Command
+{
+    protected function configure(): void
+    {
+        Definitions::submit()->applyTo($this);
+    }
+}
+```
+
+`SubmitSubjectsCommand` carries no `#[AsCommand]` (its name is the vocabulary's, `indexnow:submit-entity` here), so the
+bundle registers it with the `command` and `description` attributes of the tag; a replacement of that one names itself
+the same way. Every other command is lazy through its attribute; the bundle's own test keeps every `console.command`
+lazy.
 
 ## Conformance tests for your integration
 

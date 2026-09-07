@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Unit;
 
+use IndexNowKit\Console\Command\SubmitSubjectsCommand;
 use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 
 /**
  * The services the extension registers, before compilation: ids, classes, tags, aliases and their order, per
  * variant of the configuration, against tests/Fixtures/container-shape.php. A refactoring of the loader must not
- * change it; a deliberate change regenerates the fixture with INDEXNOWKIT_UPDATE_SHAPE=1.
+ * change it; a deliberate change regenerates the fixture with INDEXNOWKIT_UPDATE_SHAPE=1. Every `console.command`
+ * must be lazy (spec 18 §7): `AddConsoleCommandPass` instantiates at boot any command it cannot name without one.
  */
 final class ContainerShapeTest extends TestCase
 {
@@ -44,6 +48,30 @@ final class ContainerShapeTest extends TestCase
 
         self::assertArrayHasKey($variant, $recorded);
         self::assertSame($recorded[$variant], $shape);
+    }
+
+    #[DataProvider('variants')]
+    #[TestDox('every console.command of the $variant configuration is lazy: the class carries #[AsCommand] with a name, or the tag carries `command` and `description`')]
+    public function testEveryCommandIsLazy(string $variant): void
+    {
+        $commands = 0;
+        foreach (self::shape($variant)['definitions'] as $id => $definition) {
+            $tags = $definition['tags']['console.command'] ?? null;
+            if ($tags === null) {
+                continue;
+            }
+            ++$commands;
+            $class = $definition['class'] ?? $id; // `set(Foo::class)` without a class: ResolveClassPass fills it in from the id at compile time
+            self::assertTrue(class_exists($class), $id);
+            $attribute = (new ReflectionClass($class))->getAttributes(AsCommand::class)[0] ?? null;
+            $named = $attribute !== null && $attribute->newInstance()->name !== '';
+            $tagged = isset($tags[0]['command'], $tags[0]['description']);
+            self::assertTrue($named || $tagged, \sprintf('%s is registered eagerly: no #[AsCommand] name and no `command` + `description` on the tag', $id));
+            if (!$named) {
+                self::assertSame(SubmitSubjectsCommand::class, $class, 'the one command whose name is the vocabulary\'s');
+            }
+        }
+        self::assertGreaterThanOrEqual(6, $commands, $variant);
     }
 
     /**
