@@ -8,6 +8,7 @@ use IndexNowKit\Http\Response;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsHandler;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use PHPUnit\Framework\Attributes\TestDox;
+use ReflectionClass;
 use Symfony\Component\Messenger\Exception\RecoverableMessageHandlingException;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
@@ -43,9 +44,11 @@ final class MessengerDispatchTest extends BundleTestCase
             $handler($message);
             self::fail('expected RecoverableMessageHandlingException');
         } catch (RecoverableMessageHandlingException $e) {
-            // @phpstan-ignore-next-line function.alreadyNarrowedType (true on the locked Symfony version; the composer constraint also allows 6.4, which lacks it)
-            if (method_exists($e, 'getRetryDelay')) { // Symfony >= 7.2
-                self::assertSame(7000, $e->getRetryDelay());
+            // reflection, not method_exists(): the constraint allows Symfony 6.4 (no getRetryDelay()) and 7.2+ (has it), and
+            // phpstan's verdict on a narrowing check differs between the two vendor sets
+            $reflection = new ReflectionClass($e);
+            if ($reflection->hasMethod('getRetryDelay')) { // Symfony >= 7.2
+                self::assertSame(7000, $reflection->getMethod('getRetryDelay')->invoke($e));
             }
         }
     }

@@ -40,13 +40,21 @@ final class ArticleController
 
     public function createAndFail(Request $request): Response
     {
-        $this->em->wrapInTransaction(function () use ($request): void {
-            $this->em->persist(new Article((string) $request->query->get('slug', 'failed')));
+        // the business rule fails after the flush, so wrapInTransaction() rolls back and rethrows; the condition is
+        // always true at run time and undecidable for phpstan, so no vendor set (ORM 2 `@return mixed`, ORM 3 `@return T`)
+        // gets a dead line to report
+        $response = $this->em->wrapInTransaction(function () use ($request): Response {
+            $article = new Article((string) $request->query->get('slug', 'failed'));
+            $this->em->persist($article);
             $this->em->flush();
-            throw new RuntimeException('business rule violated');
-        });
+            if ($this->em->contains($article)) {
+                throw new RuntimeException('business rule violated');
+            }
 
-        // @phpstan-ignore-next-line deadCode.unreachable (wrapInTransaction() always rethrows above; kept for readability)
-        return new Response('unreachable');
+            return new Response('unreachable');
+        });
+        \assert($response instanceof Response);
+
+        return $response;
     }
 }
