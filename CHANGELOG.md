@@ -3,6 +3,19 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer; until 1.0 minor versions may
 contain breaking changes, listed under "Changed".
 
+## [0.14.1] — Unreleased
+
+### Fixed
+
+- **Fixed: the bundle was a fatal without `indexnowkit/sitemap`, `indexnowkit/verify` or `indexnowkit/history`**
+  (`Class "IndexNowKit\Sitemap\Adapter\SitemapServices" not found` while compiling the container): the configuration
+  tree and the loader asked the packages' `*Services::package()` whether the package is installed, and those classes
+  live in the packages. They now ask the core's `Adapter\OptionalPackage::sitemap()` / `verify()` / `history()`
+  (core 0.13.0); `DependencyInjection\{Sitemap,Verify,History}Services::package()` delegate there too. Same texts, same
+  service ids. A new CI job removes the three packages and boots the bundle with detection
+  (`OptionalPackagesDetectionTest`).
+- Requires `indexnowkit/core ^0.13`.
+
 ## [0.14.0] — 2026-09-07
 
 ### Changed

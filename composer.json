@@ -34,7 +34,7 @@
         "php": "^8.2",
         "ext-json": "*",
         "indexnowkit/console": "^0.4",
-        "indexnowkit/core": "^0.12",
+        "indexnowkit/core": "^0.13",
         "symfony/config": "^6.4 || ^7.0 || ^8.0",
         "symfony/console": "^6.4 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
