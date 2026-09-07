@@ -37,6 +37,13 @@ return  [
                     [
                     ],
                ],
+              'indexnowkit.clock' =>
+               [
+                   'class' => 'IndexNowKit\\Clock\\SystemClock',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.url_normalizer' =>
                [
                    'class' => 'IndexNowKit\\Url\\UrlNormalizerInterface',
@@ -344,6 +351,19 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.check.debounce_store.probe' =>
                [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
@@ -462,7 +482,7 @@ return  [
                ],
               'indexnowkit.check.samples' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'class' => 'IndexNowKit\\Check\\SampleOptions',
                    'tags' =>
                     [
                     ],
@@ -550,7 +570,7 @@ return  [
                ],
               'indexnowkit.check.verify_sample' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'class' => 'IndexNowKit\\Check\\SampleGateCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -855,6 +875,7 @@ return  [
               'IndexNowKit\\Config' => 'indexnowkit.config',
               'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
               'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'Psr\\Clock\\ClockInterface' => 'indexnowkit.clock',
               'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
               'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
               'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
@@ -917,6 +938,13 @@ return  [
               'indexnowkit.transport' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.clock' =>
+               [
+                   'class' => 'IndexNowKit\\Clock\\SystemClock',
                    'tags' =>
                     [
                     ],
@@ -1204,6 +1232,19 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.check.debounce_store.probe' =>
                [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
@@ -1294,14 +1335,14 @@ return  [
                ],
               'indexnowkit.check.samples' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'class' => 'IndexNowKit\\Check\\SampleOptions',
                    'tags' =>
                     [
                     ],
                ],
               'indexnowkit.check.verify_sample' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'class' => 'IndexNowKit\\Check\\SampleGateCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -1437,6 +1478,7 @@ return  [
               'IndexNowKit\\Config' => 'indexnowkit.config',
               'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
               'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'Psr\\Clock\\ClockInterface' => 'indexnowkit.clock',
               'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
               'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
               'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
@@ -1491,6 +1533,13 @@ return  [
               'indexnowkit.transport' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.clock' =>
+               [
+                   'class' => 'IndexNowKit\\Clock\\SystemClock',
                    'tags' =>
                     [
                     ],
@@ -1751,6 +1800,19 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.check.debounce_store' =>
                [
                    'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
@@ -1855,7 +1917,7 @@ return  [
                ],
               'indexnowkit.check.samples' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'class' => 'IndexNowKit\\Check\\SampleOptions',
                    'tags' =>
                     [
                     ],
@@ -1943,7 +2005,7 @@ return  [
                ],
               'indexnowkit.check.verify_sample' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'class' => 'IndexNowKit\\Check\\SampleGateCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -2168,6 +2230,7 @@ return  [
               'IndexNowKit\\Config' => 'indexnowkit.config',
               'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
               'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'Psr\\Clock\\ClockInterface' => 'indexnowkit.clock',
               'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
               'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
               'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
@@ -2229,6 +2292,13 @@ return  [
               'indexnowkit.transport' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.clock' =>
+               [
+                   'class' => 'IndexNowKit\\Clock\\SystemClock',
                    'tags' =>
                     [
                     ],
@@ -2523,6 +2593,19 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.check.debounce_store.probe' =>
                [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Check\\CacheProbe',
@@ -2641,7 +2724,7 @@ return  [
                ],
               'indexnowkit.check.samples' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'class' => 'IndexNowKit\\Check\\SampleOptions',
                    'tags' =>
                     [
                     ],
@@ -2729,7 +2812,7 @@ return  [
                ],
               'indexnowkit.check.verify_sample' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'class' => 'IndexNowKit\\Check\\SampleGateCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -3043,6 +3126,7 @@ return  [
               'IndexNowKit\\Config' => 'indexnowkit.config',
               'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
               'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'Psr\\Clock\\ClockInterface' => 'indexnowkit.clock',
               'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
               'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
               'IndexNowKit\\ClientInterface' => 'indexnowkit.client',
@@ -3105,6 +3189,13 @@ return  [
               'indexnowkit.transport' =>
                [
                    'class' => 'IndexNowKit\\Http\\LazyTransport',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.clock' =>
+               [
+                   'class' => 'IndexNowKit\\Clock\\SystemClock',
                    'tags' =>
                     [
                     ],
@@ -3379,6 +3470,19 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'tags' =>
+                    [
+                        'indexnowkit.check' =>
+                         [
+                             0 =>
+                              [
+                              ],
+                         ],
+                    ],
+               ],
               'indexnowkit.check.debounce_store' =>
                [
                    'class' => 'IndexNowKit\\Check\\DebounceStoreCheck',
@@ -3483,7 +3587,7 @@ return  [
                ],
               'indexnowkit.check.samples' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\SampleOptions',
+                   'class' => 'IndexNowKit\\Check\\SampleOptions',
                    'tags' =>
                     [
                     ],
@@ -3571,7 +3675,7 @@ return  [
                ],
               'indexnowkit.check.verify_sample' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\VerifySampleCheck',
+                   'class' => 'IndexNowKit\\Check\\SampleGateCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -3735,6 +3839,7 @@ return  [
               'IndexNowKit\\Config' => 'indexnowkit.config',
               'IndexNowKit\\Key\\KeyProviderInterface' => 'indexnowkit.key_provider',
               'IndexNowKit\\Http\\TransportInterface' => 'indexnowkit.transport',
+              'Psr\\Clock\\ClockInterface' => 'indexnowkit.clock',
               'IndexNowKit\\Url\\UrlNormalizerInterface' => 'indexnowkit.url_normalizer',
               'IndexNowKit\\Throttle\\ThrottleInterface' => 'indexnowkit.throttle',
               'IndexNowKit\\ClientInterface' => 'indexnowkit.client',

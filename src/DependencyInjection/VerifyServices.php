@@ -7,10 +7,11 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 use BackedEnum;
 use Closure;
 use IndexNowKit\Adapter\OptionalPackage;
+use IndexNowKit\Check\SampleGateCheck;
 use IndexNowKit\Check\StaticCheck;
+use IndexNowKit\Dispatch\DispatcherFactory;
 use IndexNowKit\Http\LazyTransport;
 use IndexNowKit\Submitter;
-use IndexNowKit\SymfonyBundle\Check\VerifySampleCheck;
 use IndexNowKit\Verify\Adapter\VerifyServices as Package;
 use IndexNowKit\Verify\Check\DispatchCheck;
 use IndexNowKit\Verify\Check\TransportCheck;
@@ -90,7 +91,7 @@ final class VerifyServices
         $services->alias(VerifyConfig::class, 'indexnowkit.verify_config');
         $enabled = ($verify['enabled'] ?? false) === true;
         $services->set('indexnowkit.check.verify', StaticCheck::class)->factory([Package::class, 'installedCheck'])->args([service('indexnowkit.verify_config')])->tag('indexnowkit.check');
-        $services->set('indexnowkit.check.verify_dispatch', DispatchCheck::class)->args([$enabled && $dispatch === 'sync', 'messenger'])->tag('indexnowkit.check');
+        $services->set('indexnowkit.check.verify_dispatch', DispatchCheck::class)->args([$enabled && $dispatch === DispatcherFactory::SYNC, 'messenger'])->tag('indexnowkit.check');
         $services->set('indexnowkit.check.verify_transport', TransportCheck::class)->args([$enabled, $client])->tag('indexnowkit.check');
 
         $services->set(self::TRANSPORT . '.real', LazyTransport::class)
@@ -103,7 +104,8 @@ final class VerifyServices
         $services->set('indexnowkit.check.verify_sample.factory', Closure::class)
             ->factory([Package::class, 'sampleCheck'])
             ->args([service(self::TRANSPORT), service('indexnowkit.verify_config'), service('indexnowkit.url_normalizer'), service('indexnowkit.key_provider'), service('indexnowkit.check.entity_sampler')->nullOnInvalid(), service('indexnowkit.verify.robots')]);
-        $services->set('indexnowkit.check.verify_sample', VerifySampleCheck::class)
+        $services->set('indexnowkit.check.verify_sample', SampleGateCheck::class)
+            ->factory([SampleGateCheck::class, 'withPackage'])
             ->args([service('indexnowkit.check.samples'), service('indexnowkit.check.verify_sample.factory')])
             ->tag('indexnowkit.check');
 
@@ -112,15 +114,28 @@ final class VerifyServices
 
             return;
         }
-        $verifyArgs = [service(self::TRANSPORT), service('indexnowkit.verify_config'), service('indexnowkit.key_provider'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), service('indexnowkit.submission_store'), service('indexnowkit.verify.robots'), null];
+        // Named arguments, not positions: `VerifyingSubmitter` and `VerifyingSubmitterFactory` share these parameter
+        // names (`Verify\Adapter\VerifyServices::submitter()` passes them by name too), and a parameter added to
+        // either constructor must fail the compilation here instead of shifting a value into the wrong slot (A16).
+        $verifyArgs = [
+            '$transport' => service(self::TRANSPORT),
+            '$config' => service('indexnowkit.verify_config'),
+            '$keys' => service('indexnowkit.key_provider'),
+            '$normalizer' => service('indexnowkit.url_normalizer'),
+            '$logger' => $logger,
+            '$events' => service('event_dispatcher')->nullOnInvalid(),
+            '$store' => service('indexnowkit.submission_store'),
+            '$robots' => service('indexnowkit.verify.robots'),
+            '$clock' => service('indexnowkit.clock'),
+        ];
         $services->set('indexnowkit.verify.submitter', VerifyingSubmitter::class)
             ->decorate('indexnowkit.submitter')
-            ->args([service('.inner'), ...$verifyArgs, $dispatch === 'sync'])
+            ->args(['$inner' => service('.inner')] + $verifyArgs + ['$inWebRequest' => $dispatch === DispatcherFactory::SYNC])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Submitter::class, 'indexnowkit.verify.submitter.inner');
         $services->set('indexnowkit.verify.command_submitter_factory', VerifyingSubmitterFactory::class)
             ->decorate('indexnowkit.command_submitter_factory')
-            ->args([service('.inner'), ...$verifyArgs])
+            ->args(['$inner' => service('.inner')] + $verifyArgs)
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias('indexnowkit.command_submitter_factory.unverified', 'indexnowkit.verify.command_submitter_factory.inner');
     }

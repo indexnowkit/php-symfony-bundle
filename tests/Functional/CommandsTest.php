@@ -96,6 +96,7 @@ final class CommandsTest extends BundleTestCase
         self::assertStringContainsString('debounce: off (debounce.per_url = 0)', $display);
         self::assertStringContainsString('entity changes are submitted automatically', $display);
         self::assertStringContainsString('Next: annotate a class with #[IndexNow(...)], or send one URL now: bin/console indexnow:submit https://', $display);
+        self::assertStringNotContainsString('enabled_locales', $display, 'framework.enabled_locales is filled here, so the locales check stays silent (W14)');
     }
 
     public function testSubmitCommandUsesBaseUrl(): void

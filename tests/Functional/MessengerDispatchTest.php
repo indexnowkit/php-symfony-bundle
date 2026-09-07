@@ -29,6 +29,9 @@ final class MessengerDispatchTest extends BundleTestCase
         $message = $envelopes[0]->getMessage();
         self::assertInstanceOf(SubmitUrlsMessage::class, $message);
         self::assertSame(['https://www.example.com/en/articles/queued', 'https://www.example.com/de/articles/queued'], $message->urls);
+        // T17: the transport is in-memory://?serialize=true, so every read decodes the envelope anew. A message or a
+        // stamp that cannot survive the round trip fails here instead of in the first real worker.
+        self::assertNotSame($message, $transport->getSent()[0]->getMessage(), 'the envelope is really serialized, not handed back as the same object');
 
         $handler = static::getContainer()->get('indexnowkit.messenger.handler');
         self::assertInstanceOf(SubmitUrlsHandler::class, $handler);

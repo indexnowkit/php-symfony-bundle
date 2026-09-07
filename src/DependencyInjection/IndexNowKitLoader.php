@@ -16,9 +16,12 @@ use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
 use IndexNowKit\Check\DebounceStoreCheck;
+use IndexNowKit\Check\SampleGateCheck;
+use IndexNowKit\Check\SampleOptions;
 use IndexNowKit\Check\StaticCheck;
 use IndexNowKit\Client;
 use IndexNowKit\ClientInterface;
+use IndexNowKit\Clock\SystemClock;
 use IndexNowKit\Collector\Collector;
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
@@ -53,8 +56,7 @@ use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\CacheProbe;
 use IndexNowKit\SymfonyBundle\Check\EntitySampler;
-use IndexNowKit\SymfonyBundle\Check\SampleOptions;
-use IndexNowKit\SymfonyBundle\Check\VerifySampleCheck;
+use IndexNowKit\SymfonyBundle\Check\LocalesCheck;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\CheckCommand;
 use IndexNowKit\SymfonyBundle\Command\ConfigCommand;
@@ -88,6 +90,7 @@ use IndexNowKit\Url\RouteUrlResolverInterface;
 use IndexNowKit\Url\UrlNormalizerFactory;
 use IndexNowKit\Url\UrlNormalizerInterface;
 use IndexNowKit\Url\UrlResolverInterface;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException as DiInvalidArgumentException;
@@ -140,7 +143,7 @@ final class IndexNowKitLoader
 
     /**
      * The blocks in registration order; the service ids, arguments and tags of every block are the bundle's public
-     * surface (docs/services.md), a block only groups them.
+     * surface (docs/extending.md), a block only groups them.
      *
      * @param array<string, mixed> $config
      */
@@ -170,7 +173,7 @@ final class IndexNowKitLoader
 
         $doctrine = $config['doctrine']['enabled'] && $this->doctrineBundleEnabled($builder) && class_exists(IndexNowListener::class);
         $builder->setParameter('indexnowkit.doctrine_hooked', $doctrine && $config['enabled']);
-        $this->loadChecks($services, $builder, $config['debounce']['store']);
+        $this->loadChecks($services, $builder, $config['debounce']['store'], $doctrine);
         $this->loadConsole($services, $config, $logger, $channel, $doctrine);
         if ($doctrine && $config['enabled']) {
             $this->loadDoctrine($services, $config['doctrine']['listener_priority'], $config['doctrine']['connections'], $logger, $channel);
@@ -235,18 +238,24 @@ final class IndexNowKitLoader
     }
 
     /**
-     * Normalizer, throttle, client, debounce store, submitter, collector.
+     * Clock, normalizer, throttle, client, debounce store, submitter, collector.
      *
      * @param Tree $config
      */
     private function loadPipeline(ServicesConfigurator $services, array $config, ReferenceConfigurator $logger, string $channel): void
     {
+        // Every piece that reads the time takes it from here: the throttle window, the memory debounce store, the
+        // submitter's record time and the pre-flight decorator. Alias it to a `Psr\Clock\ClockInterface` of your own
+        // (Testing\FrozenClock in tests) and the whole graph moves with it.
+        $services->set('indexnowkit.clock', SystemClock::class);
+        $services->alias(ClockInterface::class, 'indexnowkit.clock');
+
         $services->set('indexnowkit.url_normalizer', UrlNormalizerInterface::class)->factory([UrlNormalizerFactory::class, 'fromConfig'])->args([service('indexnowkit.config')]);
         $services->alias(UrlNormalizerInterface::class, 'indexnowkit.url_normalizer');
 
         $services->set('indexnowkit.throttle', TokenBucket::class)
             ->factory([TokenBucket::class, 'fromConfig'])
-            ->args([service('indexnowkit.config'), $logger])
+            ->args([service('indexnowkit.config'), $logger, service('indexnowkit.clock')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ThrottleInterface::class, 'indexnowkit.throttle');
 
@@ -259,7 +268,7 @@ final class IndexNowKitLoader
         $services->alias(ClientInterface::class, 'indexnowkit.client');
 
         if ($store === 'memory') {
-            $services->set('indexnowkit.debounce_store', MemoryDebounceStore::class);
+            $services->set('indexnowkit.debounce_store', MemoryDebounceStore::class)->args([service('indexnowkit.clock')]);
         } elseif ($store === 'none') {
             $services->set('indexnowkit.debounce_store', NullDebounceStore::class);
         } else {
@@ -276,7 +285,7 @@ final class IndexNowKitLoader
         $services->alias(SubmissionStoreInterface::class, 'indexnowkit.submission_store');
 
         $services->set('indexnowkit.submitter', Submitter::class)
-            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), $logger, service('indexnowkit.url_normalizer'), service('event_dispatcher')->nullOnInvalid(), service('indexnowkit.submission_store')])
+            ->args([service('indexnowkit.client'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), $logger, service('indexnowkit.url_normalizer'), service('event_dispatcher')->nullOnInvalid(), service('indexnowkit.submission_store'), service('indexnowkit.clock')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(Submitter::class, 'indexnowkit.submitter');
         $services->alias(SubmitterInterface::class, 'indexnowkit.submitter');
@@ -430,12 +439,17 @@ final class IndexNowKitLoader
     }
 
     /**
-     * The `indexnowkit.check` tag, the wiring check and the checker over every tagged check.
+     * The `indexnowkit.check` tag, the wiring check, the locales check and the checker over every tagged check.
+     *
+     * @param bool $doctrine the Doctrine integration is active (the locales check reads the mapped classes)
      */
-    private function loadChecks(ServicesConfigurator $services, ContainerBuilder $builder, string $store): void
+    private function loadChecks(ServicesConfigurator $services, ContainerBuilder $builder, string $store, bool $doctrine): void
     {
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
+        $services->set('indexnowkit.check.locales', LocalesCheck::class)
+            ->args(['%kernel.enabled_locales%', service('indexnowkit.attribute_reader'), $doctrine ? service('doctrine') : null])
+            ->tag('indexnowkit.check');
         // The debounce line: memory/none need no probe; a pool is read through the Psr16Cache the store itself uses.
         $probe = null;
         if ($store !== 'memory' && $store !== 'none') {
@@ -470,7 +484,7 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16'), service('indexnowkit.submission_store')])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16'), service('indexnowkit.submission_store'), service('indexnowkit.clock')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         $sitemap = $config['sitemap'] ?? [];
@@ -481,7 +495,7 @@ final class IndexNowKitLoader
             $services->set(SitemapNotInstalledCommand::class)->args([$this->sitemap->notInstalledMessage()])->tag('console.command');
         }
         // The --sample options of check reach the (compile-time) checks through this holder; the sample check itself
-        // is the package's or the "not installed" line / error.
+        // is the package's or the "not installed" line / error (the core's gate, shared by every adapter).
         $services->set('indexnowkit.check.samples', SampleOptions::class);
         $verify = $config['verify'] ?? [];
         $packages = [];
@@ -489,7 +503,7 @@ final class IndexNowKitLoader
             VerifyServices::register($services, $verify, $logger, $channel, $config['dispatch'], \is_string($config['http']['client']) ? $config['http']['client'] : null, !\in_array($config['debounce']['store'], ['memory', 'none'], true));
             $packages['verify'] = service('indexnowkit.verify_config');
         } else {
-            $services->set('indexnowkit.check.verify_sample', VerifySampleCheck::class)->args([service('indexnowkit.check.samples'), null, $this->verify->checkLine($verify), $this->verify->checkLevel($verify)->value])->tag('indexnowkit.check');
+            $services->set('indexnowkit.check.verify_sample', SampleGateCheck::class)->args([service('indexnowkit.check.samples'), null, $this->verify->checkLine($verify), $this->verify->checkLevel($verify)])->tag('indexnowkit.check');
             $services->alias('indexnowkit.command_submitter_factory.unverified', 'indexnowkit.command_submitter_factory');
         }
         $history = $config['history'] ?? [];
@@ -536,7 +550,7 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.doctrine.sink', StagingSink::class)->args([service('indexnowkit')]);
         $middleware = $services->set('indexnowkit.doctrine.middleware', IndexNowMiddleware::class)->args([service('indexnowkit.doctrine.staging')]);
         $listener = $services->set('indexnowkit.doctrine.listener', IndexNowListener::class)
-            ->args(['$indexNow' => service('indexnowkit'), '$resolver' => null, '$staging' => service('indexnowkit.doctrine.staging'), '$logger' => $logger, '$autoFlush' => false])
+            ->args(['$source' => service('indexnowkit'), '$resolver' => null, '$staging' => service('indexnowkit.doctrine.staging'), '$logger' => $logger, '$autoFlush' => false])
             ->tag('monolog.logger', ['channel' => $channel]);
         foreach ($connections === [] ? [null] : $connections as $connection) {
             $scope = $connection === null ? [] : ['connection' => $connection];

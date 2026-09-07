@@ -75,8 +75,22 @@ Set `dry_run: false` for this variant, or nothing is ever posted.
 
 ## Making the test deterministic
 
-- **Debounce expiry itself** is tested with `IndexNowKit\Testing\FrozenClock`: pass it as `clock:` to a facade built
-  in the test (or register it as the `Psr\Clock\ClockInterface` service) and move time instead of sleeping; see the core's
+- **Anything that reads the time** — the debounce window, the throttle window, the time a submission record gets —
+  comes from one service, `indexnowkit.clock`. Replace it in the compiler pass and move time instead of sleeping:
+
+  ```php
+  // build(), in the compiler pass
+  $container->register('indexnowkit.clock', IndexNowKit\Testing\FrozenClock::class)->setPublic(true);
+
+  // the test
+  $clock = self::getContainer()->get('indexnowkit.clock');
+  $indexNow->submit([$url]);          // sent
+  $indexNow->submit([$url]);          // debounced
+  $clock->advance(601);
+  $indexNow->submit([$url]);          // sent again
+  ```
+
+  Register it (do not alias it) so the definition really replaces the default `Clock\SystemClock`; see the core's
   [testing guide](https://github.com/indexnowkit/php-core/blob/main/docs/testing.md).
 - **`debounce: {per_url: 0}`** or `debounce: {store: memory}`. With the default `cache.app` and a real pool, a second
   test submitting the same URL is silently debounced and the assertion fails for the wrong reason.

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Command;
 
+use IndexNowKit\Check\SampleOptions;
 use IndexNowKit\Console\CheckRunner;
 use IndexNowKit\Console\Definitions;
-use IndexNowKit\SymfonyBundle\Check\SampleOptions;
 use IndexNowKit\SymfonyBundle\DependencyInjection\ConfigFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

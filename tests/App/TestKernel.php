@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Tests\App;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use FilesystemIterator;
 use IndexNowKit\Result;
 use IndexNowKit\SymfonyBundle\IndexNowKitBundle;
 use IndexNowKit\SymfonyBundle\Messenger\SubmitUrlsMessage;
 use IndexNowKit\SymfonyBundle\Tests\App\Check\CdnCheck;
 use IndexNowKit\SymfonyBundle\Tests\App\Controller\ArticleController;
 use IndexNowKit\SymfonyBundle\Tests\App\Resolver\CustomUrlResolver;
+use IndexNowKit\SymfonyBundle\Tests\App\Resolver\ThrowingUrlResolver;
 use IndexNowKit\SymfonyBundle\Tests\App\Sitemap\FilteringSitemapSource;
 use IndexNowKit\Testing\FakeTransport;
+use IndexNowKit\Testing\FrozenClock;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
+use SplFileInfo;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -69,7 +75,7 @@ final class TestKernel extends Kernel
 
     private function isProfilerVariant(): bool
     {
-        return \in_array($this->dispatch, ['profiler', 'profilerdryrun', 'verify', 'history'], true);
+        return \in_array($this->dispatch, ['profiler', 'profilerdryrun', 'verify', 'history', 'storeerror'], true);
     }
 
     public function registerBundles(): iterable
@@ -91,12 +97,39 @@ final class TestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/indexnowkit-bundle-tests/' . $this->dispatch . '/cache';
+        return self::root() . '/' . $this->dispatch . '/cache';
     }
 
     public function getLogDir(): string
     {
-        return sys_get_temp_dir() . '/indexnowkit-bundle-tests/' . $this->dispatch . '/log';
+        return self::root() . '/' . $this->dispatch . '/log';
+    }
+
+    /**
+     * The kernels run with debug: false, so Symfony never checks whether the compiled container is still fresh. The
+     * fingerprint of the bundle's own sources goes into the path instead: editing the extension, the loader or this
+     * kernel builds a new container on the next run instead of testing against the previous one (T10). CI starts on
+     * an empty temp dir either way; this is what makes a local run agree with it.
+     */
+    private static function root(): string
+    {
+        static $fingerprint = null;
+        if ($fingerprint === null) {
+            $times = [];
+            foreach ([\dirname(__DIR__, 2) . '/src', \dirname(__DIR__, 2) . '/config', __DIR__] as $dir) {
+                /** @var iterable<SplFileInfo> $files */
+                $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+                foreach ($files as $file) {
+                    if ($file->getExtension() === 'php') {
+                        $times[] = $file->getPathname() . ':' . $file->getMTime();
+                    }
+                }
+            }
+            sort($times);
+            $fingerprint = substr(hash('xxh128', implode("\n", $times)), 0, 16);
+        }
+
+        return sys_get_temp_dir() . '/indexnowkit-bundle-tests/' . $fingerprint;
     }
 
     protected function configureContainer(ContainerConfigurator $container, LoaderInterface $loader, ContainerBuilder $builder): void
@@ -109,21 +142,27 @@ final class TestKernel extends Kernel
             'handle_all_throwables' => true,
             'php_errors' => ['log' => true],
             'cache' => ['app' => 'cache.adapter.array'],
-            'enabled_locales' => ['en', 'de'],
         ];
+        // "nolocales" is the application that never listed its locales: #[IndexNow(locales: 'all')] then expands to
+        // a single URL without a locale, which is what LocalesCheck warns about.
+        if ($this->dispatch !== 'nolocales') {
+            $framework['enabled_locales'] = ['en', 'de'];
+        }
         if ($this->isProfilerVariant()) {
             $framework['profiler'] = ['enabled' => true, 'collect' => true];
             $container->extension('twig', ['strict_variables' => true]);
             $container->extension('web_profiler', ['toolbar' => false, 'intercept_redirects' => false]);
         }
         if (\in_array($this->dispatch, ['messenger', 'messengerdelay', 'verifymessenger', 'historymessenger', 'messengerbatch'], true)) {
+            // serialize=true: the in-memory transport encodes and decodes the envelope, so the message and its stamps
+            // are really round-tripped instead of being handed back as the same object (T17).
             $framework['messenger'] = [
-                'transports' => ['async' => 'in-memory://'],
+                'transports' => ['async' => 'in-memory://?serialize=true'],
                 'routing' => [SubmitUrlsMessage::class => 'async'],
             ];
         }
         if ($this->dispatch === 'messengerauto') {
-            $framework['messenger'] = ['transports' => ['async' => 'in-memory://']];
+            $framework['messenger'] = ['transports' => ['async' => 'in-memory://?serialize=true']];
         }
         $container->extension('framework', $framework);
 
@@ -145,6 +184,7 @@ final class TestKernel extends Kernel
         if ($this->hasDoctrine()) {
             $container->services()->set(ArticleController::class)->autowire()->autoconfigure()->public()->tag('controller.service_arguments');
             $container->services()->set(CustomUrlResolver::class)->autoconfigure();
+            $container->services()->set(ThrowingUrlResolver::class)->autoconfigure();
         }
         $container->services()->set(FakeTransport::class)->public();
         $container->services()->set(ResultRecorderListener::class)->public()->tag('kernel.event_listener', ['event' => Result::class, 'method' => '__invoke']);
@@ -264,6 +304,12 @@ final class TestKernel extends Kernel
             case 'nohistorypkg':
                 $config['history'] = ['store' => 'pdo'];
                 break;
+            case 'clock':
+                // Everything that reads the time comes from indexnowkit.clock (replaced by FrozenClock in build()):
+                // the memory debounce window and the time a history record gets.
+                $config['debounce'] = ['per_url' => 600, 'store' => 'memory'];
+                $config['history'] = ['store' => 'psr16', 'limit' => 10];
+                break;
             case 'nositemappkgcfg':
                 // A block written for the package, with a key the package's tree would reject: nothing validates it without the package.
                 $config['sitemap'] = ['url' => 'https://www.example.com/sitemaps/root.xml', 'spool' => 'memory', 'spol' => 'disk'];
@@ -276,11 +322,19 @@ final class TestKernel extends Kernel
     protected function build(ContainerBuilder $container): void
     {
         $useFake = $this->dispatch !== 'scopedclient';
-        $container->addCompilerPass(new class ($useFake) implements CompilerPassInterface {
-            public function __construct(private readonly bool $useFake) {}
+        $container->addCompilerPass(new class ($useFake, $this->dispatch === 'clock', $this->dispatch === 'storeerror') implements CompilerPassInterface {
+            public function __construct(private readonly bool $useFake, private readonly bool $frozenClock, private readonly bool $throwingStore) {}
 
             public function process(ContainerBuilder $container): void
             {
+                if ($this->throwingStore) {
+                    $container->register('indexnowkit.submission_store', ThrowingSubmissionStore::class);
+                }
+                if ($this->frozenClock) {
+                    // The application's own clock, as docs/extending.md describes it: every piece that reads the
+                    // time must come from this one service.
+                    $container->register('indexnowkit.clock', FrozenClock::class)->setPublic(true);
+                }
                 if ($this->useFake) {
                     $container->setAlias('indexnowkit.transport', FakeTransport::class)->setPublic(true);
                     if ($container->hasDefinition('indexnowkit.verify.transport')) {
@@ -294,6 +348,9 @@ final class TestKernel extends Kernel
                     $container->getDefinition('indexnowkit.dispatcher')->setPublic(true);
                 }
                 $container->getDefinition('indexnowkit')->setPublic(true);
+                if ($container->hasDefinition('indexnowkit.resolver_locator')) {
+                    $container->getDefinition('indexnowkit.resolver_locator')->setPublic(true);
+                }
                 if ($container->hasDefinition('indexnowkit.data_collector')) {
                     $container->getDefinition('indexnowkit.data_collector')->setPublic(true);
                 }

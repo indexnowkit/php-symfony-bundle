@@ -23,6 +23,16 @@ final class ConfigTableTest extends TestCase
         $file = $root . '/packages/core/docs/configuration.md';
         $current = (string) file_get_contents($file);
 
-        self::assertSame($current, config_table_apply($current, config_table_render()), 'packages/core/docs/configuration.md is stale: run bin/config-table');
+        // Called dynamically: config_table_apply()/config_table_render() are defined by the require_once above,
+        // a file PHPStan cannot see from this package alone (it lives outside packages/symfony-bundle).
+        $render = self::functionNamed('config_table_render');
+        $apply = self::functionNamed('config_table_apply');
+        self::assertSame($current, $apply($current, $render()), 'packages/core/docs/configuration.md is stale: run bin/config-table');
+    }
+
+    /** @return callable(mixed ...$args): mixed */
+    private static function functionNamed(string $name): callable
+    {
+        return static fn(mixed ...$args): mixed => $name(...$args);
     }
 }

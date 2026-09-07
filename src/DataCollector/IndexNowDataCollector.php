@@ -6,6 +6,7 @@ namespace IndexNowKit\SymfonyBundle\DataCollector;
 
 use IndexNowKit\Collector\CollectorInterface;
 use IndexNowKit\Config;
+use IndexNowKit\Console\ConfigRunner;
 use IndexNowKit\Engine;
 use IndexNowKit\Key\KeyProviderInterface;
 use IndexNowKit\Key\KeyValidator;
@@ -107,9 +108,17 @@ final class IndexNowDataCollector extends DataCollector implements LateDataColle
             }
             $this->data['recent'] = $recent;
         } catch (Throwable $e) {
-            // A missing table or an unreachable cache is one line in the panel, never a broken profiler.
-            $this->data['recent_error'] = $e->getMessage();
+            // A missing table or an unreachable cache is one line in the panel, never a broken profiler. The panel
+            // ends up in screenshots of bug reports, so the store's own message is masked the way `indexnow:config`
+            // masks a DSN: the class names the failure, the text keeps no credentials.
+            $this->data['recent_error'] = self::maskedError($e);
         }
+    }
+
+    /** `<exception class>: <message with the userinfo and the password of any DSN masked>`. */
+    private static function maskedError(Throwable $e): string
+    {
+        return \sprintf('%s: %s', $e::class, ConfigRunner::maskDsn($e->getMessage()));
     }
 
     /**

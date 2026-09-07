@@ -145,3 +145,8 @@ walks to them:
 #[IndexNow(route: 'article_show', params: ['slug' => 'slug'], locales: 'all')]   // every locale of this article
 #[IndexNow(via: 'translations')]                                                 // or: the sibling objects' own rules
 ```
+
+`locales: 'all'` expands to `framework.enabled_locales`. An application that never filled that list gets one URL
+without a locale per rule, silently — `indexnow:check` says so (`router.locales`, one warning naming the entities
+that ask for every locale). Either list the locales in `framework.enabled_locales` or name them on the rule
+(`locales: ['en', 'de']`).
