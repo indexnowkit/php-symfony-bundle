@@ -13,11 +13,33 @@ contain breaking changes, listed under "Changed".
   decorators. Replace it with `IndexNowKit\Testing\FrozenClock` in a compiler pass and the debounce window, the
   throttle window and the time a submission record gets all move together (audit 0.13 A5; docs/extending.md,
   docs/testing.md).
-- **`indexnowkit.check.locales`** (`Check\LocalesCheck`, code `router.locales`): one `indexnow:check` warning when a
-  `#[IndexNow(locales: 'all')]` rule meets an empty `framework.enabled_locales`, which until now silently produced
-  one URL without a locale instead of one per locale (audit 0.13 W14).
+- **`indexnowkit.check.locales`** (the core's `Check\LocalesCheck` over `Check\MappedClasses`, code `router.locales`):
+  one `indexnow:check` warning when a `#[IndexNow(locales: 'all')]` rule meets an empty `framework.enabled_locales`,
+  which until now silently produced one URL without a locale instead of one per locale (audit 0.13 W14; the class
+  moved to the core in wave M, spec 19 §4.4, one text for the three adapters that print it).
+- **The router bridge warns once per process** when `locales: 'all'` meets an empty `framework.enabled_locales`
+  (`indexnowkit.route_url_resolver` takes the logger now, on the `indexnow` channel): the rule silently collapsing
+  to one URL was, until now, a line of `check` only. The expansion, the pinned origin and the exception text are the
+  core's `Url\RouteOrigin` (wave M, spec 19 §4.6).
 
 ### Changed
+
+- **Wave M (spec 19): the bundle's copies of what the family shares are the core's or the packages' classes.**
+  `Check\LocalesCheck` and `Check\EntitySampler` are removed — the service ids stay (`indexnowkit.check.locales` is the
+  core's `Check\LocalesCheck` over the new `Check\MappedClasses`, `indexnowkit.check.entity_sampler.callable` is
+  `Console\SubjectSampler` of `indexnowkit/console`). `Command\EntityLoader` extends `Console\AbstractSubjectLoader`
+  (its constructor and `manager()` are unchanged). `Messenger\MessengerDispatcher` is the Messenger push around the
+  core's `Dispatch\BatchingDispatcher`: its constructor takes the `Config` (`indexnowkit.config`) where it took
+  `$logUrls` and `$batchMaxUrls` — an internal service (`indexnowkit.dispatcher`), not in `docs/bc.md` — and its log
+  lines are the core's (`{count} URL(s) queued as message {id}`, `cannot queue {count} URL(s) (message {id}), they are
+  lost: {error}`; docs/messenger.md). `SubmitUrlsMessage::newId()` delegates to `BatchingDispatcher::newJobId()`.
+  **`EventListener\FlushListener` takes `(CollectorInterface, Closure(): IndexNowKit)`** instead of a PSR-11 service
+  locator (PSR-11 says a container should not be passed in for an object to fetch its own dependencies; a
+  `service_closure('indexnowkit')` is as lazy). *Migration*: a `FlushListener` built by hand passes
+  `static fn () => $container->get('indexnowkit')`. `Check\CacheProbe` writes the core's `DebounceStoreCheck::PROBE_KEY`
+  (it only read a key). The nine literal `'memory'` / `'none'` comparisons of the loader are
+  `DebounceStoreFactory::isShared()`; the `status` line of the debounce store is `HistoryServices::describeStore()`
+  of `indexnowkit/history` (`cache.app (missing)` when the pool is not a service, where the bundle printed the bare id).
 
 - **The command classes are the packages', `Command\*` of the bundle is gone** (wave L, spec 18). `indexnow:check`,
   `indexnow:config`, `indexnow:submit`, `indexnow:submit-entity`, `indexnow:explain`, `indexnow:key:generate` and the

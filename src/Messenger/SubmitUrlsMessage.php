@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Messenger;
 
+use IndexNowKit\Dispatch\BatchingDispatcher;
+
 final readonly class SubmitUrlsMessage
 {
     /**
@@ -13,8 +15,9 @@ final readonly class SubmitUrlsMessage
      */
     public function __construct(public array $urls, public string $id = '') {}
 
+    /** A fresh correlation id: the core's `Dispatch\BatchingDispatcher::newJobId()`, kept here for the callers of 0.14. */
     public static function newId(): string
     {
-        return bin2hex(random_bytes(6));
+        return BatchingDispatcher::newJobId();
     }
 }

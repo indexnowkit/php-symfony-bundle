@@ -7,6 +7,7 @@ namespace IndexNowKit\SymfonyBundle\DependencyInjection;
 use Closure;
 use IndexNowKit\Adapter\OptionalPackage;
 use IndexNowKit\Config;
+use IndexNowKit\Debounce\DebounceStoreFactory;
 use IndexNowKit\History\Adapter\HistoryServices as Package;
 use IndexNowKit\History\Check\HistoryCheck;
 use IndexNowKit\History\Console\HistoryCommand;
@@ -24,7 +25,6 @@ use PDO;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Psr\SimpleCache\CacheInterface;
-use ReflectionClass;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException as DiInvalidArgumentException;
@@ -113,11 +113,11 @@ final class HistoryServices
             }
             $services->set('indexnowkit.submission_store', PdoSubmissionStore::class)->args([service('indexnowkit.history.pdo'), \is_string($pdo['table'] ?? null) && $pdo['table'] !== '' ? $pdo['table'] : HistoryConfig::DEFAULT_TABLE]);
         } else {
-            if (\in_array($debounceStore, ['memory', 'none'], true)) {
+            if (DebounceStoreFactory::isShared($debounceStore)) {
+                $cache = service('indexnowkit.debounce_store.psr16');
+            } else {
                 $services->set('indexnowkit.history.cache', Psr16Cache::class)->args([service('cache.app')]);
                 $cache = service('indexnowkit.history.cache');
-            } else {
-                $cache = service('indexnowkit.debounce_store.psr16');
             }
             $prefix = \is_string($history['key_prefix'] ?? null) && $history['key_prefix'] !== '' ? $history['key_prefix'] : '%indexnowkit.debounce.key_prefix%';
             $services->set('indexnowkit.submission_store', Psr16SubmissionStore::class)->args([$cache, $prefix, is_numeric($history['limit'] ?? null) ? (int) $history['limit'] : HistoryConfig::DEFAULT_LIMIT]);
@@ -139,7 +139,7 @@ final class HistoryServices
      */
     public static function registerConsole(ServicesConfigurator $services, mixed $logger, string $channel, string $debounceStore, string $dispatch, ?string $transport, string $bus): void
     {
-        $pool = \in_array($debounceStore, ['memory', 'none'], true);
+        $pool = !DebounceStoreFactory::isShared($debounceStore);
         $services->set('indexnowkit.check.history', HistoryCheck::class)->args([service('indexnowkit.history_config'), service('indexnowkit.submission_store')])->tag('indexnowkit.check');
         $services->set('indexnowkit.forbidden_counter', ForbiddenCounter::class)
             ->factory([self::class, 'forbiddenCounter'])
@@ -195,7 +195,7 @@ final class HistoryServices
      */
     public static function statusRunner(Config $config, KeyProviderInterface $keys, ForbiddenCounter $forbidden, string $debounceStore, ?object $pool, SubmissionStoreInterface $store, string $dispatch, ?string $transport, string $bus, bool $routed = false): StatusRunner
     {
-        $description = \in_array($debounceStore, ['memory', 'none'], true) || $pool === null ? $debounceStore : \sprintf('%s (%s)', $debounceStore, (new ReflectionClass($pool))->getShortName());
+        $description = Package::describeStore($debounceStore, 'cache.app', static fn(): ?object => $pool);
         $transport ??= $routed ? 'routed by framework.messenger.routing' : 'none: handled synchronously (set messenger.transport)';
 
         return Package::statusRunner($config, $keys, $forbidden, $description, $store, $dispatch === 'messenger' ? self::facts($transport, $bus) : null);

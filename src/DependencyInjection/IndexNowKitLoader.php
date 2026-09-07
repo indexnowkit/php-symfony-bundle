@@ -16,6 +16,7 @@ use IndexNowKit\Check\Checker;
 use IndexNowKit\Check\CheckerInterface;
 use IndexNowKit\Check\CheckInterface;
 use IndexNowKit\Check\DebounceStoreCheck;
+use IndexNowKit\Check\LocalesCheck;
 use IndexNowKit\Check\SampleGateCheck;
 use IndexNowKit\Check\SampleOptions;
 use IndexNowKit\Check\StaticCheck;
@@ -42,9 +43,11 @@ use IndexNowKit\Console\KeyGenerateRunner;
 use IndexNowKit\Console\ResultFormatterInterface;
 use IndexNowKit\Console\ResultRenderer;
 use IndexNowKit\Console\SubjectLoaderInterface;
+use IndexNowKit\Console\SubjectSampler;
 use IndexNowKit\Console\SubmitRunner;
 use IndexNowKit\Console\SubmitSubjectsRunner;
 use IndexNowKit\Console\Vocabulary;
+use IndexNowKit\Debounce\DebounceStoreFactory;
 use IndexNowKit\Debounce\DebounceStoreInterface;
 use IndexNowKit\Debounce\MemoryDebounceStore;
 use IndexNowKit\Debounce\NullDebounceStore;
@@ -65,8 +68,7 @@ use IndexNowKit\Submission\SubmissionStoreInterface;
 use IndexNowKit\Submitter;
 use IndexNowKit\SubmitterInterface;
 use IndexNowKit\SymfonyBundle\Check\CacheProbe;
-use IndexNowKit\SymfonyBundle\Check\EntitySampler;
-use IndexNowKit\SymfonyBundle\Check\LocalesCheck;
+use IndexNowKit\SymfonyBundle\Check\MappedClasses;
 use IndexNowKit\SymfonyBundle\Check\WiringCheck;
 use IndexNowKit\SymfonyBundle\Command\EntityLoader;
 use IndexNowKit\SymfonyBundle\Controller\KeyFileController;
@@ -100,7 +102,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigura
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_closure;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 
@@ -262,15 +263,15 @@ final class IndexNowKitLoader
 
         $store = $config['debounce']['store'];
         // The 403 counter shares the PSR-16 view of the debounce pool; memory/none leave it in the process.
-        $failureCache = \in_array($store, ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16');
+        $failureCache = DebounceStoreFactory::isShared($store) ? service('indexnowkit.debounce_store.psr16') : null;
         $services->set('indexnowkit.client', Client::class)
             ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), $logger, service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $failureCache])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(ClientInterface::class, 'indexnowkit.client');
 
-        if ($store === 'memory') {
+        if ($store === DebounceStoreFactory::MEMORY) {
             $services->set('indexnowkit.debounce_store', MemoryDebounceStore::class)->args([service('indexnowkit.clock')]);
-        } elseif ($store === 'none') {
+        } elseif ($store === DebounceStoreFactory::NONE) {
             $services->set('indexnowkit.debounce_store', NullDebounceStore::class);
         } else {
             $services->set('indexnowkit.debounce_store.psr16', Psr16Cache::class)->args([service($store)]);
@@ -312,7 +313,8 @@ final class IndexNowKitLoader
         $services->alias(AttributeReaderInterface::class, 'indexnowkit.attribute_reader');
 
         $services->set('indexnowkit.route_url_resolver', SymfonyRouteUrlResolver::class)
-            ->args([service('router'), service('request_stack'), service('indexnowkit.config'), '%kernel.enabled_locales%']);
+            ->args([service('router'), service('request_stack'), service('indexnowkit.config'), '%kernel.enabled_locales%', $logger])
+            ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(RouteUrlResolverInterface::class, 'indexnowkit.route_url_resolver');
 
         $builder->registerForAutoconfiguration(UrlResolverInterface::class)->addTag('indexnowkit.url_resolver');
@@ -356,7 +358,7 @@ final class IndexNowKitLoader
         match ($dispatch) {
             'none' => $services->set('indexnowkit.dispatcher', NullDispatcher::class),
             'messenger' => $services->set('indexnowkit.dispatcher', MessengerDispatcher::class)
-                ->args([service($config['messenger']['bus']), $logger, $config['messenger']['delay'], array_map(static fn(string $id) => service($id), $config['messenger']['stamps']), $config['logging']['max_urls'], $config['batch']['max_urls']])
+                ->args([service($config['messenger']['bus']), $logger, $config['messenger']['delay'], array_map(static fn(string $id) => service($id), $config['messenger']['stamps']), service('indexnowkit.config')])
                 ->tag('monolog.logger', ['channel' => $channel]),
             default => $services->set('indexnowkit.dispatcher', SyncDispatcher::class)
                 ->args([service('indexnowkit.submitter'), $logger, $config['logging']['max_urls']])
@@ -397,7 +399,7 @@ final class IndexNowKitLoader
         $services->alias(IndexNowKit::class, 'indexnowkit')->public();
 
         $services->set('indexnowkit.flush_listener', FlushListener::class)
-            ->args([service('indexnowkit.collector'), service_locator(['indexnowkit' => service('indexnowkit')])])
+            ->args([service('indexnowkit.collector'), service_closure('indexnowkit')])
             ->tag('kernel.event_listener', ['event' => 'kernel.terminate', 'method' => 'onTerminate', 'priority' => $config['flush']['priority']]) // default -1000: before ProfilerListener (-1024) so results land in the profile
             ->tag('kernel.event_listener', ['event' => 'console.terminate', 'method' => 'onTerminate', 'priority' => $config['flush']['console_priority']])
             ->tag('kernel.event_listener', ['event' => 'Symfony\Component\Messenger\Event\WorkerMessageHandledEvent', 'method' => 'onTerminate', 'priority' => $config['flush']['console_priority']]);
@@ -448,12 +450,15 @@ final class IndexNowKitLoader
     {
         $builder->registerForAutoconfiguration(CheckInterface::class)->addTag('indexnowkit.check');
         $services->set('indexnowkit.check.wiring', WiringCheck::class)->args(['%indexnowkit.dispatch%', '%indexnowkit.messenger_routed%', '%indexnowkit.doctrine_hooked%'])->tag('indexnowkit.check');
+        // The locale line is the core's check over the classes Doctrine maps (nothing without the integration).
+        $services->set('indexnowkit.check.locales.classes', MappedClasses::class)->args([$doctrine ? service('doctrine') : null]);
+        $services->set('indexnowkit.check.locales.classes_closure', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.locales.classes')]);
         $services->set('indexnowkit.check.locales', LocalesCheck::class)
-            ->args(['%kernel.enabled_locales%', service('indexnowkit.attribute_reader'), $doctrine ? service('doctrine') : null])
+            ->args(['%kernel.enabled_locales%', service('indexnowkit.attribute_reader'), service('indexnowkit.check.locales.classes_closure'), 'framework.enabled_locales'])
             ->tag('indexnowkit.check');
-        // The debounce line: memory/none need no probe; a pool is read through the Psr16Cache the store itself uses.
+        // The debounce line: memory/none need no probe; a pool is written through the Psr16Cache the store itself uses.
         $probe = null;
-        if ($store !== 'memory' && $store !== 'none') {
+        if (DebounceStoreFactory::isShared($store)) {
             $services->set('indexnowkit.check.debounce_store.probe', CacheProbe::class)->args([service('indexnowkit.debounce_store.psr16'), service($store)]);
             $services->set('indexnowkit.check.debounce_store.probe_closure', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.debounce_store.probe')]);
             $probe = service('indexnowkit.check.debounce_store.probe_closure');
@@ -489,7 +494,7 @@ final class IndexNowKitLoader
         $services->set('indexnowkit.result_formatter', ResultRenderer::class);
         $services->alias(ResultFormatterInterface::class, 'indexnowkit.result_formatter');
         $services->set('indexnowkit.command_submitter_factory', SubmitterFactory::class)
-            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), \in_array($config['debounce']['store'], ['memory', 'none'], true) ? null : service('indexnowkit.debounce_store.psr16'), service('indexnowkit.submission_store'), service('indexnowkit.clock')])
+            ->args([service('indexnowkit.transport'), service('indexnowkit.key_provider'), service('indexnowkit.config'), service('indexnowkit.debounce_store'), service('indexnowkit.throttle'), service('indexnowkit.url_normalizer'), $logger, service('event_dispatcher')->nullOnInvalid(), DebounceStoreFactory::isShared($config['debounce']['store']) ? service('indexnowkit.debounce_store.psr16') : null, service('indexnowkit.submission_store'), service('indexnowkit.clock')])
             ->tag('monolog.logger', ['channel' => $channel]);
         $services->alias(SubmitterFactoryInterface::class, 'indexnowkit.command_submitter_factory');
         $sitemap = $config['sitemap'] ?? [];
@@ -505,7 +510,7 @@ final class IndexNowKitLoader
         $verify = $config['verify'] ?? [];
         $packages = [];
         if ($this->verify->installed()) {
-            VerifyServices::register($services, $verify, $logger, $channel, $config['dispatch'], \is_string($config['http']['client']) ? $config['http']['client'] : null, !\in_array($config['debounce']['store'], ['memory', 'none'], true));
+            VerifyServices::register($services, $verify, $logger, $channel, $config['dispatch'], \is_string($config['http']['client']) ? $config['http']['client'] : null, DebounceStoreFactory::isShared($config['debounce']['store']));
             $packages['verify'] = service('indexnowkit.verify_config');
         } else {
             $services->set('indexnowkit.check.verify_sample', SampleGateCheck::class)->args([service('indexnowkit.check.samples'), null, $this->verify->checkLine($verify), $this->verify->checkLevel($verify)])->tag('indexnowkit.check');
@@ -538,7 +543,7 @@ final class IndexNowKitLoader
         }
         $services->set('indexnowkit.entity_loader', EntityLoader::class)->args([service('doctrine')]);
         $services->alias(SubjectLoaderInterface::class, 'indexnowkit.entity_loader');
-        $services->set('indexnowkit.check.entity_sampler.callable', EntitySampler::class)->args([service('indexnowkit.entity_loader'), service('indexnowkit')]);
+        $services->set('indexnowkit.check.entity_sampler.callable', SubjectSampler::class)->args([service('indexnowkit.entity_loader'), service('indexnowkit')]);
         $services->set('indexnowkit.check.entity_sampler', Closure::class)->factory([Closure::class, 'fromCallable'])->args([service('indexnowkit.check.entity_sampler.callable')]);
         $services->set('indexnowkit.console.submit_entity', SubmitSubjectsRunner::class)->args([service('indexnowkit'), service('indexnowkit.entity_loader'), service('indexnowkit.command_submitter_factory'), service('indexnowkit.result_formatter'), service('indexnowkit.console.vocabulary')]);
         // no #[AsCommand] on this one (its name is the vocabulary's): the tag carries the name and the description

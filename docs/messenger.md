@@ -81,7 +81,7 @@ message is being handled, the submission is only dispatched after that handler f
 `doctrine_transaction` middleware this keeps the guarantee that nothing is announced before its transaction commits.
 
 A failure to dispatch never breaks the request: it is logged as
-`indexnow: cannot dispatch {count} URL(s) to messenger (message {id}), they are lost: {error}` on the `indexnow` channel.
+`indexnow: cannot queue {count} URL(s) (message {id}), they are lost: {error}` on the `indexnow` channel (the line of the core's `Dispatch\BatchingDispatcher`, the same in every adapter; `{noun}` is `message` here).
 
 ## Retry semantics
 
@@ -133,7 +133,7 @@ periodically, or the collector grows for the life of the process and the URLs go
 |---|---|
 | `indexnow: {count} URL(s) of job {id} will be retried` | `indexnow` channel, `info`, in the worker |
 | `indexnow: {count} URL(s) of job {id} rejected permanently ({reasons}); run "bin/console indexnow:check"` | `indexnow` channel, `error`, in the worker |
-| `indexnow: cannot dispatch {count} URL(s) to messenger (message {id}), they are lost` | `indexnow` channel, `error`, in the web request |
+| `indexnow: cannot queue {count} URL(s) (message {id}), they are lost` | `indexnow` channel, `error`, in the web request |
 | exhausted retries | Messenger's failure transport, default channel |
 | the URLs a request handed over | Web Profiler panel, which also says results appear in the worker's log |
 

@@ -161,6 +161,13 @@ return  [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
                    'tags' =>
                     [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
                     ],
                ],
               'indexnowkit.resolver_locator' =>
@@ -351,9 +358,23 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales.classes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\MappedClasses',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.locales.classes_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.check.locales' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'class' => 'IndexNowKit\\Check\\LocalesCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -745,7 +766,7 @@ return  [
                ],
               'indexnowkit.check.entity_sampler.callable' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'class' => 'IndexNowKit\\Console\\SubjectSampler',
                    'tags' =>
                     [
                     ],
@@ -1063,6 +1084,13 @@ return  [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
                    'tags' =>
                     [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
                     ],
                ],
               'indexnowkit.resolver_locator' =>
@@ -1243,9 +1271,23 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales.classes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\MappedClasses',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.locales.classes_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.check.locales' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'class' => 'IndexNowKit\\Check\\LocalesCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -1666,6 +1708,13 @@ return  [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
                    'tags' =>
                     [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
                     ],
                ],
               'indexnowkit.resolver_locator' =>
@@ -1819,9 +1868,23 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales.classes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\MappedClasses',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.locales.classes_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.check.locales' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'class' => 'IndexNowKit\\Check\\LocalesCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -2199,7 +2262,7 @@ return  [
                ],
               'indexnowkit.check.entity_sampler.callable' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'class' => 'IndexNowKit\\Console\\SubjectSampler',
                    'tags' =>
                     [
                     ],
@@ -2443,6 +2506,13 @@ return  [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
                    'tags' =>
                     [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
                     ],
                ],
               'indexnowkit.resolver_locator' =>
@@ -2623,9 +2693,23 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales.classes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\MappedClasses',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.locales.classes_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.check.locales' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'class' => 'IndexNowKit\\Check\\LocalesCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>
@@ -3045,7 +3129,7 @@ return  [
                ],
               'indexnowkit.check.entity_sampler.callable' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\EntitySampler',
+                   'class' => 'IndexNowKit\\Console\\SubjectSampler',
                    'tags' =>
                     [
                     ],
@@ -3351,6 +3435,13 @@ return  [
                    'class' => 'IndexNowKit\\SymfonyBundle\\Url\\SymfonyRouteUrlResolver',
                    'tags' =>
                     [
+                        'monolog.logger' =>
+                         [
+                             0 =>
+                              [
+                                  'channel' => 'indexnow',
+                              ],
+                         ],
                     ],
                ],
               'indexnowkit.resolver_locator' =>
@@ -3511,9 +3602,23 @@ return  [
                          ],
                     ],
                ],
+              'indexnowkit.check.locales.classes' =>
+               [
+                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\MappedClasses',
+                   'tags' =>
+                    [
+                    ],
+               ],
+              'indexnowkit.check.locales.classes_closure' =>
+               [
+                   'class' => 'Closure',
+                   'tags' =>
+                    [
+                    ],
+               ],
               'indexnowkit.check.locales' =>
                [
-                   'class' => 'IndexNowKit\\SymfonyBundle\\Check\\LocalesCheck',
+                   'class' => 'IndexNowKit\\Check\\LocalesCheck',
                    'tags' =>
                     [
                         'indexnowkit.check' =>

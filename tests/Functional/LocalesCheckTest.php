@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace IndexNowKit\SymfonyBundle\Tests\Functional;
 
+use IndexNowKit\Check\LocalesCheck;
 use IndexNowKit\Http\Response;
-use IndexNowKit\SymfonyBundle\Check\LocalesCheck;
 use IndexNowKit\SymfonyBundle\Tests\App\Entity\Article;
 use IndexNowKit\SymfonyBundle\Tests\App\TestKernel;
 use PHPUnit\Framework\Attributes\TestDox;

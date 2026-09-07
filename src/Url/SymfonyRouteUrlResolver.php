@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace IndexNowKit\SymfonyBundle\Url;
 
 use IndexNowKit\Config;
-use IndexNowKit\Exception\ConfigurationException;
+use IndexNowKit\Url\RouteOrigin;
 use IndexNowKit\Url\RouteUrlResolverInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Exception\ExceptionInterface as RoutingException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -18,30 +19,29 @@ use Symfony\Component\Routing\RouterInterface;
  *
  * Request context: inside an HTTP request the current request's scheme/host are used; outside (console,
  * Messenger worker) they come from `base_url`. A rule that pins a host (`#[IndexNow(host: ...)]`) or a host
- * with its own `hosts.<host>.base_url` overrides the context for that URL only.
+ * with its own `hosts.<host>.base_url` overrides the context for that URL only. What every bridge of the family
+ * decides the same way (the locale expansion, the pinned origin, the exception) is the core's `Url\RouteOrigin`.
  */
 final class SymfonyRouteUrlResolver implements RouteUrlResolverInterface
 {
+    /** `locales: 'all'` met an empty `framework.enabled_locales`: warned about once, not once per entity. */
+    private bool $warnedAboutLocales = false;
+
     /**
-     * @param list<string> $enabledLocales
+     * @param list<string>         $enabledLocales `%kernel.enabled_locales%`
+     * @param LoggerInterface|null $logger         where `locales: 'all'` over an empty list is warned about (once per process)
      */
     public function __construct(
         private readonly RouterInterface $router,
         private readonly RequestStack $requestStack,
         private readonly Config $config,
         private readonly array $enabledLocales = [],
+        private readonly ?LoggerInterface $logger = null,
     ) {}
 
     public function locales(array|string $locales): array
     {
-        if (\is_array($locales)) {
-            return $locales === [] ? [null] : $locales;
-        }
-        if ($locales === 'all' && $this->enabledLocales !== []) {
-            return $this->enabledLocales;
-        }
-
-        return [null];
+        return RouteOrigin::expand($locales, $this->enabledLocales, $this->logger, 'framework.enabled_locales', $this->warnedAboutLocales);
     }
 
     public function generate(string $route, array $params, ?string $locale = null, ?string $host = null): string
@@ -58,7 +58,7 @@ final class SymfonyRouteUrlResolver implements RouteUrlResolverInterface
 
             return $this->router->generate($route, $routeParams, UrlGeneratorInterface::ABSOLUTE_URL);
         } catch (RoutingException $e) {
-            throw new ConfigurationException(\sprintf('Cannot generate route "%s": %s', $route, $e->getMessage()), 0, $e);
+            throw RouteOrigin::generationFailed($route, $e);
         } finally {
             if ($restore !== null) {
                 $context->setScheme($restore->getScheme())->setHost($restore->getHost())->setBaseUrl($restore->getBaseUrl())->setHttpPort($restore->getHttpPort())->setHttpsPort($restore->getHttpsPort());
@@ -72,9 +72,7 @@ final class SymfonyRouteUrlResolver implements RouteUrlResolverInterface
     private function contextFor(?string $host): ?RequestContext
     {
         if ($host !== null) {
-            $baseUrl = $this->config->baseUrlFor($host) ?? 'https://' . $host;
-
-            return RequestContext::fromUri($baseUrl);
+            return RequestContext::fromUri(RouteOrigin::pinnedRoot($this->config, $host));
         }
         if ($this->requestStack->getCurrentRequest() === null && $this->config->baseUrl !== null) {
             return RequestContext::fromUri($this->config->baseUrl);
