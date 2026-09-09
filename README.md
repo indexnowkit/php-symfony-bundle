@@ -52,7 +52,9 @@ composer require indexnowkit/sitemap         # optional: the indexnow:sitemap co
 bin/console indexnow:key:generate --write-env     # adds INDEXNOW_KEY to .env.local
 ```
 
-The Flex recipe registers the bundle, creates `config/packages/indexnowkit.yaml` and imports the key file route.
+The Flex recipe (a contrib recipe: `composer config extra.symfony.allow-contrib true` once) registers the bundle,
+creates `config/packages/indexnowkit.yaml`, imports the key file route and adds `INDEXNOW_KEY` (empty: dry run outside
+production until `indexnow:key:generate --write-env` fills `.env.local`) and `INDEXNOW_BASE_URL` to `.env`.
 Without Flex, add `IndexNowKit\SymfonyBundle\IndexNowKitBundle` to `config/bundles.php` and import
 `@IndexNowKitBundle/config/routes.php` from `config/routes.yaml`.
 

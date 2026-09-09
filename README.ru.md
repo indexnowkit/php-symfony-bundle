@@ -51,7 +51,9 @@ composer require indexnowkit/sitemap         # опционально: кома�
 bin/console indexnow:key:generate --write-env     # добавит INDEXNOW_KEY в .env.local
 ```
 
-Flex-рецепт регистрирует бандл, создаёт `config/packages/indexnowkit.yaml` и подключает роут файла ключа.
+Flex-рецепт (contrib: один раз `composer config extra.symfony.allow-contrib true`) регистрирует бандл, создаёт
+`config/packages/indexnowkit.yaml`, подключает роут файла ключа и добавляет в `.env` пустой `INDEXNOW_KEY` (вне production
+это dry-run, пока `indexnow:key:generate --write-env` не запишет ключ в `.env.local`) и `INDEXNOW_BASE_URL`.
 Без Flex добавьте `IndexNowKit\SymfonyBundle\IndexNowKitBundle` в `config/bundles.php` и импортируйте
 `@IndexNowKitBundle/config/routes.php` из `config/routes.yaml`.
 
